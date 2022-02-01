@@ -4,7 +4,7 @@ from re import search
 import modules.google_work as google_work
 import modules.mpstats as mpstats
 
-GOOGLE_CATEGORIES_KEY = '1i639nTdBNRp3TyDvA1qPT-QP0RdNaJiwkxBIOPMZoLs'
+GOOGLE_WB_KEY = '1i639nTdBNRp3TyDvA1qPT-QP0RdNaJiwkxBIOPMZoLs'
 choice = 'start'
 
 def ask_start():
@@ -16,11 +16,13 @@ def ask_start():
     print("1 - Отчет по категориям и позициям")
     print("2 - Отчет по категориям")
     print("3 - Отчет по позициям")
+    print("4 - Отчет по остаткам")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'categories_and_positions'
     elif choice.strip() == '2': choice = 'categories'
     elif choice.strip() == '3': choice = 'positions'
+    elif choice.strip() == '4': choice = 'balance'
     else:
         choice = 'start'
         print("Неправильный выбор...")
@@ -32,19 +34,19 @@ def ask_sku_list(worksheet):
     """
     while(True):
         print("\n1 - Взять список SKU из Google таблицы")
-        #print("2 - Ввести список вручную")
         print("2 - В начало")
         sku_list_choice = input("Выбор: ")
         if sku_list_choice.strip() == '1':
             supply_sku_list, sku_list = google_work.get_columns(worksheet, 1, 1, 2)
-            return supply_sku_list, sku_list
-        # elif sku_list_choice.strip() == '2':
-        #     while (True):
-        #         print("Введите список SKU (в конце нажмите Enter 2 раза):")
-        #         try:
-        #             sku_list = list(map(int, list(iter(input, ""))))
-        #             return sku_list
-        #         except: print('Проверьте правильность введенных данных...')
+            supply_sku_dict = {sku_list[i]: supply_sku_list[i] for i in range(len(sku_list))}
+            if len(supply_sku_dict) < len(sku_list):
+                print(f'Всего записей: {len(sku_list)}')
+                print(f'Найдено {len(sku_list)-len(supply_sku_dict)} повторяющихся записей...')
+                sku_list = sorted(list(supply_sku_dict.keys()))
+                supply_sku_list = [[supply_sku_dict[sku]] for sku in sku_list]
+                worksheet.update('A2', supply_sku_list)
+                return sku_list
+            else: return sorted(sku_list)
         elif sku_list_choice.strip() == '2':
             global choice
             choice = 'start'
@@ -87,44 +89,56 @@ def ask_day_period():
 while(True):
     if choice == 'start': ask_start()
     elif choice == 'categories':
-        worksheet = google_work.open_sheet(GOOGLE_CATEGORIES_KEY, 'Категории')
-        supply_sku_list, sku_list = ask_sku_list(worksheet)
+        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Категории')
+        sku_list = ask_sku_list(worksheet)
         if choice == 'start': continue
         start_date, end_date = ask_day_period()
         if choice == 'start': continue
-        items_list = mpstats.get_categories_and_positions(sku_list, start_date, end_date)
-        category_table = mpstats.categories(items_list)
+        items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
+        category_table = mpstats.categories(items_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', category_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_CATEGORIES_KEY}")
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
         choice = 'start'
     elif choice == 'positions':
-        worksheet = google_work.open_sheet(GOOGLE_CATEGORIES_KEY, 'Позиции')
-        supply_sku_list, sku_list = ask_sku_list(worksheet)
+        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Позиции')
+        sku_list = ask_sku_list(worksheet)
         if choice == 'start': continue
         start_date, end_date = ask_day_period()
         if choice == 'start': continue
-        items_list = mpstats.get_categories_and_positions(sku_list, start_date, end_date)
-        position_table = mpstats.positions(sku_list, items_list)
+        items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
+        position_table = mpstats.positions(items_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', position_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_CATEGORIES_KEY}")
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
         choice = 'start'
     elif choice == 'categories_and_positions':
-        worksheet = google_work.open_sheet(GOOGLE_CATEGORIES_KEY, 'Категории')
-        supply_sku_list, sku_list = ask_sku_list(worksheet)
+        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Категории')
+        sku_list = ask_sku_list(worksheet)
         if choice == 'start': continue
         start_date, end_date = ask_day_period()
         if choice == 'start': continue
-        items_list = mpstats.get_categories_and_positions(sku_list, start_date, end_date)
-        category_table = mpstats.categories(items_list)
+        items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
+        category_table = mpstats.categories(items_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', category_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_CATEGORIES_KEY}")
-        worksheet = google_work.open_sheet(GOOGLE_CATEGORIES_KEY, 'Позиции')
-        position_table = mpstats.positions(sku_list, items_list)
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
+        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Позиции')
+        position_table = mpstats.positions(items_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', position_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_CATEGORIES_KEY}")
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
+        choice = 'start'
+    elif choice == 'balance':
+        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Остатки')
+        sku_list = ask_sku_list(worksheet)
+        if choice == 'start': continue
+        start_date, end_date = ask_day_period()
+        if choice == 'start': continue
+        items_dict = mpstats.fetch_orders_and_balance(sku_list, start_date, end_date)
+        balance_table = mpstats.balance(items_dict)
+        google_work.clear(worksheet, 'B:ZZ')
+        worksheet.update('B1', balance_table)
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
         choice = 'start'
     else: raise KeyError(f"Check menu choices - {choice} have not found")

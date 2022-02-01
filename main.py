@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-import re
+from re import search
 
 import modules.google_work as google_work
 import modules.mpstats as mpstats
@@ -73,8 +73,8 @@ def ask_day_period():
             while(True):
                 start_date = input("Введите дату начала периода (YYYY-MM-DD): ").strip()
                 end_date = input("Введите дату конца периода (YYYY-MM-DD): ").strip()
-                if re.search(r'\d\d\d\d\-\d\d\-\d\d', start_date) \
-                and re.search(r'\d\d\d\d\-\d\d\-\d\d', end_date):
+                if search(r'\d\d\d\d\-\d\d\-\d\d', start_date) \
+                and search(r'\d\d\d\d\-\d\d\-\d\d', end_date):
                     return start_date, end_date
                 else: print("Неправильные даты...")
         elif day_choice.strip() == '4':

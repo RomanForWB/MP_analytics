@@ -1,4 +1,4 @@
-import gspread
+from gspread import authorize
 from oauth2client.service_account import ServiceAccountCredentials
 # EMAIL: roman-wb@roman-wb.iam.gserviceaccount.com
 
@@ -6,7 +6,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 def initialize_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
-    gc = gspread.authorize(credentials)
+    gc = authorize(credentials)
     return gc
 
 # === получить лист google-документа ===

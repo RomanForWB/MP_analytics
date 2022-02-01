@@ -1,4 +1,3 @@
-import aiohttp, asyncio
 from datetime import date, timedelta
 
 import modules.async_fetch as async_fetch

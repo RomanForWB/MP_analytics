@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup
-import requests
 
 import modules.async_fetch as async_fetch
 

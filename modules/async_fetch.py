@@ -1,5 +1,4 @@
 import aiohttp, asyncio
-from datetime import date, timedelta
 
 counter = 0
 

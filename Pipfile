@@ -11,6 +11,8 @@ asyncio = "*"
 datetime = "*"
 gspread = "*"
 oauth2client = "*"
+openpyxl = "*"
+selenium = "*"
 
 [dev-packages]
 

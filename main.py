@@ -3,6 +3,7 @@ from re import search
 
 import modules.google_work as google_work
 import modules.mpstats as mpstats
+import modules.wildberries as wildberries
 
 GOOGLE_WB_KEY = '1i639nTdBNRp3TyDvA1qPT-QP0RdNaJiwkxBIOPMZoLs'
 choice = 'start'
@@ -30,7 +31,7 @@ def ask_sku_list(worksheet):
     """
     Спрашивает у пользователя про список sku
     :param worksheet: worksheet из gspread (использовать google_work.open_sheet())
-    :return: списки из SKU в формате ([00000000, 00000000,...],[00000000, 00000000,...])
+    :return: список SKU в формате [00000000, 00000000...]
     """
     while(True):
         print("\n1 - Взять список SKU из Google таблицы")
@@ -85,7 +86,7 @@ def ask_day_period():
             return None, None
         else: print("Неправильный выбор...")
 
-# ================== начало ==================
+# ================== начало диалога ==================
 while(True):
     if choice == 'start': ask_start()
     elif choice == 'categories':
@@ -95,7 +96,8 @@ while(True):
         start_date, end_date = ask_day_period()
         if choice == 'start': continue
         items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
-        category_table = mpstats.categories(items_dict)
+        categories_dict = wildberries.get_category_and_brand(sku_list)
+        category_table = mpstats.categories(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', category_table)
         print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
@@ -107,7 +109,8 @@ while(True):
         start_date, end_date = ask_day_period()
         if choice == 'start': continue
         items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
-        position_table = mpstats.positions(items_dict)
+        categories_dict = wildberries.get_category_and_brand(sku_list)
+        position_table = mpstats.positions(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', position_table)
         print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
@@ -119,12 +122,13 @@ while(True):
         start_date, end_date = ask_day_period()
         if choice == 'start': continue
         items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
-        category_table = mpstats.categories(items_dict)
+        categories_dict = wildberries.get_category_and_brand(sku_list)
+        category_table = mpstats.categories(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', category_table)
         print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
         worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Позиции')
-        position_table = mpstats.positions(items_dict)
+        position_table = mpstats.positions(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', position_table)
         print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
@@ -136,7 +140,8 @@ while(True):
         start_date, end_date = ask_day_period()
         if choice == 'start': continue
         items_dict = mpstats.fetch_orders_and_balance(sku_list, start_date, end_date)
-        balance_table = mpstats.balance(items_dict)
+        categories_dict = wildberries.get_category_and_brand(sku_list)
+        balance_table = mpstats.balance(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', balance_table)
         print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")

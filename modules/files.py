@@ -1,5 +1,5 @@
 from openpyxl import load_workbook
-from json import load as json_load
+from json import load as json_load, dump as json_dump
 from os import mkdir as mkdir
 from subprocess import check_output as subprocess_check_output
 from shutil import rmtree as rmdir
@@ -56,6 +56,11 @@ def write_text(text, filename, codirovka = 'utf-8', errors = ''):
                 file.write(text)
         except UnicodeEncodeError:
             write_lines(text.splitlines(), filename, codirovka)
+
+# записать в файл строку с текстом
+def write_json(dict_to_json, filename, codirovka = 'utf-8', errors = ''):
+    with open(filename, 'w') as file:
+        json_dump(dict_to_json, file, indent=4)
 
 # открыть лист в таблице Excel и получить её в виде двумерного списка
 def open_table(filename='doc.xlsx', sheetname='Лист 1'):

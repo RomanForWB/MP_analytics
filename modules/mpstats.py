@@ -72,7 +72,7 @@ def positions(items_dict, categories_dict):
             table.append([int(sku), main_category, categories_dict[sku]['brand']] + main_positions)
     return table
 
-def balance(items_dict, categories_dict):
+def stocks(items_dict, categories_dict):
     # === устранение ненужных размеров ===
     actual_items_dict = dict()
     for sku, value in items_dict.items():
@@ -116,6 +116,6 @@ if __name__ == '__main__':
     sku_list = [44117798,16557761,35663011,35663012,16557765,16557766,12129508,16557769,16557770]
     items_dict = fetch_orders_and_balance(sku_list)
     categories_dict = wildberries.get_category_and_brand(sku_list)
-    balance_table = balance(items_dict, categories_dict)
+    balance_table = stocks(items_dict, categories_dict)
     for row in balance_table:
         print(row)

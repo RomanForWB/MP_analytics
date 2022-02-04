@@ -13,6 +13,8 @@ gspread = "*"
 oauth2client = "*"
 openpyxl = "*"
 selenium = "*"
+pyqt5 = "*"
+sip = "*"
 
 [dev-packages]
 

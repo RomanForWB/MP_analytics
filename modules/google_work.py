@@ -3,6 +3,10 @@ from oauth2client.service_account import ServiceAccountCredentials
 # EMAIL: roman-wb@roman-wb.iam.gserviceaccount.com
 
 # === подключение к google ===
+
+# запуск браузера по умолчанию через командную строку
+# cmd: explorer "https://google.com"
+
 def initialize_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)

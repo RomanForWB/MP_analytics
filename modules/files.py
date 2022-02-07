@@ -66,11 +66,13 @@ def write_json(dict_to_json, filename, codirovka = 'utf-8', errors = ''):
 def open_table(filename='doc.xlsx', sheetname='Лист 1'):
     wb = load_workbook(filename)
     sheet = wb[sheetname]
+    print(sheet)
     table = list()
     for row in range(0, sheet.max_row+1):
         table.append([])
         for col in range(0, sheet.max_column+1):
             current_cell = sheet.cell(row=row + 1, column=col + 1).value
+            print(current_cell)
             if str(current_cell).isspace() != True and current_cell != '': # проверяем на пустоту
                 table[row].append(current_cell)
             else: # если пустая, то пусть None

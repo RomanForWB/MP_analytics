@@ -46,8 +46,11 @@ def fetch_all_stocks(keys_dict, start_date=date.today()-timedelta(days=30)):
     items_dict = dict()
     for company, key in keys_dict.items():
         params = {'key': key, 'dateFrom': str(start_date)}
-        response = requests.get(url, params=params)
-        items_dict[company] = response.json()
+        while (True):
+            response = requests.get(url, params=params)
+            if response.status_code >= 200 and response.status_code < 300:
+                items_dict[company] = response.json()
+                break
     return items_dict
 
 def stocks(company, items_list):
@@ -99,12 +102,7 @@ def fetch_cards(token):
 
 # ================== тестовые запуски ==================
 if __name__ == '__main__':
-    # sku_list = [44117798,16557761,35663011,35663012,16557765,16557766,12129508,16557769,16557770]
-    # items_dict = get_category_and_brand(sku_list)
-    # for sku, value in items_dict.items():
-    #     print(sku + value)
-
-    items_list = fetch_stocks(WILDBERRIES_SUPPLIER_KEY_MARYINA, '2022-01-01')
-    stocks_table = stocks(items_list)
-    for row in stocks_table:
-        print(row)
+    token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NJRCI6IjgyOGMzOTJmLWJkMzUtNDRjYi04MDM5LTFjODQ3ZjQ1YmEzNSJ9.5D_uGQ5yt4KsAd_4Og9qMRbzZ6praIYdtQAnWG9IU6Q'
+    result = fetch_cards(token)
+    print(result)
+    print(len(result))

@@ -15,6 +15,7 @@ openpyxl = "*"
 selenium = "*"
 pyqt5 = "*"
 sip = "*"
+pandas = "*"
 
 [dev-packages]
 

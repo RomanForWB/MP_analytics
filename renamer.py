@@ -6,6 +6,7 @@ from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtTest import QTest
 from modules.wildberries import fetch_cards
+import modules.files as files
 import webbrowser
 import requests
 
@@ -14,10 +15,10 @@ WILDBERRIES_SUPPLIER_KEYS_64 = {'ИП Марьина А.А.' : 'MmY1ZTU0ZTUtN2E2
                              'ООО НЬЮЭРАМЕДИА' : 'NmEyMWYyZTItNTNmZi00NjZkLWIwNTMtYTU1MTI0NzgwZTIw',
                              'ИП Ахметов В.Р.' : 'OWVhNTlhMTQtNjAwYi00ZmZkLTgzNGQtNzFlZTI1NTdmMGVi'}
 
-WILDBERRIES_SUPPLIER_KEYS_32 = {'ИП Марьина А.А.' : '2f5e54e5-7a64-4bb9-8058-8581eee4e75a',
-                                'ИП Туманян А.А.': '',
-                                'ООО НЬЮЭРАМЕДИА': '',
-                                'ИП Ахметов В.Р.': ''}
+suppliers = ['ИП Марьина А.А.',
+                                'ИП Туманян А.А.',
+                                'ООО НЬЮЭРАМЕДИА',
+                                'ИП Ахметов В.Р.']
 
 WILDBERRIES_TOKENS = {'ИП Марьина А.А.' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NJRCI6IjgyOGMzOTJmLWJkMzUtNDRjYi04MDM5LTFjODQ3ZjQ1YmEzNSJ9.5D_uGQ5yt4KsAd_4Og9qMRbzZ6praIYdtQAnWG9IU6Q'}
 
@@ -33,14 +34,14 @@ class LineWithSaveButton(QLineEdit):
     def initConnection(self, card):
         self.button = QPushButton('Сохранить')
         self.button.clicked.connect(self.saveName)
-        self.headers = {'Authorization': WILDBERRIES_TOKENS[supplier]}
+        self.headers = {'Authorization': files.get_wb_key('token', supplier)}
         self.card = card
     def saveName(self):
         body = {"id": 1,
                 "jsonrpc": "2.0",
                 "params": {
                     "card": self.card,
-                    "supplierID": WILDBERRIES_SUPPLIER_KEYS_32[supplier]}
+                    "supplierID": files.get_wb_key('x32', supplier)}
                 }
         for i in range(len(body["params"]["card"]["addin"])):
             if body["params"]["card"]["addin"][i]["type"] == 'Наименование':
@@ -93,7 +94,7 @@ class Renamer(QWidget):
         company_choice.setFixedWidth(200)
         company_choice.move(105, 18)
         company_choice.currentTextChanged.connect(self.changeCompany)
-        supplier_list = list(WILDBERRIES_SUPPLIER_KEYS_32.keys())
+        supplier_list = suppliers
         company_choice.addItems(supplier_list)
         global supplier
         supplier = supplier_list[0]
@@ -130,7 +131,7 @@ class Renamer(QWidget):
 
     def addNewResults(self):
         global supplier
-        cards = fetch_cards(WILDBERRIES_TOKENS[supplier])
+        cards = fetch_cards(files.get_wb_key('token', supplier))
         for i in range(len(cards)):
             self.rows.append([])
             self.rows[i].append(QLabel(str(cards[i]['imtId'])))

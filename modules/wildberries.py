@@ -115,7 +115,6 @@ def feedbacks(supplier):
     cards = fetch_cards(token)
     card_ids = [card['imtId'] for card in cards]
     feedbacks = fetch_feedbacks(card_ids)
-    print(feedbacks)
     table = list()
     last_counter = 3  # количество рассматриваемых отзывов
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд',

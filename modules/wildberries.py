@@ -1,8 +1,9 @@
 from bs4 import BeautifulSoup
 from datetime import date, timedelta
-import requests, json
+import requests, json, sys
 
 import modules.async_requests as async_requests
+import modules.files as files
 
 WILDBERRIES_SUPPLIER_KEY_MARYINA = 'MmY1ZTU0ZTUtN2E2NC00YmI5LTgwNTgtODU4MWVlZTRlNzVh'
 
@@ -53,6 +54,21 @@ def fetch_all_stocks(keys_dict, start_date=date.today()-timedelta(days=30)):
                 break
     return items_dict
 
+def fetch_cards(token):
+    headers = {'Authorization': token}
+    body = {"id": 1,
+            "jsonrpc": "2.0",
+            "params": {
+            'withError': False,
+            'query': {
+                "limit": 1000
+            }
+        }
+    }
+    r = requests.post("https://suppliers-api.wildberries.ru/card/list", json=body, headers=headers)
+    result = json.loads(r.text)
+    return result['result']['cards']
+
 def stocks(company, items_list):
     table = list()
     items_dict = dict()
@@ -85,24 +101,65 @@ def all_stocks(items_dict):
     table.insert(0, header)
     return table
 
-def fetch_cards(token):
-    headers = {'Authorization': token}
-    body = {"id": 1,
-            "jsonrpc": "2.0",
-            "params": {
-            'withError': False,
-            'query': {
-                "limit": 1000
-            }
-        }
-    }
-    r = requests.post("https://suppliers-api.wildberries.ru/card/list", json=body, headers=headers)
-    result = json.loads(r.text)
-    return result['result']['cards']
+def fetch_feedbacks(card_ids):
+    url = 'https://public-feedbacks.wildberries.ru/api/v1/summary/full'
+    params_list = [{"imtId": card_id,
+                    "skip": 0,
+                    "take": 1000} for card_id in card_ids]
+    feedbacks_dict = async_requests.by_params('POST', url, params_list, card_ids, content_type='json')
+    feedbacks_dict = {card_id: feedbacks['feedbacks'] for card_id, feedbacks in feedbacks_dict.items()}
+    return feedbacks_dict
+
+def feedbacks(supplier):
+    token = files.get_wb_key('token', supplier)
+    cards = fetch_cards(token)
+    card_ids = [card['imtId'] for card in cards]
+    feedbacks = fetch_feedbacks(card_ids)
+    print(feedbacks)
+    table = list()
+    last_counter = 3  # количество рассматриваемых отзывов
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд',
+              'Плохой отзыв', 'Средний рейтинг', 'Последний негативный отзыв']
+    for card in cards:
+        card_id = card['imtId']
+        nomenclature = card['nomenclatures'][0]['nmId']
+        for type in card['addin']:
+            if type['type'] == 'Бренд':
+                brand = type['params'][0]['value']
+                break
+        bad_mark = 'Нет'
+        rating_score = 0
+        bad_feedback = ''
+        if feedbacks[card_id] is None: avg_rating = 0
+        elif len(feedbacks[card_id]) <= last_counter:
+            for feedback in feedbacks[card_id]:
+                rating_score += feedback['productValuation']
+                if bad_mark == 'Нет' and feedback['productValuation'] < 4:
+                    bad_mark = 'Да'
+                    bad_feedback = feedback['text']
+            avg_rating = round(rating_score / len(feedbacks[card_id]), 1)
+        else:
+            for feedback in feedbacks[card_id][:last_counter]:
+                rating_score += feedback['productValuation']
+                if bad_mark == 'Нет' and feedback['productValuation'] < 4:
+                    bad_mark = 'Да'
+                    bad_feedback = feedback['text']
+            avg_rating = round(rating_score/last_counter, 1)
+        table.append([supplier,
+                      nomenclature,
+                      card['supplierVendorCode'],
+                      f"{card['parent']}/{card['object']}",
+                      brand,
+                      bad_mark,
+                      avg_rating,
+                      bad_feedback])
+    table.sort(key=lambda item: item[2])
+    table.insert(0, header)
+    return table
+
 
 # ================== тестовые запуски ==================
 if __name__ == '__main__':
-    token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NJRCI6IjgyOGMzOTJmLWJkMzUtNDRjYi04MDM5LTFjODQ3ZjQ1YmEzNSJ9.5D_uGQ5yt4KsAd_4Og9qMRbzZ6praIYdtQAnWG9IU6Q'
-    result = fetch_cards(token)
+    result = feedbacks('ИП Марьина А.А.')
     print(result)
     print(len(result))

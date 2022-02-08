@@ -23,6 +23,7 @@ def ask_start():
     print("3 - Отчет по позициям")
     print("4 - Отчет по остаткам (с MPStats)")
     print("5 - Отчет по остаткам (с Wildberries)")
+    print("6 - Отчет по отзывам")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'categories_and_positions'
@@ -30,6 +31,7 @@ def ask_start():
     elif choice.strip() == '3': choice = 'positions'
     elif choice.strip() == '4': choice = 'balance'
     elif choice.strip() == '5': choice = 'balance-wb'
+    elif choice.strip() == '6': choice = 'feedbacks'
     else:
         choice = 'start'
         print("Неправильный выбор...")
@@ -139,7 +141,26 @@ def ask_company():
             return None
         else:
             print("Неправильный выбор...")
-
+def ask_supplier():
+    while (True):
+        print("\n1 - Для всех")
+        print("2 - ИП Марьина А.А.")
+        print("3 - ИП Туманян А.А.")
+        print("4 - ООО НЬЮЭРАМЕДИА")
+        print("5 - ИП Ахметов В.Р.")
+        print("6 - В начало")
+        supplier_choice = input("Выбор: ")
+        if supplier_choice.strip() == '1': return WILDBERRIES_SUPPLIER_KEYS
+        if supplier_choice.strip() == '2': return 'ИП Марьина А.А.'
+        if supplier_choice.strip() == '3': return 'ИП Туманян А.А.'
+        if supplier_choice.strip() == '4': return 'ООО НЬЮЭРАМЕДИА'
+        if supplier_choice.strip() == '5': return 'ИП Ахметов В.Р.'
+        elif supplier_choice.strip() == '6':
+            global choice
+            choice = 'start'
+            return None
+        else:
+            print("Неправильный выбор...")
 
 # ================== начало диалога ==================
 while(True):
@@ -211,6 +232,15 @@ while(True):
         balance_table = wildberries.all_stocks(items_dict)
         google_work.clear(worksheet)
         worksheet.update(balance_table)
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
+        choice = 'start'
+    elif choice == 'feedbacks':
+        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Отзывы')
+        supplier = ask_supplier()
+        if choice == 'start': continue
+        feedbacks_table = wildberries.feedbacks(supplier)
+        google_work.clear(worksheet)
+        worksheet.update(feedbacks_table)
         print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
         choice = 'start'
     else: raise KeyError(f"Check menu choices - {choice} have not found")

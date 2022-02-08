@@ -5,6 +5,14 @@ from subprocess import check_output as subprocess_check_output
 from shutil import rmtree as rmdir
 from time import sleep
 
+supplier_represent = {"ИП Марьина А.А.": "maryina",
+                      "ИП Туманян А.А.": "tumanyan",
+                      "ООО НЬЮЭРАМЕДИА": "neweramedia",
+                      "ИП Ахметов В.Р.": "ahmetov"}
+google_keys = None
+wb_keys = None
+paths = None
+
 # открыть файл и получить его в виде списка строк
 def open_lines(filename, codirovka = 'utf-8', errors = ''):
     if errors != '':
@@ -28,87 +36,154 @@ def open_text(filename, codirovka = 'utf-8', errors = ''):
         return text
 
 # записать в файл список строк
-def write_lines(lines, filename, codirovka = 'utf-8', errors = ''):
-    if errors != '':
-        with open(filename, 'w', encoding=codirovka, errors=errors) as file:
-            for line in lines:
-                file.write(line + '\n')
-        return lines
-    else:
-        with open(filename, 'w', encoding=codirovka) as file:
-            for i in range(len(lines)):
-                try:
-                    file.write(lines[i] + '\n')
-                except UnicodeEncodeError:
-                    if filename.startswith('history/'): pass
-                    else: print("Внимание - при записи {} пропущена строка №{}: {}".format(filename, i+1, lines[i]))
-                    file.write('// missing_line \n')
-        return lines
+def write_lines(lines, filename, codirovka = 'utf-8', errors = None):
+    with open(filename, 'w', encoding=codirovka, errors=errors) as file:
+        for i in range(len(lines)):
+            try:
+                file.write(lines[i] + '\n')
+            except UnicodeEncodeError:
+                if filename.startswith('history/'): pass
+                else: print("Внимание - при записи {} пропущена строка №{}: {}".format(filename, i+1, lines[i]))
+                file.write('// missing_line \n')
+    return lines
 
 # записать в файл строку с текстом
-def write_text(text, filename, codirovka = 'utf-8', errors = ''):
-    if errors != '':
-        with open(filename, 'w', encoding=codirovka, errors=errors) as file:
-            file.write(text)
-    else:
-        try:
-            with open(filename, 'w', encoding=codirovka) as file:
-                file.write(text)
-        except UnicodeEncodeError:
-            write_lines(text.splitlines(), filename, codirovka)
+def write_text(text, filename, encoding = 'utf-8', errors = None):
+    """Write a string in file.
 
-# записать в файл строку с текстом
-def write_json(dict_to_json, filename, codirovka = 'utf-8', errors = ''):
+    :param text: string to be write
+    :type text: str
+
+    :param filename: file path and file name with extension
+    :type filename: str
+
+    :param encoding: name of the encoding used to decode or encode the file
+    :type encoding: str
+
+    :param errors: 'strict' or None to raise a ValueError if there is an encoding error
+    (the default of None has the same effect), 'ignore' to ignore errors.
+    :type errors: str
+    """
+    try:
+        with open(filename, 'w', encoding=encoding, errors=errors) as file: file.write(text)
+    except UnicodeEncodeError:
+        write_lines(text.splitlines(), filename, encoding)
+
+
+def write_json(to_json, filename):
+    """Write json-like object in a presentative form.
+
+    :param to_json: object to be saved
+
+    :param filename: file path and file name with extension
+    :type filename: str
+    """
     with open(filename, 'w') as file:
-        json_dump(dict_to_json, file, indent=4)
+        json_dump(to_json, file, indent=4)
 
-# открыть лист в таблице Excel и получить её в виде двумерного списка
-def open_table(filename='doc.xlsx', sheetname='Лист 1'):
-    wb = load_workbook(filename)
-    sheet = wb[sheetname]
-    print(sheet)
-    table = list()
-    for row in range(0, sheet.max_row+1):
-        table.append([])
-        for col in range(0, sheet.max_column+1):
-            current_cell = sheet.cell(row=row + 1, column=col + 1).value
-            print(current_cell)
-            if str(current_cell).isspace() != True and current_cell != '': # проверяем на пустоту
-                table[row].append(current_cell)
-            else: # если пустая, то пусть None
-                table[row].append(None)
-    return table
+def open_with_notepad(path):
+    """Open file/multiple files in Notepad++.
+    The path to Notepad++ executable can be changed in keys/paths.json
 
-# открыть файл в notepad++
-def open_with_notepad(filenames):
-    with open("paths.json", "r") as paths_json:
-        notepad_path = json_load(paths_json)["notepad++"].replace('.exe', '')
-    output = subprocess_check_output('\"{}\" -multiInst -nosession \"{}\"'.format(notepad_path, filenames))
-    return output
+    :param path: path to the folder / path to only one file
+    :type path: str
+    """
+    notepad_path = get_path('notepad++').replace('.exe', '')
+    output = subprocess_check_output('\"{}\" -multiInst -nosession \"{}\"'.format(notepad_path, path))
 
-# получить ключ google-таблицы из json-а
-def get_google_key(id):
-    with open("google_keys.json", "r") as paths_json:
-        return json_load(paths_json)[id]
 
-# удалить папку с содержимым
 def delete_folder(folder):
+    """Delete the folder and its contents.
+
+    :param folder: path to the folder
+    :type folder: str
+    """
     try:
         rmdir(folder)
     except: pass
 
-# очистить папку
+
 def clean_folder(folder):
+    """Delete folder contents (the folder remains).
+
+    :param folder: path to the folder
+    :type folder: str
+    """
     delete_folder(folder)
     sleep(0.5)
     mkdir(folder)
 
-# создать папку
+
 def create_folder(folder):
+    """Create folder in a specific path.
+
+    :param folder: path to the folder
+    :type folder: str
+    """
     mkdir(folder)
 
-# получить из paths.json путь к файлу по идентификатору
-def get_path(id):
-    with open("paths.json", "r") as paths_json:
-        path = json_load(paths_json)[id]
+
+def get_wb_key(type, supplier):
+    """Get wildberries key or token.
+    New suppliers and tokens can be added in keys/wb.json.
+
+    :param type: one of: 'token', 'x32', 'x64'
+    :type type: str
+
+    :param supplier: one of:
+        'ИП Марьина А.А.',
+        'ИП Туманян А.А.',
+        'ООО НЬЮЭРАМЕДИА',
+        'ИП Ахметов В.Р.'...
+    :type supplier: str
+
+    :return: wildberries key or token string
+    :rtype: str
+    """
+    global wb_keys
+    if wb_keys is None:
+        with open("keys/wb.json", "r") as json_file:
+            wb_keys = json_load(json_file)
+    supplier = supplier_represent[supplier]
+    key = wb_keys[type][supplier]
+    return key
+
+
+def get_google_key(identifier):
+    """Get google document key.
+    Google keys can be expanded in keys/google.json.
+
+    :param identifier: one of: 'wb_analytics'
+    :type identifier: str
+
+    :return: google key
+    :rtype: str
+    """
+    global google_keys
+    if google_keys is None:
+        with open("keys/google.json", "r") as json_file:
+            google_keys = json_load(json_file)
+    key = google_keys[identifier]
+    return key
+
+
+def get_path(identifier):
+    """Get file path by identifier.
+    File paths can be expanded in keys/paths.json.
+
+    :param identifier: one of:
+        'wb_analytics',
+        'notepad++',
+        'chrome_driver'
+    :type identifier: str
+
+    :return: file path
+    :rtype: str
+    """
+    global paths
+    if paths is None:
+        with open("keys/paths.json", "r") as json_file:
+            paths = json_load(json_file)
+    path = paths[identifier]
     return path
+

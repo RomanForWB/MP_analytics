@@ -1,4 +1,4 @@
-import sys, time
+import sys
 from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLabel,
                              QScrollArea, QHBoxLayout, QVBoxLayout, QToolTip,
                              QPushButton, QComboBox, QGroupBox, QFormLayout, QLineEdit)
@@ -14,11 +14,14 @@ WILDBERRIES_SUPPLIER_KEYS_64 = {'ИП Марьина А.А.' : 'MmY1ZTU0ZTUtN2E2
                              'ООО НЬЮЭРАМЕДИА' : 'NmEyMWYyZTItNTNmZi00NjZkLWIwNTMtYTU1MTI0NzgwZTIw',
                              'ИП Ахметов В.Р.' : 'OWVhNTlhMTQtNjAwYi00ZmZkLTgzNGQtNzFlZTI1NTdmMGVi'}
 
-WILDBERRIES_SUPPLIER_KEYS_32 = {'ИП Марьина А.А.' : '2f5e54e5-7a64-4bb9-8058-8581eee4e75a'}
+WILDBERRIES_SUPPLIER_KEYS_32 = {'ИП Марьина А.А.' : '2f5e54e5-7a64-4bb9-8058-8581eee4e75a',
+                                'ИП Туманян А.А.': '',
+                                'ООО НЬЮЭРАМЕДИА': '',
+                                'ИП Ахметов В.Р.': ''}
 
 WILDBERRIES_TOKENS = {'ИП Марьина А.А.' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NJRCI6IjgyOGMzOTJmLWJkMzUtNDRjYi04MDM5LTFjODQ3ZjQ1YmEzNSJ9.5D_uGQ5yt4KsAd_4Og9qMRbzZ6praIYdtQAnWG9IU6Q'}
 
-supplier = 'ИП Марьина А.А.'
+supplier = None
 
 class LineWithSaveButton(QLineEdit):
     card = None
@@ -47,12 +50,12 @@ class LineWithSaveButton(QLineEdit):
         if response.status_code >= 200 and response.status_code < 300:
             print('Успешно заменено наименование')
             self.button.setStyleSheet('QPushButton {color: green;}')
-            QTest.qWait(1000)
+            QTest.qWait(1500)
             self.button.setStyleSheet('QPushButton {color: black;}')
         else:
             print('Ошибка')
             self.button.setStyleSheet('QPushButton {color: red;}')
-            QTest.qWait(1000)
+            QTest.qWait(1500)
             self.button.setStyleSheet('QPushButton {color: black;}')
 
 class LinkButton(QPushButton):
@@ -87,9 +90,13 @@ class Renamer(QWidget):
         company_label.move(20, 20)
 
         company_choice = QComboBox(self)
-        company_choice.addItems(list(WILDBERRIES_SUPPLIER_KEYS_64.keys()))
         company_choice.setFixedWidth(200)
         company_choice.move(105, 18)
+        company_choice.currentTextChanged.connect(self.changeCompany)
+        supplier_list = list(WILDBERRIES_SUPPLIER_KEYS_32.keys())
+        company_choice.addItems(supplier_list)
+        global supplier
+        supplier = supplier_list[0]
 
         self.download_label = QLabel("<p style=\"color: grey;\">Загрузка...</p>", self)
         self.download_label.setFont(QFont('Roboto', 10))
@@ -108,6 +115,11 @@ class Renamer(QWidget):
         refresh_button = QPushButton('Обновить', self)
         refresh_button.move(320, 17)
         refresh_button.clicked.connect(self.refreshResults)
+
+    def changeCompany(self, text):
+        global supplier
+        supplier = text
+        print(supplier)
 
     def refreshResults(self):
         self.download_label.show()
@@ -133,9 +145,6 @@ class Renamer(QWidget):
                     self.grid.addWidget(self.rows[i][2], i, 2)
                     break
 
-            # self.rows[i].append(QPushButton("Сохранить"))
-            # self.grid.addWidget(self.rows[i][2], i, 2)
-
             self.rows[i].append(LinkButton("Ссылка", cards[i]['nomenclatures'][0]['nmId']))
             self.grid.addWidget(self.rows[i][3], i, 3)
 
@@ -145,7 +154,6 @@ class Renamer(QWidget):
         for row in self.rows:
             for widget in row[:-1]: widget.deleteLater()
         self.rows = list()
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

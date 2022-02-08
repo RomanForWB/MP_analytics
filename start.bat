@@ -1,3 +1,2 @@
-CALL .venv\Scripts\activate
-python main.py
+pipenv run python main.py
 pause

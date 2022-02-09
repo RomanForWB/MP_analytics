@@ -156,7 +156,14 @@ def feedbacks(supplier):
     table.insert(0, header)
     return table
 
-
+def feedbacks_for_all(suppliers_list):
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд',
+              'Плохой отзыв', 'Средний рейтинг', 'Последний негативный отзыв']
+    table = list()
+    for supplier in suppliers_list:
+        table += feedbacks(supplier)[1:]
+    table.insert(0, header)
+    return table
 # ================== тестовые запуски ==================
 if __name__ == '__main__':
     result = feedbacks('ИП Марьина А.А.')

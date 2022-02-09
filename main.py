@@ -150,7 +150,7 @@ def ask_supplier():
         print("5 - ИП Ахметов В.Р.")
         print("6 - В начало")
         supplier_choice = input("Выбор: ")
-        if supplier_choice.strip() == '1': return WILDBERRIES_SUPPLIER_KEYS
+        if supplier_choice.strip() == '1': return list(WILDBERRIES_SUPPLIER_KEYS.keys())
         if supplier_choice.strip() == '2': return 'ИП Марьина А.А.'
         if supplier_choice.strip() == '3': return 'ИП Туманян А.А.'
         if supplier_choice.strip() == '4': return 'ООО НЬЮЭРАМЕДИА'
@@ -235,10 +235,11 @@ while(True):
         print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
         choice = 'start'
     elif choice == 'feedbacks':
-        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Отзывы')
+        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Отзывы (тест)')
         supplier = ask_supplier()
         if choice == 'start': continue
-        feedbacks_table = wildberries.feedbacks(supplier)
+        if type(supplier) == str: feedbacks_table = wildberries.feedbacks(supplier)
+        else: feedbacks_table = wildberries.feedbacks_for_all(supplier)
         google_work.clear(worksheet)
         worksheet.update(feedbacks_table)
         print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")

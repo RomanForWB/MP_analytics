@@ -5,10 +5,6 @@ from subprocess import check_output as subprocess_check_output
 from shutil import rmtree as rmdir
 from time import sleep
 
-supplier_represent = {"ИП Марьина А.А.": "maryina",
-                      "ИП Туманян А.А.": "tumanyan",
-                      "ООО НЬЮЭРАМЕДИА": "neweramedia",
-                      "ИП Ахметов В.Р.": "ahmetov"}
 google_keys = None
 wb_keys = None
 paths = None
@@ -47,7 +43,7 @@ def write_lines(lines, filename, codirovka = 'utf-8', errors = None):
                 file.write('// missing_line \n')
     return lines
 
-# записать в файл строку с текстом
+
 def write_text(text, filename, encoding = 'utf-8', errors = None):
     """Write a string in file.
 
@@ -130,11 +126,7 @@ def get_wb_key(type, supplier):
     :param type: one of: 'token', 'x32', 'x64'
     :type type: str
 
-    :param supplier: one of:
-        'ИП Марьина А.А.',
-        'ИП Туманян А.А.',
-        'ООО НЬЮЭРАМЕДИА',
-        'ИП Ахметов В.Р.'...
+    :param supplier: one of the suppliers in supplier's dictionary in main
     :type supplier: str
 
     :return: wildberries key or token string
@@ -144,7 +136,6 @@ def get_wb_key(type, supplier):
     if wb_keys is None:
         with open("keys/wb.json", "r") as json_file:
             wb_keys = json_load(json_file)
-    supplier = supplier_represent[supplier]
     key = wb_keys[type][supplier]
     return key
 

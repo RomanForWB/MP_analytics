@@ -4,40 +4,37 @@ from re import search
 import modules.google_work as google_work
 import modules.mpstats as mpstats
 import modules.wildberries as wildberries
+import modules.files as files
 
-WILDBERRIES_SUPPLIER_KEYS = {'ИП Марьина А.А.' : 'MmY1ZTU0ZTUtN2E2NC00YmI5LTgwNTgtODU4MWVlZTRlNzVh',
-                             'ИП Туманян А.А.' : 'OGY2MWFhYWEtMmJjYi00YzdkLWFjMDYtZDY1Y2FkMzFjZmUy',
-                             'ООО НЬЮЭРАМЕДИА' : 'NmEyMWYyZTItNTNmZi00NjZkLWIwNTMtYTU1MTI0NzgwZTIw',
-                             'ИП Ахметов В.Р.' : 'OWVhNTlhMTQtNjAwYi00ZmZkLTgzNGQtNzFlZTI1NTdmMGVi'}
-GOOGLE_WB_KEY = '1i639nTdBNRp3TyDvA1qPT-QP0RdNaJiwkxBIOPMZoLs'
+supplier_identifiers = {"ИП Марьина А.А.": "maryina",
+                        "ИП Туманян А.А.": "tumanyan",
+                        "ООО НЬЮЭРАМЕДИА": "neweramedia",
+                        "ИП Ахметов В.Р.": "ahmetov"}
+supplier_names = {value: key for key, value in supplier_identifiers.items()}
+
 choice = 'start'
-
 def ask_start():
-    """
-    Основное меню программы
-    """
+    """Основное меню программы."""
     print("\n========================================")
     print("=========== Программа для WB ===========")
-    print("1 - Отчет по категориям и позициям")
+    print("1 - Обновить все отчеты")
     print("2 - Отчет по категориям")
     print("3 - Отчет по позициям")
-    print("4 - Отчет по остаткам (с MPStats)")
-    print("5 - Отчет по остаткам (с Wildberries)")
-    print("6 - Отчет по отзывам")
+    print("4 - Отчет по остаткам")
+    print("5 - Отчет по отзывам")
     global choice
     choice = input("Выбор: ")
-    if choice.strip() == '1': choice = 'categories_and_positions'
+    if choice.strip() == '1': choice = 'all_reports'
     elif choice.strip() == '2': choice = 'categories'
     elif choice.strip() == '3': choice = 'positions'
     elif choice.strip() == '4': choice = 'balance'
-    elif choice.strip() == '5': choice = 'balance-wb'
-    elif choice.strip() == '6': choice = 'feedbacks'
+    elif choice.strip() == '5': choice = 'feedbacks'
     else:
         choice = 'start'
         print("Неправильный выбор...")
 def ask_sku_list(worksheet):
-    """
-    Спрашивает у пользователя про список sku
+    """Спрашивает у пользователя про список sku
+
     :param worksheet: worksheet из gspread (использовать google_work.open_sheet())
     :return: список SKU в формате [00000000, 00000000...]
     """
@@ -59,7 +56,7 @@ def ask_sku_list(worksheet):
         elif sku_list_choice.strip() == '2':
             global choice
             choice = 'start'
-            break
+            return None
         else: print("Неправильный выбор...")
 def ask_day_period():
     """
@@ -121,52 +118,49 @@ def ask_start_day():
             choice = 'start'
             return None
         else: print("Неправильный выбор...")
-def ask_company():
-    while (True):
-        print("\n1 - Для всех")
-        print("2 - ИП Марьина А.А.")
-        print("3 - ИП Туманян А.А.")
-        print("4 - ООО НЬЮЭРАМЕДИА")
-        print("5 - ИП Ахметов В.Р.")
-        print("6 - В начало")
-        company_choice = input("Выбор: ")
-        if company_choice.strip() == '1': return WILDBERRIES_SUPPLIER_KEYS
-        if company_choice.strip() == '2': return {'ИП Марьина А.А.': WILDBERRIES_SUPPLIER_KEYS['ИП Марьина А.А.']}
-        if company_choice.strip() == '3': return {'ИП Туманян А.А.': WILDBERRIES_SUPPLIER_KEYS['ИП Туманян А.А.']}
-        if company_choice.strip() == '4': return {'ООО НЬЮЭРАМЕДИА': WILDBERRIES_SUPPLIER_KEYS['ООО НЬЮЭРАМЕДИА']}
-        if company_choice.strip() == '5': return {'ИП Ахметов В.Р.': WILDBERRIES_SUPPLIER_KEYS['ИП Ахметов В.Р.']}
-        elif company_choice.strip() == '6':
-            global choice
-            choice = 'start'
-            return None
-        else:
-            print("Неправильный выбор...")
 def ask_supplier():
     while (True):
         print("\n1 - Для всех")
-        print("2 - ИП Марьина А.А.")
-        print("3 - ИП Туманян А.А.")
-        print("4 - ООО НЬЮЭРАМЕДИА")
-        print("5 - ИП Ахметов В.Р.")
-        print("6 - В начало")
-        supplier_choice = input("Выбор: ")
-        if supplier_choice.strip() == '1': return WILDBERRIES_SUPPLIER_KEYS
-        if supplier_choice.strip() == '2': return 'ИП Марьина А.А.'
-        if supplier_choice.strip() == '3': return 'ИП Туманян А.А.'
-        if supplier_choice.strip() == '4': return 'ООО НЬЮЭРАМЕДИА'
-        if supplier_choice.strip() == '5': return 'ИП Ахметов В.Р.'
-        elif supplier_choice.strip() == '6':
-            global choice
-            choice = 'start'
-            return None
-        else:
+        supplier_number = 1
+        supplier_choices = dict()
+        for supplier in supplier_identifiers.keys():
+            supplier_number += 1
+            supplier_choices[supplier_number] = supplier
+            print(f'{supplier_number} - {supplier}')
+        print(f'{supplier_number + 1} - В начало')
+        try:
+            choice_number = int(input("Выбор: ").strip())
+            if choice_number == (supplier_number + 1):
+                global choice
+                choice = 'start'
+                return None
+            else: return supplier_identifiers[supplier_choices[choice_number]]
+        except ValueError:
             print("Неправильный выбор...")
 
 # ================== начало диалога ==================
 while(True):
     if choice == 'start': ask_start()
+    # elif choice == 'all_reports':
+    #     worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Категории')
+    #     sku_list = ask_sku_list(worksheet)
+    #     if choice == 'start': continue
+    #     start_date, end_date = ask_day_period()
+    #     if choice == 'start': continue
+    #     items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
+    #     categories_dict = wildberries.get_category_and_brand(sku_list)
+    #     category_table = mpstats.categories(items_dict, categories_dict)
+    #     google_work.clear(worksheet, 'B:ZZ')
+    #     worksheet.update('B1', category_table)
+    #     print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+    #     worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Позиции')
+    #     position_table = mpstats.positions(items_dict, categories_dict)
+    #     google_work.clear(worksheet, 'B:ZZ')
+    #     worksheet.update('B1', position_table)
+    #     print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+    #     choice = 'start'
     elif choice == 'categories':
-        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Категории')
+        worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Категории')
         sku_list = ask_sku_list(worksheet)
         if choice == 'start': continue
         start_date, end_date = ask_day_period()
@@ -176,10 +170,10 @@ while(True):
         category_table = mpstats.categories(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', category_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
         choice = 'start'
     elif choice == 'positions':
-        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Позиции')
+        worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Позиции')
         sku_list = ask_sku_list(worksheet)
         if choice == 'start': continue
         start_date, end_date = ask_day_period()
@@ -189,10 +183,10 @@ while(True):
         position_table = mpstats.positions(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', position_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
         choice = 'start'
     elif choice == 'categories_and_positions':
-        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Категории')
+        worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Категории')
         sku_list = ask_sku_list(worksheet)
         if choice == 'start': continue
         start_date, end_date = ask_day_period()
@@ -202,28 +196,15 @@ while(True):
         category_table = mpstats.categories(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', category_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
-        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Позиции')
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+        worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Позиции')
         position_table = mpstats.positions(items_dict, categories_dict)
         google_work.clear(worksheet, 'B:ZZ')
         worksheet.update('B1', position_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
         choice = 'start'
     elif choice == 'balance':
-        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Остатки с MPSTATS')
-        sku_list = ask_sku_list(worksheet)
-        if choice == 'start': continue
-        start_date, end_date = ask_day_period()
-        if choice == 'start': continue
-        items_dict = mpstats.fetch_orders_and_balance(sku_list, start_date, end_date)
-        categories_dict = wildberries.get_category_and_brand(sku_list)
-        balance_table = mpstats.stocks(items_dict, categories_dict)
-        google_work.clear(worksheet, 'B:ZZ')
-        worksheet.update('B1', balance_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
-        choice = 'start'
-    elif choice == 'balance-wb':
-        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Остатки с WB')
+        worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Остатки с WB')
         start_date = ask_start_day()
         if choice == 'start': continue
         company_keys = ask_company()
@@ -232,15 +213,28 @@ while(True):
         balance_table = wildberries.all_stocks(items_dict)
         google_work.clear(worksheet)
         worksheet.update(balance_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
         choice = 'start'
     elif choice == 'feedbacks':
-        worksheet = google_work.open_sheet(GOOGLE_WB_KEY, 'Отзывы')
+        worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Отзывы')
         supplier = ask_supplier()
         if choice == 'start': continue
         feedbacks_table = wildberries.feedbacks(supplier)
         google_work.clear(worksheet)
         worksheet.update(feedbacks_table)
-        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{GOOGLE_WB_KEY}")
+        print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
         choice = 'start'
+    # elif choice == 'balance':
+    #     worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Остатки с MPSTATS')
+    #     sku_list = ask_sku_list(worksheet)
+    #     if choice == 'start': continue
+    #     start_date, end_date = ask_day_period()
+    #     if choice == 'start': continue
+    #     items_dict = mpstats.fetch_orders_and_balance(sku_list, start_date, end_date)
+    #     categories_dict = wildberries.get_category_and_brand(sku_list)
+    #     balance_table = mpstats.stocks(items_dict, categories_dict)
+    #     google_work.clear(worksheet, 'B:ZZ')
+    #     worksheet.update('B1', balance_table)
+    #     print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+    #     choice = 'start'
     else: raise KeyError(f"Check menu choices - {choice} have not found")

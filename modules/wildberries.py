@@ -5,8 +5,6 @@ import requests, json, sys
 import modules.async_requests as async_requests
 import modules.files as files
 
-WILDBERRIES_SUPPLIER_KEY_MARYINA = 'MmY1ZTU0ZTUtN2E2NC00YmI5LTgwNTgtODU4MWVlZTRlNzVh'
-
 def get_category_and_brand(sku_list):
     url_list = [f'https://www.wildberries.ru/catalog/{sku}/detail.aspx' for sku in sku_list]
     categories_dict = async_requests.by_urls('GET', url_list, sku_list,

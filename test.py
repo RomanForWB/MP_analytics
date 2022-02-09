@@ -1,5 +1,2 @@
-import modules.files as files
-import pandas as pd
+supplier_choice = int(input("Выбор: ").strip())
 
-dynamics_df = pd.read_excel('files/dynamics.xlsx', sheet_name='ОСТАТКИ')
-print(dynamics_df)

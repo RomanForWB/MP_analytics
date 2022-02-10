@@ -4,13 +4,15 @@ import requests, json, sys
 
 import modules.async_requests as async_requests
 import modules.files as files
+from main import supplier_names
+
 
 def get_category_and_brand(sku_list):
     url_list = [f'https://www.wildberries.ru/catalog/{sku}/detail.aspx' for sku in sku_list]
     categories_dict = async_requests.by_urls('GET', url_list, sku_list,
                                              content_type='text')
     counter = 0
-    print("\nПарсинг категорий из карточек Wildberries...")
+    print("Парсинг категорий из карточек Wildberries...")
     print(f"Всего карточек: {len(categories_dict)}")
     for sku, value in categories_dict.items():
         soup = BeautifulSoup(value, 'html.parser')
@@ -26,21 +28,25 @@ def get_category_and_brand(sku_list):
             categories_dict[sku]['brand'] = category_soup[-1].text.strip()
         counter += 1
         print(f'\rОбработано: {counter}', end='')
+    print()
     return categories_dict
 
-def fetch_incomes(key, start_date=date.today()-timedelta(days=30)):
+
+def fetch_incomes(key, start_date=date.today() - timedelta(days=30)):
     url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/incomes'
     params = {'key': key, 'dateFrom': str(start_date)}
     response = requests.get(url, params=params)
     return response.json()
 
-def fetch_stocks(key, start_date=date.today()-timedelta(days=30)):
+
+def fetch_stocks(key, start_date=date.today() - timedelta(days=30)):
     url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/stocks'
     params = {'key': key, 'dateFrom': str(start_date)}
     response = requests.get(url, params=params)
     return response.json()
 
-def fetch_all_stocks(keys_dict, start_date=date.today()-timedelta(days=30)):
+
+def fetch_all_stocks(keys_dict, start_date=date.today() - timedelta(days=30)):
     url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/stocks'
     items_dict = dict()
     for company, key in keys_dict.items():
@@ -52,20 +58,6 @@ def fetch_all_stocks(keys_dict, start_date=date.today()-timedelta(days=30)):
                 break
     return items_dict
 
-def fetch_cards(token):
-    headers = {'Authorization': token}
-    body = {"id": 1,
-            "jsonrpc": "2.0",
-            "params": {
-            'withError': False,
-            'query': {
-                "limit": 1000
-            }
-        }
-    }
-    r = requests.post("https://suppliers-api.wildberries.ru/card/list", json=body, headers=headers)
-    result = json.loads(r.text)
-    return result['result']['cards']
 
 def stocks(company, items_list):
     table = list()
@@ -77,7 +69,7 @@ def stocks(company, items_list):
                     f"{item['category']}/{item['subject']}",
                     item['brand'],
                     item['techSize'])
-        items_dict.setdefault(dict_key, [0,0,0,0,0,''])
+        items_dict.setdefault(dict_key, [0, 0, 0, 0, 0, ''])
         items_dict[dict_key][0] += item['quantityFull']
         items_dict[dict_key][1] += item['quantityNotInOrders']
         items_dict[dict_key][2] += item['quantity']
@@ -85,9 +77,10 @@ def stocks(company, items_list):
         items_dict[dict_key][4] += item['inWayFromClient']
         if items_dict[dict_key][5] < item['lastChangeDate']: items_dict[dict_key][5] = item['lastChangeDate']
     for key, value in items_dict.items():
-        table.append(list(key)+value)
+        table.append(list(key) + value)
     table.sort()
     return table
+
 
 def all_stocks(items_dict):
     table = list()
@@ -99,71 +92,145 @@ def all_stocks(items_dict):
     table.insert(0, header)
     return table
 
-def fetch_feedbacks(card_ids):
+
+# ================ NEW VERSION =======================
+
+
+def fetch_cards(supplier):
+    url = "https://suppliers-api.wildberries.ru/card/list"
+    body = {"id": 1,
+            "jsonrpc": "2.0",
+            "params": {
+                "withError": False,
+                "query": {
+                    "limit": 1000
+                }
+            }
+            }
+    if type(supplier) == list:
+        headers_list = [{'Authorization': files.get_wb_key('token', one)}
+                        for one in supplier]
+        cards_dict = async_requests.by_headers('POST', url, headers_list, supplier, params=body, content_type='json')
+        cards_dict = {one: cards['result']['cards'] for one, cards in cards_dict.items()}
+        return cards_dict
+    else:
+        headers = {'Authorization': files.get_wb_key('token', supplier)}
+        response = requests.post(url, json=body, headers=headers)
+        result = response.json()
+        return result['result']['cards']
+
+
+def fetch_feedbacks(imt_list, count=1000):
     url = 'https://public-feedbacks.wildberries.ru/api/v1/summary/full'
-    params_list = [{"imtId": card_id,
+    params_list = [{"imtId": imt,
                     "skip": 0,
-                    "take": 1000} for card_id in card_ids]
-    feedbacks_dict = async_requests.by_params('POST', url, params_list, card_ids, content_type='json')
-    feedbacks_dict = {card_id: feedbacks['feedbacks'] for card_id, feedbacks in feedbacks_dict.items()}
+                    "take": count} for imt in imt_list]
+    feedbacks_dict = async_requests.by_params('POST', url, params_list, imt_list, content_type='json')
+    feedbacks_dict = {imt: feedbacks_info['feedbacks']
+                      for imt, feedbacks_info in feedbacks_dict.items()}
     return feedbacks_dict
 
-def feedbacks(supplier):
-    token = files.get_wb_key('token', supplier)
-    cards = fetch_cards(token)
-    card_ids = [card['imtId'] for card in cards]
-    feedbacks = fetch_feedbacks(card_ids)
+
+def _feedbacks_by_data(supplier, card, feedbacks_list):
+    brand = ''  # бренд
+    for type in card['addin']:
+        if type['type'] == 'Бренд':
+            brand = type['params'][0]['value']
+            break
+
+    bad_mark = 'Нет'  # наличие плохого отзыва
+    rating_score = 0
+    bad_feedback = ''  # текст плохого отзыва
+    if feedbacks_list is None:
+        avg_rating = 0  # средний рейтинг последних отзывов
+    else:
+        for feedback in feedbacks_list:
+            rating_score += feedback['productValuation']
+            if bad_mark == 'Нет' and feedback['productValuation'] < 4:
+                bad_mark = 'Да'
+                bad_feedback = feedback['text']
+        avg_rating = round(rating_score / len(feedbacks_list), 1)  # средний рейтинг последних отзывов
+
+    return [supplier_names[supplier], card['nomenclatures'][0]['nmId'],
+            card['supplierVendorCode'], f"{card['parent']}/{card['object']}", brand,
+            bad_mark, avg_rating, bad_feedback]
+
+
+def _feedbacks_by_supplier(supplier, count):
+    cards = fetch_cards(supplier)
+    imt_list = [card['imtId'] for card in cards]
+    feedbacks_dict = fetch_feedbacks(imt_list, count)
     table = list()
-    last_counter = 3  # количество рассматриваемых отзывов
+    for card in cards:
+        data_list = _feedbacks_by_data(supplier, card, feedbacks_dict[card['imtId']])
+        table.append(data_list)
+    table.sort(key=lambda item: item[2])
+    return table
+
+
+def _feedbacks_by_suppliers_list(suppliers_list, count):
+    table = list()
+    for supplier in suppliers_list:
+        table += _feedbacks_by_supplier(supplier, count)
+    return table
+
+
+def _feedbacks_by_nm_list(nm_list, count):
+    suppliers_list = list(supplier_names.keys())
+    cards_dict = fetch_cards(suppliers_list)
+    supplier_cards_dict = {supplier: [] for supplier in suppliers_list}
+    imt_list = list()
+    for nm in nm_list:
+        for supplier, cards in cards_dict.items():
+            for card in cards:
+                for nomenclature in card['nomenclatures']:
+                    if nm == nomenclature['nmId']:
+                        supplier_cards_dict[supplier].append(card)
+                        imt_list.append(card['imtId'])
+    feedbacks_dict = fetch_feedbacks(imt_list, count)
+    result_table = list()
+    for supplier, cards in supplier_cards_dict.items():
+        supplier_table = list()
+        for card in cards:
+            data_list = _feedbacks_by_data(supplier, card, feedbacks_dict[card['imtId']])
+            supplier_table.append(data_list)
+        result_table += sorted(supplier_table, key=lambda item: item[2])
+    return result_table
+
+
+def feedbacks(input_data, count=3):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд',
               'Плохой отзыв', 'Средний рейтинг', 'Последний негативный отзыв']
-    for card in cards:
-        card_id = card['imtId']
-        nomenclature = card['nomenclatures'][0]['nmId']
-        for type in card['addin']:
-            if type['type'] == 'Бренд':
-                brand = type['params'][0]['value']
-                break
-        bad_mark = 'Нет'
-        rating_score = 0
-        bad_feedback = ''
-        if feedbacks[card_id] is None: avg_rating = 0
-        elif len(feedbacks[card_id]) <= last_counter:
-            for feedback in feedbacks[card_id]:
-                rating_score += feedback['productValuation']
-                if bad_mark == 'Нет' and feedback['productValuation'] < 4:
-                    bad_mark = 'Да'
-                    bad_feedback = feedback['text']
-            avg_rating = round(rating_score / len(feedbacks[card_id]), 1)
-        else:
-            for feedback in feedbacks[card_id][:last_counter]:
-                rating_score += feedback['productValuation']
-                if bad_mark == 'Нет' and feedback['productValuation'] < 4:
-                    bad_mark = 'Да'
-                    bad_feedback = feedback['text']
-            avg_rating = round(rating_score/last_counter, 1)
-        table.append([supplier,
-                      nomenclature,
-                      card['supplierVendorCode'],
-                      f"{card['parent']}/{card['object']}",
-                      brand,
-                      bad_mark,
-                      avg_rating,
-                      bad_feedback])
-    table.sort(key=lambda item: item[2])
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str:
+            table = _feedbacks_by_suppliers_list(input_data, count)
+        elif type(input_data[0]) == int:
+            table = _feedbacks_by_nm_list(input_data, count)
+    elif type(input_data) == str:
+        table = _feedbacks_by_supplier(input_data, count)
+    elif type(input_data) == int:
+        table = _feedbacks_by_nm_list([input_data], count)
+    else:
+        raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table
 
-def feedbacks_for_all(suppliers_list):
-    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд',
-              'Плохой отзыв', 'Средний рейтинг', 'Последний негативный отзыв']
-    table = list()
-    for supplier in suppliers_list:
-        table += feedbacks(supplier)[1:]
-    table.insert(0, header)
-    return table
+
+def fetch_simple_category_and_brand(nm_list):
+    url_list = [f'https://wbx-content-v2.wbstatic.net/ru/{nm}.json' for nm in nm_list]
+    # headers = {'Content-Type': 'application/json'}
+    nm_dict = async_requests.by_urls('GET', url_list, nm_list, content_type='text')
+    simple_categories_dict = dict()
+    for nm, info in nm_dict.items():
+        info = json.loads(info)
+        simple_categories_dict[nm] = {'category': f"{info['subj_root_name']}/{info['subj_name']}",
+                                      'brand': info['selling']['brand_name']}
+    # simple_categories_dict = {nm: {'category': f"{info['subj_root_name']}/{info['subj_name']}",
+    #                                'brand': info['selling']['brand_name']}
+    #                           for nm, info in nm_dict.items()}
+    return simple_categories_dict
+
+
 # ================== тестовые запуски ==================
-if __name__ == '__main__':
-    result = feedbacks('ИП Марьина А.А.')
-    print(result)
-    print(len(result))
+if __name__ == '__main__': pass

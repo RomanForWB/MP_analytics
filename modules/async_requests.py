@@ -4,10 +4,12 @@ counter = 0
 
 
 async def _get_fetch(session, url, id, params=None, headers=None, content_type='text'):
+    global counter
     while (True):
         try:
             async with session.get(url, params=params, headers=headers) as response:
-                if response.status < 200 or response.status >= 300: pass
+                if response.status < 200 or response.status >= 300:
+                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
                 else:
                     if content_type.lower() == 'json':
                         result = await response.json()
@@ -15,7 +17,6 @@ async def _get_fetch(session, url, id, params=None, headers=None, content_type='
                     else:
                         result = await response.text()
                         result = [id, result]
-                    global counter
                     counter += 1
                     print(f'\rОбработано: {counter}', end=' ')
                     return result

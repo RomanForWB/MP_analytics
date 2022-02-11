@@ -6,21 +6,10 @@ from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtTest import QTest
 from modules.wildberries import fetch_cards
+from main import supplier_names
 import modules.files as files
 import webbrowser
 import requests
-
-WILDBERRIES_SUPPLIER_KEYS_64 = {'ИП Марьина А.А.' : 'MmY1ZTU0ZTUtN2E2NC00YmI5LTgwNTgtODU4MWVlZTRlNzVh',
-                             'ИП Туманян А.А.' : 'OGY2MWFhYWEtMmJjYi00YzdkLWFjMDYtZDY1Y2FkMzFjZmUy',
-                             'ООО НЬЮЭРАМЕДИА' : 'NmEyMWYyZTItNTNmZi00NjZkLWIwNTMtYTU1MTI0NzgwZTIw',
-                             'ИП Ахметов В.Р.' : 'OWVhNTlhMTQtNjAwYi00ZmZkLTgzNGQtNzFlZTI1NTdmMGVi'}
-
-suppliers = ['ИП Марьина А.А.',
-                                'ИП Туманян А.А.',
-                                'ООО НЬЮЭРАМЕДИА',
-                                'ИП Ахметов В.Р.']
-
-WILDBERRIES_TOKENS = {'ИП Марьина А.А.' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NJRCI6IjgyOGMzOTJmLWJkMzUtNDRjYi04MDM5LTFjODQ3ZjQ1YmEzNSJ9.5D_uGQ5yt4KsAd_4Og9qMRbzZ6praIYdtQAnWG9IU6Q'}
 
 supplier = None
 
@@ -94,7 +83,7 @@ class Renamer(QWidget):
         company_choice.setFixedWidth(200)
         company_choice.move(105, 18)
         company_choice.currentTextChanged.connect(self.changeCompany)
-        supplier_list = suppliers
+        supplier_list = list(supplier_names.values())
         company_choice.addItems(supplier_list)
         global supplier
         supplier = supplier_list[0]

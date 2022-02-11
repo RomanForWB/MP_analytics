@@ -131,7 +131,7 @@ class Renamer(QWidget):
 
     def addNewResults(self):
         global supplier
-        cards = fetch_cards(files.get_wb_key('token', supplier))
+        cards = fetch_cards(supplier=files.get_wb_key('token', supplier))
         for i in range(len(cards)):
             self.rows.append([])
             self.rows[i].append(QLabel(str(cards[i]['imtId'])))

@@ -1,8 +1,12 @@
-import requests
+from datetime import date, timedelta, datetime
 
-nm = 50387174
+days = list()
+start_date_string = '2022-02-05'
+start_date = datetime.strptime(start_date_string, '%Y-%m-%d').date()
+today_date = date.today()
+intermediate_day = start_date
+while intermediate_day <= today_date:
+    days.append(intermediate_day.strftime('%d.%m'))
+    intermediate_day += timedelta(days=1)
 
-response = requests.get(f'https://wbx-content-v2.wbstatic.net/ru/{nm}.json')
-result = response.json()
-for key, value in result.items():
-    print(f"{key} : {value}")
+print(days)

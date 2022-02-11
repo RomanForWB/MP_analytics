@@ -28,7 +28,7 @@ def ask_start():
     if choice.strip() == '1': choice = 'all_reports'
     elif choice.strip() == '2': choice = 'categories'
     elif choice.strip() == '3': choice = 'positions'
-    elif choice.strip() == '4': choice = 'balance'
+    elif choice.strip() == '4': choice = 'stocks'
     elif choice.strip() == '5': choice = 'feedbacks'
     else:
         choice = 'start'
@@ -131,6 +131,54 @@ def ask_supplier():
             else: return supplier_identifiers[supplier_choices[choice_number]]
         except ValueError:
             print("Неправильный выбор...")
+def ask_nm_list():
+    print('Введите список номенклатур (Enter нужно нажать два раза)')
+    nm_list = list(iter(input, ""))
+    return nm_list
+def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
+    while (True):
+        all_choice = None
+        supplier_choices = None
+        google_choice = None
+        manual_choice = None
+        # ========= Printing choices =========
+        choice_counter = 0
+        if skip_suppliers == False:
+            choice_counter += 1
+            all_choice = choice_counter
+            print(f"\n{all_choice} - Для всех")
+            supplier_choices = dict()
+            for supplier in supplier_names.keys():
+                choice_counter += 1
+                print(f'{choice_counter} - {supplier_names[supplier]}')
+                supplier_choices[choice_counter] = supplier
+        if skip_nm == False:
+            choice_counter += 1
+            google_choice = choice_counter
+            print(f'{google_choice} - Взять список номенклатур из таблицы \"{worksheet.title}\"')
+            choice_counter += 1
+            manual_choice = choice_counter
+            print(f'{manual_choice} - Ввести список номенклатур')
+        back_choice = choice_counter + 1
+        print(f'{back_choice} - В начало')
+        # ============= Selection =============
+        try:
+            input_choice = int(input("Выбор: ").strip())
+            if all_choice is not None and input_choice == all_choice:
+                return list(supplier_names.keys())
+            elif supplier_choices is not None and input_choice in supplier_choices.keys():
+                return supplier_choices[input_choice]
+            elif google_choice is not None and input_choice == google_choice:
+                return google_work.get_columns(worksheet, 1, 2)
+            elif manual_choice is not None and input_choice == manual_choice:
+                return ask_nm_list()
+            elif input_choice == back_choice:
+                global choice
+                choice = 'start'
+                return None
+            else: print("Неправильный выбор...")
+        except ValueError:
+            print("Неправильный выбор...")
 
 # ================== начало диалога ==================
 if __name__ == '__main__':
@@ -148,7 +196,7 @@ if __name__ == '__main__':
             category_table = mpstats.categories(items_dict, categories_dict)
             google_work.clear(worksheet, 'B:ZZ')
             worksheet.update('B1', category_table)
-            print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+            print(f"Таблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
             choice = 'start'
         elif choice == 'positions':
             worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Позиции')
@@ -161,24 +209,20 @@ if __name__ == '__main__':
             position_table = mpstats.positions(items_dict, categories_dict)
             google_work.clear(worksheet, 'B:ZZ')
             worksheet.update('B1', position_table)
-            print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+            print(f"Таблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
             choice = 'start'
-        elif choice == 'balance':
+        elif choice == 'stocks':
             worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Остатки')
-            company_keys = {name: files.get_wb_key('x64', supplier) for supplier, name in supplier_names.items()}
-            items_dict = wildberries.fetch_all_stocks(company_keys, date.today()-timedelta(days=7))
-            balance_table = wildberries.all_stocks(items_dict)
-            google_work.clear(worksheet)
-            worksheet.update(balance_table)
-            print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+            input_data = ask_input(worksheet, skip_nm=True)
+            if choice == 'start': continue
+            stocks_table = wildberries.stocks(input_data)
+            google_work.insert_table(worksheet, stocks_table, replace=True)
             choice = 'start'
         elif choice == 'feedbacks':
             worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Отзывы')
-            supplier = ask_supplier()
+            input_data = ask_input(worksheet)
             if choice == 'start': continue
-            feedbacks_table = wildberries.feedbacks(supplier)
-            google_work.clear(worksheet)
-            worksheet.update(feedbacks_table)
-            print(f"\nТаблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+            feedbacks_table = wildberries.feedbacks(input_data)
+            google_work.insert_table(worksheet, feedbacks_table, replace=True)
             choice = 'start'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

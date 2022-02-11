@@ -1,16 +1,14 @@
 from datetime import date, timedelta
-
+import modules.files as files
 import modules.async_requests as async_requests
 import modules.wildberries as wildberries
-
-MPSTATS_TOKEN = '61f13463acf5c2.3680545125abcc4e82cf45ecd7c2cfa60c39ef32'
 
 def fetch_categories_and_positions(sku_list,
                                    start_date=date.today()-timedelta(days=30),
                                    end_date=date.today()):
     url_list = [f'https://mpstats.io/api/wb/get/item/{sku}/by_category' for sku in sku_list]
     params = {'d1': str(start_date), 'd2': str(end_date)}
-    headers = {'X-Mpstats-TOKEN': MPSTATS_TOKEN,
+    headers = {'X-Mpstats-TOKEN': files.get_mpstats_token(),
                'Content-Type': 'application/json'}
     items_dict = async_requests.by_urls('GET', url_list, sku_list,
                                         params=params,
@@ -23,7 +21,7 @@ def fetch_orders_and_balance(sku_list,
                              end_date=date.today()):
     url_list = [f'https://mpstats.io/api/wb/get/item/{sku}/orders_by_size' for sku in sku_list]
     params = {'d1': str(start_date), 'd2': str(end_date)}
-    headers = {'X-Mpstats-TOKEN': MPSTATS_TOKEN,
+    headers = {'X-Mpstats-TOKEN': files.get_mpstats_token(),
                'Content-Type': 'application/json'}
     items_dict = async_requests.by_urls('GET', url_list, sku_list,
                                         params=params,

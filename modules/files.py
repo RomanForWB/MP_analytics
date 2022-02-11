@@ -8,6 +8,7 @@ from time import sleep
 google_keys = None
 wb_keys = None
 paths = None
+mpstats_tokens = None
 
 # открыть файл и получить его в виде списка строк
 def open_lines(filename, codirovka = 'utf-8', errors = ''):
@@ -178,3 +179,16 @@ def get_path(identifier):
     path = paths[identifier]
     return path
 
+def get_mpstats_token():
+    """Get MPStats API token.
+    New token can be added in keys/mpstats.json.
+
+    :return: MPStats token
+    :rtype: str
+    """
+    global mpstats_tokens
+    if mpstats_tokens is None:
+        with open("keys/mpstats.json", "r") as json_file:
+            mpstats_tokens = json_load(json_file)
+    mpstats_token = mpstats_tokens['token']
+    return mpstats_token

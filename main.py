@@ -20,9 +20,10 @@ def ask_start():
     print("=========== Программа для WB ===========")
     print("1 - Обновить все отчеты (в работе)")
     print("2 - Отчет по категориям")
-    print("3 - Отчет по позициям (долго)")
+    print("3 - Отчет по позициям (в работе)")
     print("4 - Отчет по остаткам")
     print("5 - Отчет по отзывам")
+    print("6 - Отчет по заказам")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'all_reports'
@@ -30,6 +31,7 @@ def ask_start():
     elif choice.strip() == '3': choice = 'positions'
     elif choice.strip() == '4': choice = 'stocks'
     elif choice.strip() == '5': choice = 'feedbacks'
+    elif choice.strip() == '6': choice = 'orders'
     else:
         choice = 'start'
         print("Неправильный выбор...")
@@ -52,8 +54,8 @@ def ask_sku_list(worksheet):
             return None
         else: print("Неправильный выбор...")
 def ask_day_period():
-    """
-    Спрашивает у пользователя про даты начала и конца
+    """Спрашивает у пользователя про даты начала и конца.
+
     :return: (start_date, end_date) даты в формате 'YYYY-MM-DD'
     """
     while(True):
@@ -83,10 +85,11 @@ def ask_day_period():
             choice = 'start'
             return None, None
         else: print("Неправильный выбор...")
-def ask_start_day():
-    """
-    Спрашивает у пользователя про дату начала
-    :return: start_date дату в формате 'YYYY-MM-DD'
+def ask_start_date():
+    """Ask user about start date.
+
+    :return: date string 'YYYY-MM-DD'
+    :rtype: str
     """
     while(True):
         print("\n1 - За последние 7 дней")
@@ -95,10 +98,10 @@ def ask_start_day():
         print("4 - В начало")
         day_choice = input("Выбор: ")
         if day_choice.strip() == '1':
-            start_date = date.today() - timedelta(days=7)
+            start_date = str(date.today() - timedelta(days=7))
             return start_date
         elif day_choice.strip() == '2':
-            start_date = date.today() - timedelta(days=30)
+            start_date = str(date.today() - timedelta(days=30))
             return start_date
         elif day_choice.strip() == '3':
             while(True):
@@ -111,26 +114,6 @@ def ask_start_day():
             choice = 'start'
             return None
         else: print("Неправильный выбор...")
-def ask_supplier():
-    while (True):
-        print("\n1 - Для всех")
-        supplier_number = 1
-        supplier_choices = dict()
-        for supplier in supplier_identifiers.keys():
-            supplier_number += 1
-            supplier_choices[supplier_number] = supplier
-            print(f'{supplier_number} - {supplier}')
-        print(f'{supplier_number + 1} - В начало')
-        try:
-            choice_number = int(input("Выбор: ").strip())
-            if choice_number == 1: return list(supplier_identifiers.values())
-            elif choice_number == (supplier_number + 1):
-                global choice
-                choice = 'start'
-                return None
-            else: return supplier_identifiers[supplier_choices[choice_number]]
-        except ValueError:
-            print("Неправильный выбор...")
 def ask_nm_list():
     print('Введите список номенклатур (Enter нужно нажать два раза)')
     nm_list = list(iter(input, ""))
@@ -224,5 +207,14 @@ if __name__ == '__main__':
             if choice == 'start': continue
             feedbacks_table = wildberries.feedbacks(input_data)
             google_work.insert_table(worksheet, feedbacks_table, replace=True)
+            choice = 'start'
+        elif choice == 'orders':
+            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Заказы (тест)')
+            input_data = ask_input(worksheet, skip_nm=True)
+            if choice == 'start': continue
+            start_date = ask_start_date()
+            if choice == 'start': continue
+            orders_table = wildberries.orders(input_data, start_date)
+            google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'start'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

@@ -163,14 +163,14 @@ def _orders_by_supplier(supplier, start_date, days):
             nm_info_dict[nm] = {'Артикул поставщика': order['supplierArticle'],
                                 'Предмет': f"{order['category']}/{order['subject']}",
                                 'Бренд': order['brand']}
-        day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
-        nm_dict.setdefault(nm, {day: {'orders': 0, 'prices': []} for day in days})
-        try: nm_dict[nm][day]['orders'] += 1
-        except KeyError:
-            print(order)
-            continue
-        final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
-        nm_dict[nm][day]['prices'] += final_price * order['quantity']
+            nm_dict[nm] = {day: {'orders': 0, 'prices': []} for day in days}
+        try:
+            day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
+            nm_dict[nm][day]['orders'] += 1
+            final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
+            nm_dict[nm][day]['prices'] += [final_price] * order['quantity']
+        except KeyError: pass
+
     table = list()
     for nm, days_info in nm_dict.items():
         article = nm_info_dict[nm]['Артикул поставщика']
@@ -179,8 +179,9 @@ def _orders_by_supplier(supplier, start_date, days):
         days_orders_list = [days_info[day]['orders'] for day in days]
         orders_count = sum(days_orders_list)
         orders_price = sum([sum(days_info[day]['prices']) for day in days])
-        avg_price = round(orders_price / orders_count, 2)
-        table.append([supplier_names[supplier], article, subject, brand] +
+        if orders_count == 0: avg_price = 0
+        else: avg_price = orders_price / orders_count
+        table.append([supplier_names[supplier], nm, article, subject, brand] +
                      days_orders_list + [orders_count, avg_price, orders_price])
     return table
 

@@ -1,7 +1,16 @@
 from datetime import date, timedelta
+from warnings import warn as warning
 import modules.files as files
 import modules.async_requests as async_requests
 import modules.wildberries as wildberries
+from main import supplier_names
+
+seller_identifiers = {"maryina": "ИП Марьина А А",
+                      "tumanyan": "ИП Туманян Арен Арменович",
+                      "neweramedia": "ООО НЬЮЭРАМЕДИА",
+                      "ahmetov": "ИП Ахметов В Р",
+                      "fursov": "ИП Фурсов И Н"}
+if len(supplier_names) != len(seller_identifiers): warning("Please, fill the sellers identifiers in mpstats module.")
 
 def fetch_categories_and_positions(sku_list,
                                    start_date=date.today()-timedelta(days=30),
@@ -108,6 +117,36 @@ def stocks(items_dict, categories_dict):
                 except KeyError: right_part.append('-')
             table.append(left_part+right_part)
     return table
+
+
+# =============== NEW VERSION ===============
+
+
+# def _fetch_info_by_nm_list(nm_list):
+# def _fetch_info_by_supplier(supplier):
+#     headers = {'X-Mpstats-TOKEN': files.get_mpstats_token(),
+#                'Content-Type': 'application/json'}
+#     body = {"startRow": 0,
+#             "endRow": 5000}
+#     params = {'path': 'ИП Фурсов И Н'}
+#
+#
+# def fetch_info(supplier=None, suppliers_list=None, nm_list=None, nm=None):
+#     if supplier is None \
+#         and suppliers_list is None \
+#         and nm_list is None \
+#         and nm is None: raise AttributeError("No input data to fetch cards.")
+#     elif supplier is not None: return _fetch_cards_by_supplier(supplier)
+#     elif suppliers_list is not None: return _fetch_cards_by_suppliers_list(suppliers_list)
+#     elif nm is not None: return _fetch_info_by_nm_list([nm])
+#     elif nm_list is not None: return _fetch_info_by_nm_list(nm_list)
+#
+#
+# def _fetch_categories_by_supplier(supplier):
+#
+#
+
+
 
 # ================== тестовые запуски ==================
 if __name__ == '__main__':

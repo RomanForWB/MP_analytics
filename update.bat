@@ -1,4 +1,5 @@
 echo off
-git pull
+git fetch --all
+git reset --hard main
 echo ~~~~Successfully updated~~~~
 pause

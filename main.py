@@ -175,20 +175,16 @@ if __name__ == '__main__':
         # elif choice == 'all_reports':
         elif choice == 'categories':
             worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Категории')
-            sku_list = ask_sku_list(worksheet)
+            input_data = ask_input(worksheet, skip_suppliers=True)
             if choice == 'start': continue
-            start_date, end_date = ask_day_period()
+            start_date = ask_start_date()
             if choice == 'start': continue
-            items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
-            categories_dict = wildberries.fetch_simple_category_and_brand(sku_list)
-            category_table = mpstats.categories(items_dict, categories_dict)
-            google_work.clear(worksheet, 'B:ZZ')
-            worksheet.update('B1', category_table)
-            print(f"Таблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+            categories_table = mpstats.categories(input_data, start_date)
+            google_work.insert_table(worksheet, categories_table, replace=True)
             choice = 'start'
         elif choice == 'positions':
             worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Позиции')
-            input_data = ask_input(worksheet, skip_suppliers=True)
+            input_data = ask_input(worksheet)
             if choice == 'start': continue
             start_date = ask_start_date()
             if choice == 'start': continue

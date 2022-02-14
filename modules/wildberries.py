@@ -452,7 +452,7 @@ def orders_category(input_data, start_date=str(date.today() - timedelta(days=7))
 
 
 def stocks(input_data, start_date=str(date.today()-timedelta(days=7))):
-    header = ['Артикул поставщика', 'SKU', 'Компания', 'Предмет', 'Бренд', 'Размер',
+    header = ['Артикул поставщика', 'Номенклатура', 'Компания', 'Предмет', 'Бренд', 'Размер',
               'На складе', 'На складе (не в заказах)',
               'Доступно для продажи', 'В пути к клиенту', 'В пути от клиента', 'Время обновления']
     table = list()

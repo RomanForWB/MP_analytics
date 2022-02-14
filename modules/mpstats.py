@@ -39,46 +39,6 @@ def fetch_orders_and_balance(sku_list,
                                         content_type='json')
     return items_dict
 
-def categories(items_dict, categories_dict):
-    days = None
-    table = list()
-    for sku, value in items_dict.items():
-        if days is None: # при первом проходе
-            days = value['days']
-            table.append(['SKU', 'Основная категория', 'Бренд']+days)
-        categories = list()
-        try:
-            for i in range(len(days)):
-                categories_by_day = [positions[i] for positions in value['categories'].values()]
-                categories_count = len(categories_by_day) - categories_by_day.count('NaN')
-                categories.append(categories_count)
-            table.append([int(sku), categories_dict[sku]['category'], categories_dict[sku]['brand']] + categories)
-        except AttributeError:
-            table.append([int(sku)] + ['-']*(len(days)+2))
-    return table
-#
-# def positions(items_dict, categories_dict):
-#     days = None
-#     table = list()
-#     for sku, value in items_dict.items():
-#         if days is None: # при первом проходе
-#             days = value['days']
-#             table.append(['SKU', 'Основная категория', 'Бренд'] + days)  # шапка
-#
-#         if len(value['categories']) == 0: table.append([int(sku)] + ['-']*(len(days)+2))
-#         elif categories_dict[sku]['category'] is None: table.append([int(sku)] + ['-']*(len(days)+2))
-#         else:
-#             for category, positions in value['categories'].items():
-#                 main_category_length = 0
-#                 if categories_dict[sku]['category'] in category and positions[-1] != 'NaN':
-#                     if len(category) > main_category_length:
-#                         main_category = category
-#                         main_positions = positions
-#                         main_category_length = len(category)
-#             for i in range(len(main_positions)):
-#                 if type(main_positions[i]) != int: main_positions[i] = '-'
-#             table.append([int(sku), main_category, categories_dict[sku]['brand']] + main_positions)
-#     return table
 
 def stocks(items_dict, categories_dict):
     # === устранение ненужных размеров ===
@@ -247,6 +207,36 @@ def _positions_by_nm_list(nm_list, start_date):
     return result_table
 
 
+def _categories_by_nm_list(nm_list, start_date, days):
+    positions_dict = fetch_positions(nm_list=nm_list, start_date=start_date)
+    cards_dict = wildberries.fetch_cards(suppliers_list=list(seller_identifiers.keys()))
+    result_table = list()
+    for supplier, cards in cards_dict.items():
+        supplier_table = list()
+        for card in cards:
+            for nomenclature in card['nomenclatures']:
+                if nomenclature['nmId'] not in nm_list: continue
+                else:
+                    nm = nomenclature['nmId']
+                    categories = list()
+                    try:
+                        for i in range(len(days)):
+                            categories_by_day = [positions[i] for positions in positions_dict[nm]['categories'].values()]
+                            categories_count = len(categories_by_day) - categories_by_day.count('NaN')
+                            categories.append(categories_count)
+                            for type in card['addin']:
+                                if type['type'] == 'Бренд': brand = type['params'][0]['value']
+                        supplier_table.append([supplier_names[supplier], nm,
+                                                card['supplierVendorCode'] + nomenclature['vendorCode'],
+                                                f"{card['parent']}/{card['object']}", brand] + categories)
+                    except AttributeError:
+                        supplier_table.append([supplier_names[supplier], nm,
+                                               card['supplierVendorCode'] + nomenclature['vendorCode'],
+                                               f"{card['parent']}/{card['object']}", brand] + ['-']*len(days))
+        result_table += supplier_table
+    return result_table
+
+
 def fetch_positions(supplier=None, suppliers_list=None, nm_list=None, nm=None,
                     start_date=str(date.today()-timedelta(days=7))):
     headers = {'X-Mpstats-TOKEN': files.get_mpstats_token(),
@@ -290,6 +280,27 @@ def positions(input_data, start_date):
         elif type(input_data[0]) == int: table = _positions_by_nm_list(input_data, start_date)
     elif type(input_data) == str: table = _positions_by_supplier(input_data, start_date)
     elif type(input_data) == int: table = _positions_by_nm_list([input_data], start_date)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table
+
+
+def categories(input_data, start_date):
+    days = list()
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    today_date = date.today() - timedelta(days=1)
+    intermediate_day = start_date
+    while intermediate_day <= today_date:
+        days.append(intermediate_day.strftime('%d.%m'))
+        intermediate_day += timedelta(days=1)
+
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + days
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _categories_by_suppliers_list(input_data, start_date, days)
+        elif type(input_data[0]) == int: table = _categories_by_nm_list(input_data, start_date, days)
+    elif type(input_data) == str: table = _categories_by_supplier(input_data, start_date, days)
+    elif type(input_data) == int: table = _categories_by_nm_list([input_data], start_date, days)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table

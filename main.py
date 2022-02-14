@@ -20,7 +20,7 @@ def ask_start():
     print("=========== Программа для WB ===========")
     print("1 - Обновить все отчеты (в работе)")
     print("2 - Отчет по категориям")
-    print("3 - Отчет по позициям (в работе)")
+    print("3 - Отчет по позициям")
     print("4 - Отчет по остаткам")
     print("5 - Отчет по отзывам")
     print("6 - Отчет по заказам")
@@ -152,7 +152,8 @@ def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
             elif supplier_choices is not None and input_choice in supplier_choices.keys():
                 return supplier_choices[input_choice]
             elif google_choice is not None and input_choice == google_choice:
-                return google_work.get_columns(worksheet, 1, 2)
+                try: return list(map(int, google_work.get_columns(worksheet, 1, 2)))
+                except ValueError: print("Проверьте значения списка номенклатур...")
             elif manual_choice is not None and input_choice == manual_choice:
                 return ask_nm_list()
             elif input_choice == back_choice:
@@ -183,16 +184,12 @@ if __name__ == '__main__':
             choice = 'start'
         elif choice == 'positions':
             worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Позиции')
-            sku_list = ask_sku_list(worksheet)
+            input_data = ask_input(worksheet, skip_suppliers=True)
             if choice == 'start': continue
-            start_date, end_date = ask_day_period()
+            start_date = ask_start_date()
             if choice == 'start': continue
-            items_dict = mpstats.fetch_categories_and_positions(sku_list, start_date, end_date)
-            categories_dict = wildberries.get_category_and_brand(sku_list)
-            position_table = mpstats.positions(items_dict, categories_dict)
-            google_work.clear(worksheet, 'B:ZZ')
-            worksheet.update('B1', position_table)
-            print(f"Таблица успешно обновлена - https://docs.google.com/spreadsheets/d/{files.get_google_key('wb_analytics')}")
+            positions_table = mpstats.positions(input_data, start_date)
+            google_work.insert_table(worksheet, positions_table, replace=True)
             choice = 'start'
         elif choice == 'stocks':
             worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Остатки')

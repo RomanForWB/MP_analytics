@@ -47,4 +47,4 @@ def insert_table(worksheet, table_rows, replace=False,
     elif start_row is not None: worksheet.update('A'+str(start_row), table_rows)
     elif start_cell is not None: worksheet.update(start_cell, table_rows)
     else: worksheet.update(table_rows)
-    print(f"Таблица успешно обновлена.")
+    print(f"Таблица \"{worksheet.title}\" успешно обновлена.")

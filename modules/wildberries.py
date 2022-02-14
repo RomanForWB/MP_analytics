@@ -52,7 +52,7 @@ def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
     headers_list = [{'Authorization': files.get_wb_key('token', supplier)}
                     for supplier in suppliers_list]
     cards_dict = async_requests.by_headers('POST', url, headers_list, suppliers_list, body=body, content_type='json')
-    cards_dict = {one: cards['result']['cards'] for one, cards in cards_dict.items()}
+    cards_dict = {supplier: cards['result']['cards'] for supplier, cards in cards_dict.items()}
     return cards_dict
 
 

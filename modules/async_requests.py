@@ -13,7 +13,7 @@ async def _get_fetch(session, url, id, params=None, headers=None, content_type='
                 else:
                     if content_type.lower() == 'json':
                         result = await response.json()
-                        result = [id, dict(result)]
+                        result = [id, result]
                     else:
                         result = await response.text()
                         result = [id, result]

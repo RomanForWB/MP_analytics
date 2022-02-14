@@ -25,6 +25,7 @@ def ask_start():
     print("5 - Отчет по отзывам")
     print("6 - Отчет по заказам (кол-во)")
     print("7 - Отчет по заказам (сумма)")
+    print("8 - Отчет по заказам (категории)")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'all_reports'
@@ -34,6 +35,7 @@ def ask_start():
     elif choice.strip() == '5': choice = 'feedbacks'
     elif choice.strip() == '6': choice = 'orders_count'
     elif choice.strip() == '7': choice = 'orders_value'
+    elif choice.strip() == '8': choice = 'orders_category'
     else:
         choice = 'start'
         print("Неправильный выбор...")
@@ -223,6 +225,15 @@ if __name__ == '__main__':
             start_date = ask_start_date()
             if choice == 'start': continue
             orders_table = wildberries.orders_value(input_data, start_date)
+            google_work.insert_table(worksheet, orders_table, replace=True)
+            choice = 'start'
+        elif choice == 'orders_category':
+            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Заказы (категории)')
+            input_data = ask_input(worksheet, skip_nm=True)
+            if choice == 'start': continue
+            start_date = ask_start_date()
+            if choice == 'start': continue
+            orders_table = wildberries.orders_category(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'start'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

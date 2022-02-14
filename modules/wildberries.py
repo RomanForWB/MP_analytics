@@ -65,7 +65,7 @@ def _fetch_orders_by_supplier(url, headers, supplier, start_date):
 
 def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):
     params_list = [{'key': files.get_wb_key('x64', supplier),
-                    'dateFrom': start_date}
+                    'dateFrom': str(start_date)}
                    for supplier in suppliers_list]
     orders_dict = async_requests.by_params('GET', url, params_list, suppliers_list, headers=headers, content_type='json')
     return orders_dict
@@ -235,6 +235,55 @@ def _orders_value_by_suppliers_list(suppliers_list, start_date, days):
     return table
 
 
+def _orders_category_by_supplier(supplier, start_date, days):
+    orders_list = fetch_orders(supplier=supplier, start_date=start_date)
+    categories_dict = dict()
+    for order in orders_list:
+        category = f"{order['category']}/{order['subject']}"
+        if category not in categories_dict.keys():
+            categories_dict[category] = {day: 0 for day in days}
+        try:
+            day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
+            final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
+            categories_dict[category][day] += final_price
+        except KeyError: pass
+
+    table = list()
+    total = dict()
+    for category, days_info in categories_dict.items():
+        table.append([category] + [days_info[day] for day in days])
+        for day in days: total[day] += days_info[day]
+
+    table.sort(key=lambda item: sum(item[1:]), reverse=True)
+    table.insert(0, ["Итого"] + [total[day] for day in days])
+    return table
+
+
+def _orders_category_by_suppliers_list(suppliers_list, start_date, days):
+    orders_dict = fetch_orders(suppliers_list=suppliers_list, start_date=start_date)
+    categories_dict = dict()
+    for supplier, orders_list in orders_dict.items():
+        for order in orders_list:
+            category = f"{order['category']}/{order['subject']}"
+            if category not in categories_dict.keys():
+                categories_dict[category] = {day: 0 for day in days}
+            try:
+                day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
+                final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
+                categories_dict[category][day] += final_price
+            except KeyError: pass
+
+    table = list()
+    total = {day: 0 for day in days}
+    for category, days_info in categories_dict.items():
+        table.append([category] + [days_info[day] for day in days])
+        for day in days: total[day] += days_info[day]
+
+    table.sort(key=lambda item: sum(item[1:]), reverse=True)
+    table.insert(0, ["Итого"] + [total[day] for day in days])
+    return table
+
+
 def _stocks_by_supplier(supplier, start_date):
     stocks_list = fetch_stocks(supplier=supplier, start_date=start_date)
     table = list()
@@ -381,26 +430,25 @@ def orders_value(input_data, start_date=str(date.today() - timedelta(days=7))):
     return table
 
 
-# def orders_category(input_data, start_date=str(date.today() - timedelta(days=7))):
-#     days = list()
-#     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-#     today_date = date.today()
-#     intermediate_day = start_date
-#     while intermediate_day <= today_date:
-#         days.append(intermediate_day.strftime('%d.%m'))
-#         intermediate_day += timedelta(days=1)
-#
-#     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-#              days + ['Итого заказов', 'Средняя цена', 'Сумма заказов']
-#     table = list()
-#     if type(input_data) == list:
-#         if type(input_data[0]) == str: table = _orders_value_by_suppliers_list(input_data, start_date, days)
-#         elif type(input_data[0]) == int: table = _orders_value_by_nm_list(input_data, start_date, days)
-#     elif type(input_data) == str: table = _orders_value_by_supplier(input_data, start_date, days)
-#     elif type(input_data) == int: table = _orders_value_by_nm_list([input_data], start_date, days)
-#     else: raise ValueError("Unable to recognize input data")
-#     table.insert(0, header)
-#     return table
+def orders_category(input_data, start_date=str(date.today() - timedelta(days=7))):
+    days = list()
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    today_date = date.today()
+    intermediate_day = start_date
+    while intermediate_day <= today_date:
+        days.append(intermediate_day.strftime('%d.%m'))
+        intermediate_day += timedelta(days=1)
+
+    header = ['Категории'] + days
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _orders_category_by_suppliers_list(input_data, start_date, days)
+        elif type(input_data[0]) == int: table = _orders_category_by_nm_list(input_data, start_date, days)
+    elif type(input_data) == str: table = _orders_category_by_supplier(input_data, start_date, days)
+    elif type(input_data) == int: table = _orders_category_by_nm_list([input_data], start_date, days)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table
 
 
 def stocks(input_data, start_date=str(date.today()-timedelta(days=7))):

@@ -206,7 +206,7 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, feedbacks_table, replace=True)
             choice = 'start'
         elif choice == 'orders':
-            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Заказы (тест)')
+            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Заказы (кол-во)')
             input_data = ask_input(worksheet, skip_nm=True)
             if choice == 'start': continue
             start_date = ask_start_date()

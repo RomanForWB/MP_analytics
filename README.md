@@ -1,13 +1,8 @@
 Analityc reports for marketplaces
+Pipenv virtual environment in /.venv
 
-Virtual environment is included in repository
-
-Realised (permanently updating):
-
-Universal async fetch library
-
-Connection to MPStats API
-
-Connection to Google Sheets API
-
-Connection to Wildberries API
+Realised (updating):
+·Universal async fetch library
+·Fetching information from MPStats API
+·Working with sheets by Google Sheets API
+·Fetching information from Wildberries APIs

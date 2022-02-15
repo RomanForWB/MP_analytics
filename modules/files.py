@@ -120,45 +120,6 @@ def create_folder(folder):
     mkdir(folder)
 
 
-def get_wb_key(type, supplier):
-    """Get wildberries key or token.
-    New suppliers and tokens can be added in keys/wb.json.
-
-    :param type: one of: 'token', 'x32', 'x64'
-    :type type: str
-
-    :param supplier: one of the suppliers in supplier's dictionary in main
-    :type supplier: str
-
-    :return: wildberries key or token string
-    :rtype: str
-    """
-    global wb_keys
-    if wb_keys is None:
-        with open("keys/wb.json", "r") as json_file:
-            wb_keys = json_load(json_file)
-    key = wb_keys[type][supplier]
-    return key
-
-
-def get_google_key(identifier):
-    """Get google document key.
-    Google keys can be expanded in keys/google.json.
-
-    :param identifier: one of: 'wb_analytics'
-    :type identifier: str
-
-    :return: google key
-    :rtype: str
-    """
-    global google_keys
-    if google_keys is None:
-        with open("keys/google.json", "r") as json_file:
-            google_keys = json_load(json_file)
-    key = google_keys[identifier]
-    return key
-
-
 def get_path(identifier):
     """Get file path by identifier.
     File paths can be expanded in keys/paths.json.
@@ -178,17 +139,3 @@ def get_path(identifier):
             paths = json_load(json_file)
     path = paths[identifier]
     return path
-
-def get_mpstats_token():
-    """Get MPStats API token.
-    New token can be added in keys/mpstats.json.
-
-    :return: MPStats token
-    :rtype: str
-    """
-    global mpstats_tokens
-    if mpstats_tokens is None:
-        with open("keys/mpstats.json", "r") as json_file:
-            mpstats_tokens = json_load(json_file)
-    mpstats_token = mpstats_tokens['token']
-    return mpstats_token

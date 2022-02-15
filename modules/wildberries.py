@@ -1,21 +1,20 @@
-from bs4 import BeautifulSoup
 from datetime import date, timedelta, datetime
 import requests, json
 
 import modules.async_requests as async_requests
 import modules.files as files
-from main import supplier_names
+import modules.info as info
 
 
 def _fetch_cards_by_supplier(url, body, supplier):
-    headers = {'Authorization': files.get_wb_key('token', supplier)}
+    headers = {'Authorization': info.wb_key('token', supplier)}
     response = requests.post(url, json=body, headers=headers)
     result = response.json()
     return result['result']['cards']
 
 
 def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
-    headers_list = [{'Authorization': files.get_wb_key('token', supplier)}
+    headers_list = [{'Authorization': info.wb_key('token', supplier)}
                     for supplier in suppliers_list]
     cards_dict = async_requests.by_headers('POST', url, headers_list, suppliers_list, body=body, content_type='json')
     cards_dict = {supplier: cards['result']['cards'] for supplier, cards in cards_dict.items()}
@@ -23,28 +22,30 @@ def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
 
 
 def _fetch_orders_by_supplier(url, headers, supplier, start_date):
-    params = {'key': files.get_wb_key('x64', supplier),
+    params = {'key': info.wb_key('x64', supplier),
               'dateFrom': start_date}
     response = requests.get(url, params=params, headers=headers)
     return response.json()
 
 
 def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):
-    params_list = [{'key': files.get_wb_key('x64', supplier),
+    params_list = [{'key': info.wb_key('x64', supplier),
                     'dateFrom': str(start_date)}
                    for supplier in suppliers_list]
-    orders_dict = async_requests.by_params('GET', url, params_list, suppliers_list, headers=headers, content_type='json')
+    orders_dict = async_requests.by_params('GET', url, params_list, suppliers_list,
+                                           headers=headers,
+                                           content_type='json')
     return orders_dict
 
 
 def _fetch_stocks_by_supplier(url, supplier, start_date):
-    params = {'key': files.get_wb_key('x64', supplier), 'dateFrom': start_date}
+    params = {'key': info.wb_key('x64', supplier), 'dateFrom': start_date}
     response = requests.get(url, params=params)
     return response.json()
 
 
 def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
-    params_list = [{'key': files.get_wb_key('x64', supplier),
+    params_list = [{'key': info.wb_key('x64', supplier),
                     'dateFrom': start_date}
                    for supplier in suppliers_list]
     stocks_dict = async_requests.by_params('GET', url, params_list, suppliers_list, content_type='json')
@@ -53,9 +54,9 @@ def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
 
 def _feedbacks_by_data(supplier, card, feedbacks_list):
     brand = ''  # бренд
-    for type in card['addin']:
-        if type['type'] == 'Бренд':
-            brand = type['params'][0]['value']
+    for addin in card['addin']:
+        if addin['type'] == 'Бренд':
+            brand = addin['params'][0]['value']
             break
 
     bad_mark = 'Нет'  # наличие плохого отзыва
@@ -70,10 +71,10 @@ def _feedbacks_by_data(supplier, card, feedbacks_list):
                 bad_mark = 'Да'
                 bad_feedback = feedback['text']
         avg_rating = round(rating_score / len(feedbacks_list), 1)  # средний рейтинг последних отзывов
-    return [[supplier_names[supplier], nomenclature['nmId'],
-            f"{card['supplierVendorCode']}{nomenclature['vendorCode']}",
-            f"{card['parent']}/{card['object']}", brand,
-            bad_mark, avg_rating, bad_feedback] for nomenclature in card['nomenclatures']]
+    return [[info.supplier_name(supplier), nomenclature['nmId'],
+             f"{card['supplierVendorCode']}{nomenclature['vendorCode']}",
+             f"{card['parent']}/{card['object']}", brand,
+             bad_mark, avg_rating, bad_feedback] for nomenclature in card['nomenclatures']]
 
 
 def _feedbacks_by_supplier(supplier, count):
@@ -96,7 +97,7 @@ def _feedbacks_by_suppliers_list(suppliers_list, count):
 
 
 def _feedbacks_by_nm_list(nm_list, count):
-    suppliers_list = list(supplier_names.keys())
+    suppliers_list = info.all_suppliers()
     cards_dict = fetch_cards(suppliers_list=suppliers_list)
     supplier_cards_dict = {supplier: [] for supplier in suppliers_list}
     imt_list = list()
@@ -118,8 +119,9 @@ def _feedbacks_by_nm_list(nm_list, count):
     return result_table
 
 
-def _orders_count_by_supplier(supplier, start_date, days):
+def _orders_count_by_supplier(supplier, start_date):
     orders_list = fetch_orders(supplier, start_date)
+    days = info.days_list(start_date)
     nm_dict = dict()
     nm_info_dict = dict()
     for order in orders_list:
@@ -147,21 +149,22 @@ def _orders_count_by_supplier(supplier, start_date, days):
         all_orders_price = sum(days_values_list)
         if all_orders_count == 0: avg_price = 0
         else: avg_price = all_orders_price / all_orders_count
-        table.append([supplier_names[supplier], nm, article, subject, brand] +
+        table.append([info.supplier_name(supplier), nm, article, subject, brand] +
                      days_orders_list + [all_orders_count, avg_price, all_orders_price])
 
     return sorted(table, key=lambda item: item[2])
 
 
-def _orders_count_by_suppliers_list(suppliers_list, start_date, days):
+def _orders_count_by_suppliers_list(suppliers_list, start_date):
     table = list()
     for supplier in suppliers_list:
-        table += _orders_count_by_supplier(supplier, start_date, days)
+        table += _orders_count_by_supplier(supplier, start_date)
     return table
 
 
-def _orders_value_by_supplier(supplier, start_date, days):
+def _orders_value_by_supplier(supplier, start_date):
     orders_list = fetch_orders(supplier, start_date)
+    days = info.days_list(start_date)
     nm_dict = dict()
     nm_info_dict = dict()
     for order in orders_list:
@@ -189,20 +192,21 @@ def _orders_value_by_supplier(supplier, start_date, days):
         all_orders_price = sum(days_values_list)
         if all_orders_count == 0: avg_price = 0
         else: avg_price = all_orders_price / all_orders_count
-        table.append([supplier_names[supplier], nm, article, subject, brand] +
+        table.append([info.supplier_name(supplier), nm, article, subject, brand] +
                      days_values_list + [all_orders_count, avg_price, all_orders_price])
     return sorted(table, key=lambda item: item[2])
 
 
-def _orders_value_by_suppliers_list(suppliers_list, start_date, days):
+def _orders_value_by_suppliers_list(suppliers_list, start_date):
     table = list()
     for supplier in suppliers_list:
-        table += _orders_value_by_supplier(supplier, start_date, days)
+        table += _orders_value_by_supplier(supplier, start_date)
     return table
 
 
-def _orders_category_by_supplier(supplier, start_date, days):
+def _orders_category_by_supplier(supplier, start_date):
     orders_list = fetch_orders(supplier=supplier, start_date=start_date)
+    days = info.days_list(start_date)
     categories_dict = dict()
     for order in orders_list:
         category = f"{order['category']}/{order['subject']}"
@@ -225,8 +229,9 @@ def _orders_category_by_supplier(supplier, start_date, days):
     return table
 
 
-def _orders_category_by_suppliers_list(suppliers_list, start_date, days):
+def _orders_category_by_suppliers_list(suppliers_list, start_date):
     orders_dict = fetch_orders(suppliers_list=suppliers_list, start_date=start_date)
+    days = info.days_list(start_date)
     categories_dict = dict()
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
@@ -255,7 +260,7 @@ def _stocks_by_supplier(supplier, start_date):
     table = list()
     items_dict = dict()
     for item in stocks_list:
-        dict_key = (supplier_names[supplier],
+        dict_key = (info.supplier_name(supplier),
                     item['nmId'],
                     item['supplierArticle'],
                     f"{item['category']}/{item['subject']}",
@@ -288,14 +293,14 @@ def _stocks_by_suppliers_list(suppliers_list, start_date):
 def fetch_cards(supplier=None, suppliers_list=None):
     url = "https://suppliers-api.wildberries.ru/card/list"
     body = {"id": 1,
-              "jsonrpc": "2.0",
-              "params": {
-                  "withError": False,
-                  "query": {
-                      "limit": 1000
-                      }
-                  }
-              }
+            "jsonrpc": "2.0",
+            "params": {
+                "withError": False,
+                "query": {
+                    "limit": 1000
+                }
+            }
+            }
     if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch cards.")
     elif supplier is not None: return _fetch_cards_by_supplier(url, body, supplier)
     elif suppliers_list is not None: return _fetch_cards_by_suppliers_list(url, body, suppliers_list)
@@ -316,10 +321,10 @@ def fetch_simple_category_and_brand(nm_list):
     url_list = [f'https://wbx-content-v2.wbstatic.net/ru/{nm}.json' for nm in nm_list]
     nm_dict = async_requests.by_urls('GET', url_list, nm_list, content_type='text')
     simple_categories_dict = dict()
-    for nm, info in nm_dict.items():
-        info = json.loads(info)
-        simple_categories_dict[nm] = {'category': f"{info['subj_root_name']}/{info['subj_name']}",
-                                      'brand': info['selling']['brand_name']}
+    for nm, card_info in nm_dict.items():
+        card_info = json.loads(card_info)
+        simple_categories_dict[nm] = {'category': f"{card_info['subj_root_name']}/{card_info['subj_name']}",
+                                      'brand': card_info['selling']['brand_name']}
     return simple_categories_dict
 
 
@@ -352,75 +357,53 @@ def feedbacks(input_data, count=3):
     return table
 
 
-def orders_count(input_data, start_date=str(date.today() - timedelta(days=7))):
-    days = list()
-    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-    today_date = date.today()
-    intermediate_day = start_date
-    while intermediate_day <= today_date:
-        days.append(intermediate_day.strftime('%d.%m'))
-        intermediate_day += timedelta(days=1)
-
+def orders_count(input_data, start_date=str(date.today()-timedelta(days=7))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-             days + ['Итого заказов', 'Средняя цена', 'Сумма заказов']
+              info.days_list(start_date) + \
+             ['Итого', 'Средняя цена', 'Сумма заказов']
     table = list()
     if type(input_data) == list:
-        if type(input_data[0]) == str: table = _orders_count_by_suppliers_list(input_data, start_date, days)
-        elif type(input_data[0]) == int: table = _orders_count_by_nm_list(input_data, start_date, days)
-    elif type(input_data) == str: table = _orders_count_by_supplier(input_data, start_date, days)
-    elif type(input_data) == int: table = _orders_count_by_nm_list([input_data], start_date, days)
+        if type(input_data[0]) == str: table = _orders_count_by_suppliers_list(input_data, start_date)
+        elif type(input_data[0]) == int: table = _orders_count_by_nm_list(input_data, start_date)
+    elif type(input_data) == str: table = _orders_count_by_supplier(input_data, start_date)
+    elif type(input_data) == int: table = _orders_count_by_nm_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table
 
 
-def orders_value(input_data, start_date=str(date.today() - timedelta(days=7))):
-    days = list()
-    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-    today_date = date.today()
-    intermediate_day = start_date
-    while intermediate_day <= today_date:
-        days.append(intermediate_day.strftime('%d.%m'))
-        intermediate_day += timedelta(days=1)
-
+def orders_value(input_data, start_date=str(date.today()-timedelta(days=7))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-             days + ['Итого заказов', 'Средняя цена', 'Сумма заказов']
+             info.days_list(start_date) + \
+             ['Итого', 'Средняя цена', 'Сумма заказов']
     table = list()
     if type(input_data) == list:
-        if type(input_data[0]) == str: table = _orders_value_by_suppliers_list(input_data, start_date, days)
-        elif type(input_data[0]) == int: table = _orders_value_by_nm_list(input_data, start_date, days)
-    elif type(input_data) == str: table = _orders_value_by_supplier(input_data, start_date, days)
-    elif type(input_data) == int: table = _orders_value_by_nm_list([input_data], start_date, days)
+        if type(input_data[0]) == str: table = _orders_value_by_suppliers_list(input_data, start_date)
+        elif type(input_data[0]) == int: table = _orders_value_by_nm_list(input_data, start_date)
+    elif type(input_data) == str: table = _orders_value_by_supplier(input_data, start_date)
+    elif type(input_data) == int: table = _orders_value_by_nm_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table
 
 
-def orders_category(input_data, start_date=str(date.today() - timedelta(days=7))):
-    days = list()
-    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-    today_date = date.today()
-    intermediate_day = start_date
-    while intermediate_day <= today_date:
-        days.append(intermediate_day.strftime('%d.%m'))
-        intermediate_day += timedelta(days=1)
-
-    header = ['По категориям'] + days
+def orders_category(input_data, start_date=str(date.today()-timedelta(days=7))):
+    header = ['По категориям'] + info.days_list(start_date)
     table = list()
     if type(input_data) == list:
-        if type(input_data[0]) == str: table = _orders_category_by_suppliers_list(input_data, start_date, days)
-        elif type(input_data[0]) == int: table = _orders_category_by_nm_list(input_data, start_date, days)
-    elif type(input_data) == str: table = _orders_category_by_supplier(input_data, start_date, days)
-    elif type(input_data) == int: table = _orders_category_by_nm_list([input_data], start_date, days)
+        if type(input_data[0]) == str: table = _orders_category_by_suppliers_list(input_data, start_date)
+        elif type(input_data[0]) == int: table = _orders_category_by_nm_list(input_data, start_date)
+    elif type(input_data) == str: table = _orders_category_by_supplier(input_data, start_date)
+    elif type(input_data) == int: table = _orders_category_by_nm_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table
 
 
 def stocks(input_data, start_date=str(date.today()-timedelta(days=7))):
-    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд', 'Размер',
-              'На складе', 'Не в заказе',
-              'Доступно', 'В пути к клиенту', 'В пути от клиента', 'Время обновления']
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд',
+              'Размер', 'На складе', 'Не в заказе', 'Доступно',
+              'В пути к клиенту', 'В пути от клиента', 'Время обновления']
     table = list()
     if type(input_data) == list:
         if type(input_data[0]) == str: table = _stocks_by_suppliers_list(input_data, start_date)

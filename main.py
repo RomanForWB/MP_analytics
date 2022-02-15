@@ -5,17 +5,14 @@ import modules.google_work as google_work
 import modules.mpstats as mpstats
 import modules.wildberries as wildberries
 import modules.files as files
+import modules.info as info
 
-supplier_identifiers = {"ИП Марьина А.А.": "maryina",
-                        "ИП Туманян А.А.": "tumanyan",
-                        "ООО НЬЮЭРАМЕДИА": "neweramedia",
-                        "ИП Ахметов В.Р.": "ahmetov",
-                        "ИП Фурсов И.Н.": "fursov"}
-supplier_names = {value: key for key, value in supplier_identifiers.items()}
 
 choice = 'start'
+
+
 def ask_start():
-    """Основное меню программы."""
+    """Present main actions to the user."""
     print("\n========================================")
     print("=========== Программа для WB ===========")
     print("1 - Обновить все отчеты (в работе)")
@@ -39,6 +36,8 @@ def ask_start():
     else:
         choice = 'start'
         print("Неправильный выбор...")
+
+
 def ask_start_date():
     """Ask user about start date.
 
@@ -68,10 +67,14 @@ def ask_start_date():
             choice = 'start'
             return None
         else: print("Неправильный выбор...")
+
+
 def ask_nm_list():
     print('Введите список номенклатур (Enter нужно нажать два раза)')
     nm_list = list(iter(input, ""))
     return nm_list
+
+
 def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
     while (True):
         all_choice = None
@@ -85,9 +88,9 @@ def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
             all_choice = choice_counter
             print(f"\n{all_choice} - Для всех")
             supplier_choices = dict()
-            for supplier in supplier_names.keys():
+            for supplier in info.all_suppliers():
                 choice_counter += 1
-                print(f'{choice_counter} - {supplier_names[supplier]}')
+                print(f'{choice_counter} - {info.supplier_name(supplier)}')
                 supplier_choices[choice_counter] = supplier
         if skip_nm == False:
             choice_counter += 1
@@ -102,7 +105,7 @@ def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
         try:
             input_choice = int(input("Выбор: ").strip())
             if all_choice is not None and input_choice == all_choice:
-                return list(supplier_names.keys())
+                return info.all_suppliers()
             elif supplier_choices is not None and input_choice in supplier_choices.keys():
                 return supplier_choices[input_choice]
             elif google_choice is not None and input_choice == google_choice:
@@ -124,7 +127,7 @@ if __name__ == '__main__':
         if choice == 'start': ask_start()
         # elif choice == 'all_reports':
         elif choice == 'categories':
-            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Категории')
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
             input_data = ask_input(worksheet, skip_suppliers=True)
             if choice == 'start': continue
             start_date = ask_start_date()
@@ -133,7 +136,7 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, categories_table, replace=True)
             choice = 'start'
         elif choice == 'positions':
-            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Позиции')
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Позиции')
             input_data = ask_input(worksheet)
             if choice == 'start': continue
             start_date = ask_start_date()
@@ -142,21 +145,21 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, positions_table, replace=True)
             choice = 'start'
         elif choice == 'stocks':
-            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Остатки')
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Остатки')
             input_data = ask_input(worksheet, skip_nm=True)
             if choice == 'start': continue
             stocks_table = wildberries.stocks(input_data)
             google_work.insert_table(worksheet, stocks_table, replace=True)
             choice = 'start'
         elif choice == 'feedbacks':
-            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Отзывы')
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Отзывы')
             input_data = ask_input(worksheet)
             if choice == 'start': continue
             feedbacks_table = wildberries.feedbacks(input_data)
             google_work.insert_table(worksheet, feedbacks_table, replace=True)
             choice = 'start'
         elif choice == 'orders_count':
-            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Заказы (кол-во)')
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (кол-во)')
             input_data = ask_input(worksheet, skip_nm=True)
             if choice == 'start': continue
             start_date = ask_start_date()
@@ -165,7 +168,7 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'start'
         elif choice == 'orders_value':
-            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Заказы (сумма)')
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (сумма)')
             input_data = ask_input(worksheet, skip_nm=True)
             if choice == 'start': continue
             start_date = ask_start_date()
@@ -174,7 +177,7 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'start'
         elif choice == 'orders_category':
-            worksheet = google_work.open_sheet(files.get_google_key('wb_analytics'), 'Заказы (категории)')
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (категории)')
             input_data = ask_input(worksheet, skip_nm=True)
             if choice == 'start': continue
             start_date = ask_start_date()

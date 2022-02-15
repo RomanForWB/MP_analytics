@@ -13,75 +13,6 @@ seller_identifiers = {"maryina": ["ИП Марьина А А", "ИП Марьи�
                       "fursov": ["ИП Фурсов И Н"]}
 if len(supplier_names) != len(seller_identifiers): warning("Please, fill the sellers identifiers in mpstats module.")
 
-def fetch_categories_and_positions(sku_list,
-                                   start_date=date.today()-timedelta(days=30),
-                                   end_date=date.today()):
-    url_list = [f'https://mpstats.io/api/wb/get/item/{sku}/by_category' for sku in sku_list]
-    params = {'d1': str(start_date), 'd2': str(end_date)}
-    headers = {'X-Mpstats-TOKEN': files.get_mpstats_token(),
-               'Content-Type': 'application/json'}
-    items_dict = async_requests.by_urls('GET', url_list, sku_list,
-                                        params=params,
-                                        headers=headers,
-                                        content_type='json')
-    return items_dict
-
-def fetch_orders_and_balance(sku_list,
-                             start_date=date.today()-timedelta(days=30),
-                             end_date=date.today()):
-    url_list = [f'https://mpstats.io/api/wb/get/item/{sku}/orders_by_size' for sku in sku_list]
-    params = {'d1': str(start_date), 'd2': str(end_date)}
-    headers = {'X-Mpstats-TOKEN': files.get_mpstats_token(),
-               'Content-Type': 'application/json'}
-    items_dict = async_requests.by_urls('GET', url_list, sku_list,
-                                        params=params,
-                                        headers=headers,
-                                        content_type='json')
-    return items_dict
-
-
-def stocks(items_dict, categories_dict):
-    # === устранение ненужных размеров ===
-    actual_items_dict = dict()
-    for sku, value in items_dict.items():
-        for day, sizes in value.items():
-            for size, balance in sizes.items():
-                if size == size.upper():
-                    actual_items_dict.setdefault(sku, dict()).setdefault(day, dict())[size] = items_dict[sku][day][size]
-    items_dict = actual_items_dict
-
-    days = list()
-    for sku, value in items_dict.items():
-        for day in value.keys():
-            if day not in days: days.append(day)
-    days = sorted(days)
-    table = list()
-    table.append(['SKU', 'Предмет', 'Бренд', 'Размер'] + days)
-    for sku, value in items_dict.items():
-        try:
-            brand = categories_dict[sku].rsplit('/', 1)[1]
-            category = categories_dict[sku].rsplit('/', 1)[0]
-            left_part = [sku, category, brand]
-        except AttributeError:
-            left_part = [sku, '-', '-']
-        try: sizes = sorted(list(list(value.values())[0].keys()))
-        except IndexError:
-            table.append(left_part + ['-']*(len(days)+1))
-            continue
-        for size in sizes:
-            right_part = [size]
-            for day in days:
-                try:
-                    stock = value[day][size]['balance']
-                    if stock == 'NaN': stock = 0
-                    right_part.append(stock)
-                except KeyError: right_part.append('-')
-            table.append(left_part+right_part)
-    return table
-
-
-# =============== NEW VERSION ===============
-
 
 def _fetch_positions_by_nm_list(headers, nm_list, start_date):
     url_list = [f'https://mpstats.io/api/wb/get/item/{nm}/by_category' for nm in nm_list]
@@ -307,10 +238,4 @@ def categories(input_data, start_date):
 
 
 # ================== тестовые запуски ==================
-if __name__ == '__main__':
-    sku_list = [44117798,16557761,35663011,35663012,16557765,16557766,12129508,16557769,16557770]
-    items_dict = fetch_orders_and_balance(sku_list)
-    categories_dict = wildberries.get_category_and_brand(sku_list)
-    balance_table = stocks(items_dict, categories_dict)
-    for row in balance_table:
-        print(row)
+if __name__ == '__main__': pass

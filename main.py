@@ -39,56 +39,6 @@ def ask_start():
     else:
         choice = 'start'
         print("Неправильный выбор...")
-def ask_sku_list(worksheet):
-    """Спрашивает у пользователя про список sku
-
-    :param worksheet: worksheet из gspread (использовать google_work.open_sheet())
-    :return: список SKU в формате [00000000, 00000000...]
-    """
-    while(True):
-        print("\n1 - Взять список SKU из Google таблицы")
-        print("2 - В начало")
-        sku_list_choice = input("Выбор: ")
-        if sku_list_choice.strip() == '1':
-            sku_list = google_work.get_columns(worksheet, 1, 2)
-            return sku_list
-        elif sku_list_choice.strip() == '2':
-            global choice
-            choice = 'start'
-            return None
-        else: print("Неправильный выбор...")
-def ask_day_period():
-    """Спрашивает у пользователя про даты начала и конца.
-
-    :return: (start_date, end_date) даты в формате 'YYYY-MM-DD'
-    """
-    while(True):
-        print("\n1 - За последние 7 дней")
-        print("2 - За последние 30 дней")
-        print("3 - Свой вариант")
-        print("4 - В начало")
-        day_choice = input("Выбор: ")
-        if day_choice.strip() == '1':
-            start_date = date.today() - timedelta(days=7)
-            end_date = date.today()
-            return start_date, end_date
-        elif day_choice.strip() == '2':
-            start_date = date.today() - timedelta(days=30)
-            end_date = date.today()
-            return start_date, end_date
-        elif day_choice.strip() == '3':
-            while(True):
-                start_date = input("Введите дату начала периода (YYYY-MM-DD): ").strip()
-                end_date = input("Введите дату конца периода (YYYY-MM-DD): ").strip()
-                if search(r'\d\d\d\d\-\d\d\-\d\d', start_date) \
-                and search(r'\d\d\d\d\-\d\d\-\d\d', end_date):
-                    return start_date, end_date
-                else: print("Неправильные даты...")
-        elif day_choice.strip() == '4':
-            global choice
-            choice = 'start'
-            return None, None
-        else: print("Неправильный выбор...")
 def ask_start_date():
     """Ask user about start date.
 

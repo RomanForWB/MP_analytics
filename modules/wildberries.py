@@ -1,44 +1,10 @@
 from bs4 import BeautifulSoup
 from datetime import date, timedelta, datetime
-import requests, json, sys
+import requests, json
 
 import modules.async_requests as async_requests
 import modules.files as files
 from main import supplier_names
-
-
-def get_category_and_brand(sku_list):
-    url_list = [f'https://www.wildberries.ru/catalog/{sku}/detail.aspx' for sku in sku_list]
-    categories_dict = async_requests.by_urls('GET', url_list, sku_list, content_type='text')
-    counter = 0
-    print("Парсинг категорий из карточек Wildberries...")
-    print(f"Всего карточек: {len(categories_dict)}")
-    for sku, value in categories_dict.items():
-        soup = BeautifulSoup(value, 'html.parser')
-        category_soup = soup.findAll('a', class_="breadcrumbs__link")
-        if len(category_soup) < 2:
-            categories_dict[sku] = {'category': None, 'brand': None}
-        else:
-            categories_dict[sku] = dict()
-            header_category = category_soup[1].text.strip()
-            for data in category_soup[2:-1]:
-                header_category += '/' + data.text.strip()
-            categories_dict[sku]['category'] = header_category
-            categories_dict[sku]['brand'] = category_soup[-1].text.strip()
-        counter += 1
-        print(f'\rОбработано: {counter}', end='')
-    print()
-    return categories_dict
-
-
-def fetch_incomes(key, start_date=date.today() - timedelta(days=7)):
-    url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/incomes'
-    params = {'key': key, 'dateFrom': str(start_date)}
-    response = requests.get(url, params=params)
-    return response.json()
-
-
-# ================ NEW VERSION =======================
 
 
 def _fetch_cards_by_supplier(url, body, supplier):
@@ -289,9 +255,9 @@ def _stocks_by_supplier(supplier, start_date):
     table = list()
     items_dict = dict()
     for item in stocks_list:
-        dict_key = (item['supplierArticle'],
+        dict_key = (supplier_names[supplier],
                     item['nmId'],
-                    supplier_names[supplier],
+                    item['supplierArticle'],
                     f"{item['category']}/{item['subject']}",
                     item['brand'],
                     item['techSize'])
@@ -439,7 +405,7 @@ def orders_category(input_data, start_date=str(date.today() - timedelta(days=7))
         days.append(intermediate_day.strftime('%d.%m'))
         intermediate_day += timedelta(days=1)
 
-    header = ['Категории'] + days
+    header = ['По категориям'] + days
     table = list()
     if type(input_data) == list:
         if type(input_data[0]) == str: table = _orders_category_by_suppliers_list(input_data, start_date, days)
@@ -452,9 +418,9 @@ def orders_category(input_data, start_date=str(date.today() - timedelta(days=7))
 
 
 def stocks(input_data, start_date=str(date.today()-timedelta(days=7))):
-    header = ['Артикул поставщика', 'Номенклатура', 'Компания', 'Предмет', 'Бренд', 'Размер',
-              'На складе', 'На складе (не в заказах)',
-              'Доступно для продажи', 'В пути к клиенту', 'В пути от клиента', 'Время обновления']
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд', 'Размер',
+              'На складе', 'Не в заказе',
+              'Доступно', 'В пути к клиенту', 'В пути от клиента', 'Время обновления']
     table = list()
     if type(input_data) == list:
         if type(input_data[0]) == str: table = _stocks_by_suppliers_list(input_data, start_date)
@@ -464,6 +430,3 @@ def stocks(input_data, start_date=str(date.today()-timedelta(days=7))):
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table
-
-# ================== тестовые запуски ==================
-if __name__ == '__main__': pass

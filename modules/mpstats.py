@@ -5,16 +5,6 @@ import modules.async_requests as async_requests
 import modules.wildberries as wildberries
 
 
-def _fetch_positions_by_nm_list(headers, nm_list, start_date):
-    url_list = [f'https://mpstats.io/api/wb/get/item/{nm}/by_category' for nm in nm_list]
-    params = {'d1': str(start_date), 'd2': str(date.today())}
-    positions_dict = async_requests.by_urls('GET', url_list, nm_list,
-                                            params=params,
-                                            headers=headers,
-                                            content_type='json')
-    return positions_dict
-
-
 def _fetch_positions_by_supplier(headers, supplier, start_date):
     nm_list = [item['id'] for item in _fetch_info_by_supplier(headers, supplier)]
     return _fetch_positions_by_nm_list(headers, nm_list, start_date)
@@ -27,6 +17,16 @@ def _fetch_positions_by_suppliers_list(headers, suppliers_list, start_date):
         nm_list = [item['id'] for item in items]
         suppliers_positions_dict[supplier] = _fetch_positions_by_nm_list(headers, nm_list, start_date)
     return suppliers_positions_dict
+
+
+def _fetch_positions_by_nm_list(headers, nm_list, start_date):
+    url_list = [f'https://mpstats.io/api/wb/get/item/{nm}/by_category' for nm in nm_list]
+    params = {'d1': str(start_date), 'd2': str(date.today())}
+    positions_dict = async_requests.by_urls('GET', url_list, nm_list,
+                                            params=params,
+                                            headers=headers,
+                                            content_type='json')
+    return positions_dict
 
 
 def _fetch_info_by_supplier(headers, supplier):
@@ -69,8 +69,7 @@ def _positions_by_supplier(supplier, start_date):
             table.append([info.supplier_name(supplier), nm,
                           card['supplierVendorCode']+nomenclature['vendorCode'],
                           category, info_dict[nm]['brand']] + positions_list)
-    table.sort(key=lambda item: item[2])
-    return table
+    return sorted(table, key=lambda item: item[2])
 
 
 def _positions_by_suppliers_list(suppliers_list, start_date):
@@ -129,6 +128,63 @@ def _positions_by_nm_list(nm_list, start_date):
     return result_table
 
 
+def _categories_by_supplier(supplier, start_date):
+    days = info.days_list(start_date, to_yesterday=True)
+    cards_list = wildberries.fetch_cards(supplier=supplier)
+    positions_dict = fetch_positions(supplier=supplier, start_date=start_date)
+    table = list()
+    for card in cards_list:
+        brand = ''
+        for addin in card['addin']:
+            if addin['type'] == 'Бренд': brand = addin['params'][0]['value']
+        for nomenclature in card['nomenclatures']:
+            nm = nomenclature['nmId']
+            categories_by_days = list()
+            try:
+                for i in range(len(days)):
+                    categories_raw = [values[i] for values in positions_dict[nm]['categories'].values()]
+                    categories_count = len(categories_raw) - categories_raw.count('NaN')
+                    categories_by_days.append(categories_count)
+                table.append([info.supplier_name(supplier), nm,
+                                       card['supplierVendorCode'] + nomenclature['vendorCode'],
+                                       f"{card['parent']}/{card['object']}", brand] + categories_by_days)
+            except AttributeError:
+                table.append([info.supplier_name(supplier), nm,
+                                       card['supplierVendorCode'] + nomenclature['vendorCode'],
+                                       f"{card['parent']}/{card['object']}", brand] + ['-'] * len(days))
+    return sorted(table, key=lambda item: item[2])
+
+
+def _categories_by_suppliers_list(suppliers_list, start_date):
+    positions_dict = fetch_positions(suppliers_list=suppliers_list, start_date=start_date)
+    days = info.days_list(start_date, to_yesterday=True)
+    cards_dict = wildberries.fetch_cards(suppliers_list=suppliers_list)
+    result_table = list()
+    for supplier, cards in cards_dict.items():
+        supplier_table = list()
+        for card in cards:
+            brand = ''
+            for addin in card['addin']:
+                if addin['type'] == 'Бренд': brand = addin['params'][0]['value']
+            for nomenclature in card['nomenclatures']:
+                nm = nomenclature['nmId']
+                categories_by_days = list()
+                try:
+                    for i in range(len(days)):
+                        categories_raw = [values[i] for values in positions_dict[nm]['categories'].values()]
+                        categories_count = len(categories_raw) - categories_raw.count('NaN')
+                        categories_by_days.append(categories_count)
+                    supplier_table.append([info.supplier_name(supplier), nm,
+                                           card['supplierVendorCode'] + nomenclature['vendorCode'],
+                                           f"{card['parent']}/{card['object']}", brand] + categories_by_days)
+                except AttributeError:
+                    supplier_table.append([info.supplier_name(supplier), nm,
+                                           card['supplierVendorCode'] + nomenclature['vendorCode'],
+                                           f"{card['parent']}/{card['object']}", brand] + ['-']*len(days))
+        result_table += sorted(supplier_table, key=lambda item: item[2])
+    return result_table
+
+
 def _categories_by_nm_list(nm_list, start_date):
     positions_dict = fetch_positions(nm_list=nm_list, start_date=start_date)
     days = info.days_list(start_date, to_yesterday=True)
@@ -157,7 +213,7 @@ def _categories_by_nm_list(nm_list, start_date):
                         supplier_table.append([info.supplier_name(supplier), nm,
                                                card['supplierVendorCode'] + nomenclature['vendorCode'],
                                                f"{card['parent']}/{card['object']}", brand] + ['-']*len(days))
-        result_table += supplier_table
+        result_table += sorted(supplier_table, key=lambda item: item[2])
     return result_table
 
 

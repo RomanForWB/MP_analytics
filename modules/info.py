@@ -126,3 +126,4 @@ def days_list(from_date, to_today=True, to_yesterday=False, to_date=None):
     while tmp_day <= to_date:
         days.append(tmp_day.strftime('%d.%m'))
         tmp_day += timedelta(days=1)
+    return days

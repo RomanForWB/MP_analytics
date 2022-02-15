@@ -119,7 +119,7 @@ def _feedbacks_by_nm_list(nm_list, count):
 
 
 def _orders_count_by_supplier(supplier, start_date):
-    orders_list = fetch_orders(supplier, start_date)
+    orders_list = fetch_orders(supplier=supplier, start_date=start_date)
     days = info.days_list(start_date)
     nm_dict = dict()
     nm_info_dict = dict()
@@ -158,6 +158,48 @@ def _orders_count_by_suppliers_list(suppliers_list, start_date):
     table = list()
     for supplier in suppliers_list:
         table += _orders_count_by_supplier(supplier, start_date)
+    return table
+
+
+def _orders_count_by_nm_list(nm_list, start_date):
+    orders_dict = fetch_orders(suppliers_list=info.all_suppliers(), start_date=start_date)
+    days = info.days_list(start_date)
+    table = list()
+    nm_dict = dict()
+    nm_info_dict = dict()
+    for supplier, orders_list in orders_dict.items():
+        for order in orders_list:
+            nm = order['nmId']
+            if nm not in nm_list: continue
+            if nm not in nm_info_dict.keys():
+                nm_info_dict[nm] = {'Артикул поставщика': order['supplierArticle'],
+                                    'Предмет': f"{order['category']}/{order['subject']}",
+                                    'Бренд': order['brand']}
+                nm_dict[nm] = {day: {'orders': 0, 'prices': []} for day in days}
+            try:
+                day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
+                nm_dict[nm][day]['orders'] += 1
+                final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
+                nm_dict[nm][day]['prices'] += [final_price] * order['quantity']
+            except KeyError:
+                pass
+
+        supplier_table = list()
+        for nm, days_info in nm_dict.items():
+            article = nm_info_dict[nm]['Артикул поставщика']
+            subject = nm_info_dict[nm]['Предмет']
+            brand = nm_info_dict[nm]['Бренд']
+            days_orders_list = [days_info[day]['orders'] for day in days]
+            days_values_list = [sum(days_info[day]['prices']) for day in days]
+            all_orders_count = sum(days_orders_list)
+            all_orders_price = sum(days_values_list)
+            if all_orders_count == 0:
+                avg_price = 0
+            else:
+                avg_price = all_orders_price / all_orders_count
+            supplier_table.append([info.supplier_name(supplier), nm, article, subject, brand] +
+                                  days_orders_list + [all_orders_count, avg_price, all_orders_price])
+        table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
 
@@ -200,6 +242,48 @@ def _orders_value_by_suppliers_list(suppliers_list, start_date):
     table = list()
     for supplier in suppliers_list:
         table += _orders_value_by_supplier(supplier, start_date)
+    return table
+
+
+def _orders_value_by_nm_list(nm_list, start_date):
+    orders_dict = fetch_orders(suppliers_list=info.all_suppliers(), start_date=start_date)
+    days = info.days_list(start_date)
+    table = list()
+    nm_dict = dict()
+    nm_info_dict = dict()
+    for supplier, orders_list in orders_dict.items():
+        for order in orders_list:
+            nm = order['nmId']
+            if nm not in nm_list: continue
+            if nm not in nm_info_dict.keys():
+                nm_info_dict[nm] = {'Артикул поставщика': order['supplierArticle'],
+                                    'Предмет': f"{order['category']}/{order['subject']}",
+                                    'Бренд': order['brand']}
+                nm_dict[nm] = {day: {'orders': 0, 'prices': []} for day in days}
+            try:
+                day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
+                nm_dict[nm][day]['orders'] += 1
+                final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
+                nm_dict[nm][day]['prices'] += [final_price] * order['quantity']
+            except KeyError:
+                pass
+
+        supplier_table = list()
+        for nm, days_info in nm_dict.items():
+            article = nm_info_dict[nm]['Артикул поставщика']
+            subject = nm_info_dict[nm]['Предмет']
+            brand = nm_info_dict[nm]['Бренд']
+            days_orders_list = [days_info[day]['orders'] for day in days]
+            days_values_list = [sum(days_info[day]['prices']) for day in days]
+            all_orders_count = sum(days_orders_list)
+            all_orders_price = sum(days_values_list)
+            if all_orders_count == 0:
+                avg_price = 0
+            else:
+                avg_price = all_orders_price / all_orders_count
+            supplier_table.append([info.supplier_name(supplier), nm, article, subject, brand] +
+                                  days_values_list + [all_orders_count, avg_price, all_orders_price])
+        table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
 
@@ -254,6 +338,33 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date):
     return table
 
 
+def _orders_category_by_nm_list(nm_list, start_date):
+    orders_dict = fetch_orders(suppliers_list=info.all_suppliers(), start_date=start_date)
+    days = info.days_list(start_date)
+    categories_dict = dict()
+    for supplier, orders_list in orders_dict.items():
+        for order in orders_list:
+            if order['nmId'] not in nm_list: continue
+            category = f"{order['category']}/{order['subject']}"
+            if category not in categories_dict.keys():
+                categories_dict[category] = {day: 0 for day in days}
+            try:
+                day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
+                final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
+                categories_dict[category][day] += final_price
+            except KeyError: pass
+
+    table = list()
+    total = {day: 0 for day in days}
+    for category, days_info in categories_dict.items():
+        table.append([category] + [days_info[day] for day in days])
+        for day in days: total[day] += days_info[day]
+
+    table.sort(key=lambda item: sum(item[1:]), reverse=True)
+    table.insert(0, ["Итого"] + [total[day] for day in days])
+    return table
+
+
 def _stocks_by_supplier(supplier, start_date):
     stocks_list = fetch_stocks(supplier=supplier, start_date=start_date)
     table = list()
@@ -285,8 +396,31 @@ def _stocks_by_suppliers_list(suppliers_list, start_date):
     return table
 
 
-# def _stocks_by_nm_list
-# def _orders_count_by_nm_list()
+def _stocks_by_nm_list(nm_list, start_date):
+    stocks_dict = fetch_stocks(suppliers_list=info.all_suppliers(), start_date=start_date)
+    table = list()
+    items_dict = dict()
+    for supplier, stocks_list in stocks_dict.items():
+        supplier_table = list()
+        for item in stocks_list:
+            if item['nmId'] not in nm_list: continue
+            dict_key = (info.supplier_name(supplier),
+                        item['nmId'],
+                        item['supplierArticle'],
+                        f"{item['category']}/{item['subject']}",
+                        item['brand'],
+                        item['techSize'])
+            items_dict.setdefault(dict_key, [0, 0, 0, 0, 0, ''])
+            items_dict[dict_key][0] += item['quantityFull']
+            items_dict[dict_key][1] += item['quantityNotInOrders']
+            items_dict[dict_key][2] += item['quantity']
+            items_dict[dict_key][3] += item['inWayToClient']
+            items_dict[dict_key][4] += item['inWayFromClient']
+            if items_dict[dict_key][5] < item['lastChangeDate']: items_dict[dict_key][5] = item['lastChangeDate']
+        for key, value in items_dict.items():
+            supplier_table.append(list(key) + value)
+        table += sorted(supplier_table, key=lambda item: item[2])
+    return table
 
 
 def fetch_cards(supplier=None, suppliers_list=None):

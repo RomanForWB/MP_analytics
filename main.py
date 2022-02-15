@@ -108,7 +108,10 @@ def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
             elif supplier_choices is not None and input_choice in supplier_choices.keys():
                 return supplier_choices[input_choice]
             elif google_choice is not None and input_choice == google_choice:
-                try: return list(map(int, google_work.get_columns(worksheet, 1, 2)))
+                try:
+                    if worksheet.title == "Заказы (категории)": nm_column = 11
+                    else: nm_column = 2
+                    return list(map(int, google_work.get_columns(worksheet, 1, nm_column)))
                 except ValueError: print("Проверьте значения списка номенклатур...")
             elif manual_choice is not None and input_choice == manual_choice:
                 return ask_nm_list()
@@ -128,7 +131,7 @@ if __name__ == '__main__':
         # elif choice == 'all_reports':
         elif choice == 'categories':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
-            input_data = ask_input(worksheet, skip_suppliers=True)
+            input_data = ask_input(worksheet)
             if choice == 'start': continue
             start_date = ask_start_date()
             if choice == 'start': continue
@@ -146,7 +149,7 @@ if __name__ == '__main__':
             choice = 'start'
         elif choice == 'stocks':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Остатки')
-            input_data = ask_input(worksheet, skip_nm=True)
+            input_data = ask_input(worksheet)
             if choice == 'start': continue
             stocks_table = wildberries.stocks(input_data)
             google_work.insert_table(worksheet, stocks_table, replace=True)
@@ -160,7 +163,7 @@ if __name__ == '__main__':
             choice = 'start'
         elif choice == 'orders_count':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (кол-во)')
-            input_data = ask_input(worksheet, skip_nm=True)
+            input_data = ask_input(worksheet)
             if choice == 'start': continue
             start_date = ask_start_date()
             if choice == 'start': continue
@@ -169,7 +172,7 @@ if __name__ == '__main__':
             choice = 'start'
         elif choice == 'orders_value':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (сумма)')
-            input_data = ask_input(worksheet, skip_nm=True)
+            input_data = ask_input(worksheet)
             if choice == 'start': continue
             start_date = ask_start_date()
             if choice == 'start': continue
@@ -178,11 +181,11 @@ if __name__ == '__main__':
             choice = 'start'
         elif choice == 'orders_category':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (категории)')
-            input_data = ask_input(worksheet, skip_nm=True)
+            input_data = ask_input(worksheet)
             if choice == 'start': continue
             start_date = ask_start_date()
             if choice == 'start': continue
             orders_table = wildberries.orders_category(input_data, start_date)
-            google_work.insert_table(worksheet, orders_table, replace=True)
+            google_work.insert_table(worksheet, orders_table, replace=False)
             choice = 'start'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

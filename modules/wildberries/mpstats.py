@@ -3,6 +3,7 @@ import requests
 import modules.wildberries.info as wb_info
 import modules.async_requests as async_requests
 import modules.wildberries.analytics as wb_analytics
+import modules.info as info
 
 
 def _fetch_positions_by_supplier(headers, supplier, start_date):
@@ -129,7 +130,7 @@ def _positions_by_nm_list(nm_list, start_date):
 
 
 def _categories_by_supplier(supplier, start_date):
-    days = wb_info.days_list(start_date, to_yesterday=True)
+    days = info.days_list(start_date, to_yesterday=True)
     cards_list = wb_analytics.fetch_cards(supplier=supplier)
     positions_dict = fetch_positions(supplier=supplier, start_date=start_date)
     table = list()
@@ -157,7 +158,7 @@ def _categories_by_supplier(supplier, start_date):
 
 def _categories_by_suppliers_list(suppliers_list, start_date):
     positions_dict = fetch_positions(suppliers_list=suppliers_list, start_date=start_date)
-    days = wb_info.days_list(start_date, to_yesterday=True)
+    days = info.days_list(start_date, to_yesterday=True)
     cards_dict = wb_analytics.fetch_cards(suppliers_list=suppliers_list)
     result_table = list()
     for supplier, cards in cards_dict.items():
@@ -187,7 +188,7 @@ def _categories_by_suppliers_list(suppliers_list, start_date):
 
 def _categories_by_nm_list(nm_list, start_date):
     positions_dict = fetch_positions(nm_list=nm_list, start_date=start_date)
-    days = wb_info.days_list(start_date, to_yesterday=True)
+    days = info.days_list(start_date, to_yesterday=True)
     cards_dict = wb_analytics.fetch_cards(suppliers_list=wb_info.all_suppliers())
     result_table = list()
     for supplier, cards in cards_dict.items():
@@ -219,7 +220,7 @@ def _categories_by_nm_list(nm_list, start_date):
 
 def fetch_positions(supplier=None, suppliers_list=None, nm_list=None, nm=None,
                     start_date=str(date.today()-timedelta(days=7))):
-    headers = {'X-Mpstats-TOKEN': wb_info.mpstats_token(),
+    headers = {'X-Mpstats-TOKEN': info.mpstats_token(),
                'Content-Type': 'application/json'}
     if supplier is None \
         and suppliers_list is None \
@@ -232,7 +233,7 @@ def fetch_positions(supplier=None, suppliers_list=None, nm_list=None, nm=None,
 
 
 def fetch_info(supplier=None, suppliers_list=None, nm_list=None, nm=None):
-    headers = {'X-Mpstats-TOKEN': wb_info.mpstats_token(),
+    headers = {'X-Mpstats-TOKEN': info.mpstats_token(),
                'Content-Type': 'application/json'}
     if supplier is None \
         and suppliers_list is None \
@@ -246,7 +247,7 @@ def fetch_info(supplier=None, suppliers_list=None, nm_list=None, nm=None):
 
 def positions(input_data, start_date):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-             wb_info.days_list(start_date, to_yesterday=True)
+             info.days_list(start_date, to_yesterday=True)
     table = list()
     if type(input_data) == list:
         if type(input_data[0]) == str: table = _positions_by_suppliers_list(input_data, start_date)
@@ -260,7 +261,7 @@ def positions(input_data, start_date):
 
 def categories(input_data, start_date):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-             wb_info.days_list(start_date, to_yesterday=True)
+             info.days_list(start_date, to_yesterday=True)
     table = list()
     if type(input_data) == list:
         if type(input_data[0]) == str: table = _categories_by_suppliers_list(input_data, start_date)

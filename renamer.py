@@ -23,7 +23,7 @@ class LineWithSaveButton(QLineEdit):
     def init_connection(self, card):
         self.button = QPushButton('Сохранить')
         self.button.clicked.connect(self.save_name)
-        self.headers = {'Authorization': wb_info.wb_key('token', supplier)}
+        self.headers = {'Authorization': wb_info.api_key('token', supplier)}
         self.card = card
 
     def save_name(self):
@@ -31,7 +31,7 @@ class LineWithSaveButton(QLineEdit):
                 "jsonrpc": "2.0",
                 "params": {
                     "card": self.card,
-                    "supplierID": wb_info.wb_key('x32', supplier)}
+                    "supplierID": wb_info.api_key('x32', supplier)}
                 }
         for i in range(len(body["params"]["card"]["addin"])):
             if body["params"]["card"]["addin"][i]["type"] == 'Наименование':

@@ -7,7 +7,6 @@ import modules.wildberries as wildberries
 import modules.files as files
 import modules.info as info
 
-
 choice = 'start'
 
 
@@ -44,7 +43,7 @@ def ask_start_date():
     :return: date string 'YYYY-MM-DD'
     :rtype: str
     """
-    while(True):
+    while True:
         print("\n1 - За последние 7 дней")
         print("2 - За последние 30 дней")
         print("3 - Свой вариант")
@@ -76,14 +75,14 @@ def ask_nm_list():
 
 
 def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
-    while (True):
+    while True:
         all_choice = None
         supplier_choices = None
         google_choice = None
         manual_choice = None
         # ========= Printing choices =========
         choice_counter = 0
-        if skip_suppliers == False:
+        if not skip_suppliers:
             choice_counter += 1
             all_choice = choice_counter
             print(f"\n{all_choice} - Для всех")
@@ -92,7 +91,7 @@ def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
                 choice_counter += 1
                 print(f'{choice_counter} - {info.supplier_name(supplier)}')
                 supplier_choices[choice_counter] = supplier
-        if skip_nm == False:
+        if not skip_nm:
             choice_counter += 1
             google_choice = choice_counter
             print(f'{google_choice} - Взять список номенклатур из таблицы \"{worksheet.title}\"')
@@ -121,9 +120,10 @@ def ask_input(worksheet, skip_suppliers=False, skip_nm=False):
         except ValueError:
             print("Неправильный выбор...")
 
-# ================== начало диалога ==================
+
 if __name__ == '__main__':
-    while(True):
+    # ================== начало диалога ==================
+    while True:
         if choice == 'start': ask_start()
         # elif choice == 'all_reports':
         elif choice == 'categories':

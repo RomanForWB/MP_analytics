@@ -1,4 +1,3 @@
-from openpyxl import load_workbook
 from json import load as json_load, dump as json_dump
 from os import mkdir as mkdir
 from subprocess import check_output as subprocess_check_output
@@ -10,42 +9,71 @@ wb_keys = None
 paths = None
 mpstats_tokens = None
 
-# открыть файл и получить его в виде списка строк
-def open_lines(filename, codirovka = 'utf-8', errors = ''):
-    if errors != '':
-        with open(filename, 'r', encoding=codirovka, errors=errors) as file:
-            lines = file.read().splitlines()
-        return lines
-    else:
-        with open(filename, 'r', encoding=codirovka) as file:
-            lines = file.read().splitlines()
-        return lines
 
-# открыть файл и получить его в виде одной строки с текстом
-def open_text(filename, codirovka = 'utf-8', errors = ''):
-    if errors != '':
-        with open(filename, 'r', encoding=codirovka, errors=errors) as file:
-            text = file.read()
-        return text
-    else:
-        with open(filename, 'r', encoding=codirovka) as file:
-            text = file.read()
-        return text
+def open_lines(filename, encoding='utf-8', errors=None):
+    """Open file as a list of lines.
 
-# записать в файл список строк
-def write_lines(lines, filename, codirovka = 'utf-8', errors = None):
-    with open(filename, 'w', encoding=codirovka, errors=errors) as file:
+    :param filename: file path and file name with extension
+    :type filename: str
+
+    :param encoding: name of the encoding used to decode or encode the file
+    :type encoding: str
+
+    :param errors: 'strict' or None to raise a ValueError if there is an encoding error
+    :type errors: str
+
+    :return: list of string lines
+    :rtype: list
+    """
+    with open(filename, 'r', encoding=encoding, errors=errors) as file:
+        return file.read().splitlines()
+
+
+def open_text(filename, encoding='utf-8', errors=None):
+    """Open file as a text.
+
+    :param filename: file path and file name with extension
+    :type filename: str
+
+    :param encoding: name of the encoding used to decode or encode the file
+    :type encoding: str
+
+    :param errors: 'strict' or None to raise a ValueError if there is an encoding error
+    :type errors: str
+
+    :return: string with the text
+    :rtype: str
+    """
+    with open(filename, 'r', encoding=encoding, errors=errors) as file:
+        return file.read()
+
+
+def write_lines(lines, filename, encoding='utf-8', errors=None):
+    """Write a list of lines in file.
+    String lines should not end with newline symbol.
+
+    :param lines: lines to be write
+    :type lines: list
+
+    :param filename: file path and file name with extension
+    :type filename: str
+
+    :param encoding: name of the encoding used to decode or encode the file
+    :type encoding: str
+
+    :param errors: 'strict' or None to raise a ValueError if there is an encoding error
+    :type errors: str
+    """
+    with open(filename, 'w', encoding=encoding, errors=errors) as file:
         for i in range(len(lines)):
-            try:
-                file.write(lines[i] + '\n')
+            try: file.write(lines[i] + '\n')
             except UnicodeEncodeError:
-                if filename.startswith('history/'): pass
-                else: print("Внимание - при записи {} пропущена строка №{}: {}".format(filename, i+1, lines[i]))
-                file.write('// missing_line \n')
+                print(f"Внимание - при записи {filename} пропущена строка №{i+1}: {lines[i]}")
+                file.write(f'// пропущенная строка №{i+1}\n')
     return lines
 
 
-def write_text(text, filename, encoding = 'utf-8', errors = None):
+def write_text(text, filename, encoding='utf-8', errors=None):
     """Write a string in file.
 
     :param text: string to be write
@@ -58,13 +86,12 @@ def write_text(text, filename, encoding = 'utf-8', errors = None):
     :type encoding: str
 
     :param errors: 'strict' or None to raise a ValueError if there is an encoding error
-    (the default of None has the same effect), 'ignore' to ignore errors.
     :type errors: str
     """
     try:
         with open(filename, 'w', encoding=encoding, errors=errors) as file: file.write(text)
     except UnicodeEncodeError:
-        write_lines(text.splitlines(), filename, encoding)
+        write_lines(text.splitlines(), filename, encoding, errors)
 
 
 def write_json(to_json, filename):
@@ -78,6 +105,7 @@ def write_json(to_json, filename):
     with open(filename, 'w') as file:
         json_dump(to_json, file, indent=4)
 
+
 def open_with_notepad(path):
     """Open file/multiple files in Notepad++.
     The path to Notepad++ executable can be changed in keys/paths.json
@@ -86,7 +114,7 @@ def open_with_notepad(path):
     :type path: str
     """
     notepad_path = get_path('notepad++').replace('.exe', '')
-    output = subprocess_check_output('\"{}\" -multiInst -nosession \"{}\"'.format(notepad_path, path))
+    return subprocess_check_output('\"{}\" -multiInst -nosession \"{}\"'.format(notepad_path, path))
 
 
 def delete_folder(folder):

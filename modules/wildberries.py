@@ -2,7 +2,6 @@ from datetime import date, timedelta, datetime
 import requests, json
 
 import modules.async_requests as async_requests
-import modules.files as files
 import modules.info as info
 
 

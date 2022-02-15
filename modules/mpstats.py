@@ -1,6 +1,5 @@
 from datetime import date, timedelta
 import requests
-import modules.files as files
 import modules.info as info
 import modules.async_requests as async_requests
 import modules.wildberries as wildberries

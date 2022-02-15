@@ -1,8 +1,8 @@
 from datetime import date, timedelta
 import requests
-import modules.info as info
+import modules.wildberries.info as wb_info
 import modules.async_requests as async_requests
-import modules.wildberries as wildberries
+import modules.wildberries.analytics as wb_analytics
 
 
 def _fetch_positions_by_supplier(headers, supplier, start_date):
@@ -33,7 +33,7 @@ def _fetch_info_by_supplier(headers, supplier):
     url = 'https://mpstats.io/api/wb/get/seller'
     body = {"startRow": 0, "endRow": 5000}
     items = list()
-    for identifier in info.seller_identifiers(supplier):
+    for identifier in wb_info.seller_identifiers(supplier):
         params = {'path': identifier}
         response = requests.post(url, headers=headers, json=body, params=params)
         items += response.json()['data']
@@ -46,7 +46,7 @@ def _fetch_info_by_suppliers_list(headers, suppliers_list):
 
 
 def _fetch_info_by_nm_list(headers, nm_list):
-    suppliers_info_dict = _fetch_info_by_suppliers_list(headers, info.all_suppliers())
+    suppliers_info_dict = _fetch_info_by_suppliers_list(headers, wb_info.all_suppliers())
     info_dict = {supplier: [] for supplier in suppliers_info_dict.keys()}
     for supplier, items in suppliers_info_dict.items():
         for item in items:
@@ -56,7 +56,7 @@ def _fetch_info_by_nm_list(headers, nm_list):
 
 def _positions_by_supplier(supplier, start_date):
     info_dict = {item['id']: item for item in fetch_info(supplier=supplier)}
-    cards_list = wildberries.fetch_cards(supplier=supplier)
+    cards_list = wb_analytics.fetch_cards(supplier=supplier)
     positions_dict = fetch_positions(supplier=supplier, start_date=start_date)
     table = list()
     for card in cards_list:
@@ -66,8 +66,8 @@ def _positions_by_supplier(supplier, start_date):
             positions_list = positions_dict[nm]['categories'][category]
             for i in range(len(positions_list)):
                 if positions_list[i] == 'NaN': positions_list[i] = '-'
-            table.append([info.supplier_name(supplier), nm,
-                          card['supplierVendorCode']+nomenclature['vendorCode'],
+            table.append([wb_info.supplier_name(supplier), nm,
+                          card['supplierVendorCode'] + nomenclature['vendorCode'],
                           category, info_dict[nm]['brand']] + positions_list)
     return sorted(table, key=lambda item: item[2])
 
@@ -77,7 +77,7 @@ def _positions_by_suppliers_list(suppliers_list, start_date):
     info_dict = dict()
     for supplier, fetched_info in fetched_info_dict.items():
         info_dict[supplier] = {item['id']: item for item in fetched_info}
-    cards_dict = wildberries.fetch_cards(suppliers_list=suppliers_list)
+    cards_dict = wb_analytics.fetch_cards(suppliers_list=suppliers_list)
     positions_dict = fetch_positions(suppliers_list=suppliers_list, start_date=start_date)
     result_table = list()
     for supplier in suppliers_list:
@@ -89,7 +89,7 @@ def _positions_by_suppliers_list(suppliers_list, start_date):
                 positions_list = positions_dict[supplier][nm]['categories'][category]
                 for i in range(len(positions_list)):
                     if positions_list[i] == 'NaN': positions_list[i] = '-'
-                supplier_table.append([info.supplier_name(supplier), nm,
+                supplier_table.append([wb_info.supplier_name(supplier), nm,
                                        card['supplierVendorCode'] + nomenclature['vendorCode'],
                                        category, info_dict[nm]['brand']] + positions_list)
         result_table += sorted(supplier_table, key=lambda item: item[2])
@@ -101,7 +101,7 @@ def _positions_by_nm_list(nm_list, start_date):
     info_dict = dict()
     for supplier, fetched_info in fetched_info_dict.items():
         info_dict[supplier] = {item['id']: item for item in fetched_info}
-    cards_dict = wildberries.fetch_cards(suppliers_list=list(info_dict.keys()))
+    cards_dict = wb_analytics.fetch_cards(suppliers_list=list(info_dict.keys()))
     positions_dict = fetch_positions(nm_list=nm_list, start_date=start_date)
     result_table = list()
     for supplier in info_dict.keys():
@@ -116,11 +116,11 @@ def _positions_by_nm_list(nm_list, start_date):
                         positions_list = positions_dict[nm]['categories'][category]
                         for i in range(len(positions_list)):
                             if positions_list[i] == 'NaN': positions_list[i] = '-'
-                        supplier_table.append([info.supplier_name(supplier), nm,
+                        supplier_table.append([wb_info.supplier_name(supplier), nm,
                                                card['supplierVendorCode'] + nomenclature['vendorCode'],
                                                category, info_dict[supplier][nm]['brand']] + positions_list)
                     except TypeError:
-                        supplier_table.append([info.supplier_name(supplier), nm,
+                        supplier_table.append([wb_info.supplier_name(supplier), nm,
                                                card['supplierVendorCode'] + nomenclature['vendorCode'],
                                                category, info_dict[supplier][nm]['brand']] +
                                               ['-']*len(positions_dict[nm]['days']))
@@ -129,8 +129,8 @@ def _positions_by_nm_list(nm_list, start_date):
 
 
 def _categories_by_supplier(supplier, start_date):
-    days = info.days_list(start_date, to_yesterday=True)
-    cards_list = wildberries.fetch_cards(supplier=supplier)
+    days = wb_info.days_list(start_date, to_yesterday=True)
+    cards_list = wb_analytics.fetch_cards(supplier=supplier)
     positions_dict = fetch_positions(supplier=supplier, start_date=start_date)
     table = list()
     for card in cards_list:
@@ -145,20 +145,20 @@ def _categories_by_supplier(supplier, start_date):
                     categories_raw = [values[i] for values in positions_dict[nm]['categories'].values()]
                     categories_count = len(categories_raw) - categories_raw.count('NaN')
                     categories_by_days.append(categories_count)
-                table.append([info.supplier_name(supplier), nm,
-                                       card['supplierVendorCode'] + nomenclature['vendorCode'],
+                table.append([wb_info.supplier_name(supplier), nm,
+                              card['supplierVendorCode'] + nomenclature['vendorCode'],
                                        f"{card['parent']}/{card['object']}", brand] + categories_by_days)
             except AttributeError:
-                table.append([info.supplier_name(supplier), nm,
-                                       card['supplierVendorCode'] + nomenclature['vendorCode'],
+                table.append([wb_info.supplier_name(supplier), nm,
+                              card['supplierVendorCode'] + nomenclature['vendorCode'],
                                        f"{card['parent']}/{card['object']}", brand] + ['-'] * len(days))
     return sorted(table, key=lambda item: item[2])
 
 
 def _categories_by_suppliers_list(suppliers_list, start_date):
     positions_dict = fetch_positions(suppliers_list=suppliers_list, start_date=start_date)
-    days = info.days_list(start_date, to_yesterday=True)
-    cards_dict = wildberries.fetch_cards(suppliers_list=suppliers_list)
+    days = wb_info.days_list(start_date, to_yesterday=True)
+    cards_dict = wb_analytics.fetch_cards(suppliers_list=suppliers_list)
     result_table = list()
     for supplier, cards in cards_dict.items():
         supplier_table = list()
@@ -174,11 +174,11 @@ def _categories_by_suppliers_list(suppliers_list, start_date):
                         categories_raw = [values[i] for values in positions_dict[nm]['categories'].values()]
                         categories_count = len(categories_raw) - categories_raw.count('NaN')
                         categories_by_days.append(categories_count)
-                    supplier_table.append([info.supplier_name(supplier), nm,
+                    supplier_table.append([wb_info.supplier_name(supplier), nm,
                                            card['supplierVendorCode'] + nomenclature['vendorCode'],
                                            f"{card['parent']}/{card['object']}", brand] + categories_by_days)
                 except AttributeError:
-                    supplier_table.append([info.supplier_name(supplier), nm,
+                    supplier_table.append([wb_info.supplier_name(supplier), nm,
                                            card['supplierVendorCode'] + nomenclature['vendorCode'],
                                            f"{card['parent']}/{card['object']}", brand] + ['-']*len(days))
         result_table += sorted(supplier_table, key=lambda item: item[2])
@@ -187,8 +187,8 @@ def _categories_by_suppliers_list(suppliers_list, start_date):
 
 def _categories_by_nm_list(nm_list, start_date):
     positions_dict = fetch_positions(nm_list=nm_list, start_date=start_date)
-    days = info.days_list(start_date, to_yesterday=True)
-    cards_dict = wildberries.fetch_cards(suppliers_list=info.all_suppliers())
+    days = wb_info.days_list(start_date, to_yesterday=True)
+    cards_dict = wb_analytics.fetch_cards(suppliers_list=wb_info.all_suppliers())
     result_table = list()
     for supplier, cards in cards_dict.items():
         supplier_table = list()
@@ -206,11 +206,11 @@ def _categories_by_nm_list(nm_list, start_date):
                             categories_raw = [values[i] for values in positions_dict[nm]['categories'].values()]
                             categories_count = len(categories_raw) - categories_raw.count('NaN')
                             categories_by_days.append(categories_count)
-                        supplier_table.append([info.supplier_name(supplier), nm,
+                        supplier_table.append([wb_info.supplier_name(supplier), nm,
                                                card['supplierVendorCode'] + nomenclature['vendorCode'],
                                                f"{card['parent']}/{card['object']}", brand] + categories_by_days)
                     except AttributeError:
-                        supplier_table.append([info.supplier_name(supplier), nm,
+                        supplier_table.append([wb_info.supplier_name(supplier), nm,
                                                card['supplierVendorCode'] + nomenclature['vendorCode'],
                                                f"{card['parent']}/{card['object']}", brand] + ['-']*len(days))
         result_table += sorted(supplier_table, key=lambda item: item[2])
@@ -219,7 +219,7 @@ def _categories_by_nm_list(nm_list, start_date):
 
 def fetch_positions(supplier=None, suppliers_list=None, nm_list=None, nm=None,
                     start_date=str(date.today()-timedelta(days=7))):
-    headers = {'X-Mpstats-TOKEN': info.mpstats_token(),
+    headers = {'X-Mpstats-TOKEN': wb_info.mpstats_token(),
                'Content-Type': 'application/json'}
     if supplier is None \
         and suppliers_list is None \
@@ -232,7 +232,7 @@ def fetch_positions(supplier=None, suppliers_list=None, nm_list=None, nm=None,
 
 
 def fetch_info(supplier=None, suppliers_list=None, nm_list=None, nm=None):
-    headers = {'X-Mpstats-TOKEN': info.mpstats_token(),
+    headers = {'X-Mpstats-TOKEN': wb_info.mpstats_token(),
                'Content-Type': 'application/json'}
     if supplier is None \
         and suppliers_list is None \
@@ -246,7 +246,7 @@ def fetch_info(supplier=None, suppliers_list=None, nm_list=None, nm=None):
 
 def positions(input_data, start_date):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-             info.days_list(start_date, to_yesterday=True)
+             wb_info.days_list(start_date, to_yesterday=True)
     table = list()
     if type(input_data) == list:
         if type(input_data[0]) == str: table = _positions_by_suppliers_list(input_data, start_date)
@@ -260,7 +260,7 @@ def positions(input_data, start_date):
 
 def categories(input_data, start_date):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-             info.days_list(start_date, to_yesterday=True)
+             wb_info.days_list(start_date, to_yesterday=True)
     table = list()
     if type(input_data) == list:
         if type(input_data[0]) == str: table = _categories_by_suppliers_list(input_data, start_date)

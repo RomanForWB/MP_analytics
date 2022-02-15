@@ -2,18 +2,18 @@ from datetime import date, timedelta, datetime
 import requests, json
 
 import modules.async_requests as async_requests
-import modules.info as info
+import modules.wildberries.info as wb_info
 
 
 def _fetch_cards_by_supplier(url, body, supplier):
-    headers = {'Authorization': info.wb_key('token', supplier)}
+    headers = {'Authorization': wb_info.wb_key('token', supplier)}
     response = requests.post(url, json=body, headers=headers)
     result = response.json()
     return result['result']['cards']
 
 
 def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
-    headers_list = [{'Authorization': info.wb_key('token', supplier)}
+    headers_list = [{'Authorization': wb_info.wb_key('token', supplier)}
                     for supplier in suppliers_list]
     cards_dict = async_requests.by_headers('POST', url, headers_list, suppliers_list, body=body, content_type='json')
     cards_dict = {supplier: cards['result']['cards'] for supplier, cards in cards_dict.items()}
@@ -21,14 +21,16 @@ def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
 
 
 def _fetch_orders_by_supplier(url, headers, supplier, start_date):
-    params = {'key': info.wb_key('x64', supplier),
-              'dateFrom': start_date}
-    response = requests.get(url, params=params, headers=headers)
-    return response.json()
+    while True:
+        params = {'key': wb_info.wb_key('x64', supplier),
+                  'dateFrom': start_date}
+        response = requests.get(url, params=params, headers=headers)
+        if 200 <= response.status_code < 300: return response.json()
+        else: continue
 
 
 def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):
-    params_list = [{'key': info.wb_key('x64', supplier),
+    params_list = [{'key': wb_info.wb_key('x64', supplier),
                     'dateFrom': str(start_date)}
                    for supplier in suppliers_list]
     orders_dict = async_requests.by_params('GET', url, params_list, suppliers_list,
@@ -38,13 +40,13 @@ def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):
 
 
 def _fetch_stocks_by_supplier(url, supplier, start_date):
-    params = {'key': info.wb_key('x64', supplier), 'dateFrom': start_date}
+    params = {'key': wb_info.wb_key('x64', supplier), 'dateFrom': start_date}
     response = requests.get(url, params=params)
     return response.json()
 
 
 def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
-    params_list = [{'key': info.wb_key('x64', supplier),
+    params_list = [{'key': wb_info.wb_key('x64', supplier),
                     'dateFrom': start_date}
                    for supplier in suppliers_list]
     stocks_dict = async_requests.by_params('GET', url, params_list, suppliers_list, content_type='json')
@@ -70,7 +72,7 @@ def _feedbacks_by_data(supplier, card, feedbacks_list):
                 bad_mark = 'Да'
                 bad_feedback = feedback['text']
         avg_rating = round(rating_score / len(feedbacks_list), 1)  # средний рейтинг последних отзывов
-    return [[info.supplier_name(supplier), nomenclature['nmId'],
+    return [[wb_info.supplier_name(supplier), nomenclature['nmId'],
              f"{card['supplierVendorCode']}{nomenclature['vendorCode']}",
              f"{card['parent']}/{card['object']}", brand,
              bad_mark, avg_rating, bad_feedback] for nomenclature in card['nomenclatures']]
@@ -96,7 +98,7 @@ def _feedbacks_by_suppliers_list(suppliers_list, count):
 
 
 def _feedbacks_by_nm_list(nm_list, count):
-    suppliers_list = info.all_suppliers()
+    suppliers_list = wb_info.all_suppliers()
     cards_dict = fetch_cards(suppliers_list=suppliers_list)
     supplier_cards_dict = {supplier: [] for supplier in suppliers_list}
     imt_list = list()
@@ -120,7 +122,7 @@ def _feedbacks_by_nm_list(nm_list, count):
 
 def _orders_count_by_supplier(supplier, start_date):
     orders_list = fetch_orders(supplier=supplier, start_date=start_date)
-    days = info.days_list(start_date)
+    days = wb_info.days_list(start_date)
     nm_dict = dict()
     nm_info_dict = dict()
     for order in orders_list:
@@ -148,7 +150,7 @@ def _orders_count_by_supplier(supplier, start_date):
         all_orders_price = sum(days_values_list)
         if all_orders_count == 0: avg_price = 0
         else: avg_price = all_orders_price / all_orders_count
-        table.append([info.supplier_name(supplier), nm, article, subject, brand] +
+        table.append([wb_info.supplier_name(supplier), nm, article, subject, brand] +
                      days_orders_list + [all_orders_count, avg_price, all_orders_price])
 
     return sorted(table, key=lambda item: item[2])
@@ -162,8 +164,8 @@ def _orders_count_by_suppliers_list(suppliers_list, start_date):
 
 
 def _orders_count_by_nm_list(nm_list, start_date):
-    orders_dict = fetch_orders(suppliers_list=info.all_suppliers(), start_date=start_date)
-    days = info.days_list(start_date)
+    orders_dict = fetch_orders(suppliers_list=wb_info.all_suppliers(), start_date=start_date)
+    days = wb_info.days_list(start_date)
     table = list()
     nm_dict = dict()
     nm_info_dict = dict()
@@ -197,7 +199,7 @@ def _orders_count_by_nm_list(nm_list, start_date):
                 avg_price = 0
             else:
                 avg_price = all_orders_price / all_orders_count
-            supplier_table.append([info.supplier_name(supplier), nm, article, subject, brand] +
+            supplier_table.append([wb_info.supplier_name(supplier), nm, article, subject, brand] +
                                   days_orders_list + [all_orders_count, avg_price, all_orders_price])
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
@@ -205,7 +207,7 @@ def _orders_count_by_nm_list(nm_list, start_date):
 
 def _orders_value_by_supplier(supplier, start_date):
     orders_list = fetch_orders(supplier, start_date)
-    days = info.days_list(start_date)
+    days = wb_info.days_list(start_date)
     nm_dict = dict()
     nm_info_dict = dict()
     for order in orders_list:
@@ -233,7 +235,7 @@ def _orders_value_by_supplier(supplier, start_date):
         all_orders_price = sum(days_values_list)
         if all_orders_count == 0: avg_price = 0
         else: avg_price = all_orders_price / all_orders_count
-        table.append([info.supplier_name(supplier), nm, article, subject, brand] +
+        table.append([wb_info.supplier_name(supplier), nm, article, subject, brand] +
                      days_values_list + [all_orders_count, avg_price, all_orders_price])
     return sorted(table, key=lambda item: item[2])
 
@@ -246,8 +248,8 @@ def _orders_value_by_suppliers_list(suppliers_list, start_date):
 
 
 def _orders_value_by_nm_list(nm_list, start_date):
-    orders_dict = fetch_orders(suppliers_list=info.all_suppliers(), start_date=start_date)
-    days = info.days_list(start_date)
+    orders_dict = fetch_orders(suppliers_list=wb_info.all_suppliers(), start_date=start_date)
+    days = wb_info.days_list(start_date)
     table = list()
     nm_dict = dict()
     nm_info_dict = dict()
@@ -281,7 +283,7 @@ def _orders_value_by_nm_list(nm_list, start_date):
                 avg_price = 0
             else:
                 avg_price = all_orders_price / all_orders_count
-            supplier_table.append([info.supplier_name(supplier), nm, article, subject, brand] +
+            supplier_table.append([wb_info.supplier_name(supplier), nm, article, subject, brand] +
                                   days_values_list + [all_orders_count, avg_price, all_orders_price])
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
@@ -289,7 +291,7 @@ def _orders_value_by_nm_list(nm_list, start_date):
 
 def _orders_category_by_supplier(supplier, start_date):
     orders_list = fetch_orders(supplier=supplier, start_date=start_date)
-    days = info.days_list(start_date)
+    days = wb_info.days_list(start_date)
     categories_dict = dict()
     for order in orders_list:
         category = order['subject']
@@ -314,7 +316,7 @@ def _orders_category_by_supplier(supplier, start_date):
 
 def _orders_category_by_suppliers_list(suppliers_list, start_date):
     orders_dict = fetch_orders(suppliers_list=suppliers_list, start_date=start_date)
-    days = info.days_list(start_date)
+    days = wb_info.days_list(start_date)
     categories_dict = dict()
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
@@ -339,8 +341,8 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date):
 
 
 def _orders_category_by_nm_list(nm_list, start_date):
-    orders_dict = fetch_orders(suppliers_list=info.all_suppliers(), start_date=start_date)
-    days = info.days_list(start_date)
+    orders_dict = fetch_orders(suppliers_list=wb_info.all_suppliers(), start_date=start_date)
+    days = wb_info.days_list(start_date)
     categories_dict = dict()
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
@@ -370,7 +372,7 @@ def _stocks_by_supplier(supplier, start_date):
     table = list()
     items_dict = dict()
     for item in stocks_list:
-        dict_key = (info.supplier_name(supplier),
+        dict_key = (wb_info.supplier_name(supplier),
                     item['nmId'],
                     item['supplierArticle'],
                     f"{item['category']}/{item['subject']}",
@@ -397,14 +399,14 @@ def _stocks_by_suppliers_list(suppliers_list, start_date):
 
 
 def _stocks_by_nm_list(nm_list, start_date):
-    stocks_dict = fetch_stocks(suppliers_list=info.all_suppliers(), start_date=start_date)
+    stocks_dict = fetch_stocks(suppliers_list=wb_info.all_suppliers(), start_date=start_date)
     table = list()
     items_dict = dict()
     for supplier, stocks_list in stocks_dict.items():
         supplier_table = list()
         for item in stocks_list:
             if item['nmId'] not in nm_list: continue
-            dict_key = (info.supplier_name(supplier),
+            dict_key = (wb_info.supplier_name(supplier),
                         item['nmId'],
                         item['supplierArticle'],
                         f"{item['category']}/{item['subject']}",
@@ -492,7 +494,7 @@ def feedbacks(input_data, count=3):
 
 def orders_count(input_data, start_date=str(date.today()-timedelta(days=7))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-              info.days_list(start_date) + \
+             wb_info.days_list(start_date) + \
              ['Итого', 'Средняя цена', 'Сумма заказов']
     table = list()
     if type(input_data) == list:
@@ -507,7 +509,7 @@ def orders_count(input_data, start_date=str(date.today()-timedelta(days=7))):
 
 def orders_value(input_data, start_date=str(date.today()-timedelta(days=7))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
-             info.days_list(start_date) + \
+             wb_info.days_list(start_date) + \
              ['Итого', 'Средняя цена', 'Сумма заказов']
     table = list()
     if type(input_data) == list:
@@ -521,20 +523,20 @@ def orders_value(input_data, start_date=str(date.today()-timedelta(days=7))):
 
 
 def orders_category(input_data, start_date=str(date.today()-timedelta(days=7))):
-    header = ['По категориям'] + info.days_list(start_date)
+    header = ['По категориям'] + wb_info.days_list(start_date)
     table = list()
     if type(input_data) == list:
         if type(input_data[0]) == str:
-            header = ['Для всех'] + info.days_list(start_date)
+            header = ['Для всех'] + wb_info.days_list(start_date)
             table = _orders_category_by_suppliers_list(input_data, start_date)
         elif type(input_data[0]) == int:
-            header = ['Для номенклатур'] + info.days_list(start_date)
+            header = ['Для номенклатур'] + wb_info.days_list(start_date)
             table = _orders_category_by_nm_list(input_data, start_date)
     elif type(input_data) == str:
-        header = [info.supplier_name(input_data)] + info.days_list(start_date)
+        header = [wb_info.supplier_name(input_data)] + wb_info.days_list(start_date)
         table = _orders_category_by_supplier(input_data, start_date)
     elif type(input_data) == int:
-        header = [input_data] + info.days_list(start_date)
+        header = [input_data] + wb_info.days_list(start_date)
         table = _orders_category_by_nm_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)

@@ -5,8 +5,8 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLabel,
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtTest import QTest
 
-import modules.wildberries as wildberries
-import modules.info as info
+import modules.wildberries.analytics as wb_analytics
+import modules.wildberries.info as wb_info
 
 supplier = ''
 
@@ -23,7 +23,7 @@ class LineWithSaveButton(QLineEdit):
     def init_connection(self, card):
         self.button = QPushButton('Сохранить')
         self.button.clicked.connect(self.save_name)
-        self.headers = {'Authorization': info.wb_key('token', supplier)}
+        self.headers = {'Authorization': wb_info.wb_key('token', supplier)}
         self.card = card
 
     def save_name(self):
@@ -31,7 +31,7 @@ class LineWithSaveButton(QLineEdit):
                 "jsonrpc": "2.0",
                 "params": {
                     "card": self.card,
-                    "supplierID": info.wb_key('x32', supplier)}
+                    "supplierID": wb_info.wb_key('x32', supplier)}
                 }
         for i in range(len(body["params"]["card"]["addin"])):
             if body["params"]["card"]["addin"][i]["type"] == 'Наименование':
@@ -90,9 +90,9 @@ class Renamer(QWidget):
         supplier_choice.setFixedWidth(200)
         supplier_choice.move(105, 18)
         supplier_choice.currentTextChanged.connect(self.change_supplier)
-        supplier_names_list = info.suppliers_names()
+        supplier_names_list = wb_info.suppliers_names()
         global supplier
-        supplier = info.supplier_by_name(supplier_names_list[0])
+        supplier = wb_info.supplier_by_name(supplier_names_list[0])
         supplier_choice.addItems(supplier_names_list)
 
         self.download_label = QLabel("<p style=\"color: grey;\">Загрузка...</p>", self)
@@ -115,7 +115,7 @@ class Renamer(QWidget):
 
     def change_supplier(self, text):
         global supplier
-        supplier = info.supplier_by_name(text)
+        supplier = wb_info.supplier_by_name(text)
 
     def refresh_results(self):
         self.download_label.show()
@@ -126,7 +126,7 @@ class Renamer(QWidget):
 
     def add_new_results(self):
         global supplier
-        cards = wildberries.fetch_cards(supplier=supplier)
+        cards = wb_analytics.fetch_cards(supplier=supplier)
         for i in range(len(cards)):
             self.rows.append([])
             self.rows[i].append(QLabel(str(cards[i]['imtId'])))

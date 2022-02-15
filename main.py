@@ -186,6 +186,7 @@ if __name__ == '__main__':
             start_date = ask_start_date()
             if choice == 'start': continue
             orders_table = wildberries.orders_category(input_data, start_date)
+            google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
             choice = 'start'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

@@ -292,7 +292,7 @@ def _orders_category_by_supplier(supplier, start_date):
     days = info.days_list(start_date)
     categories_dict = dict()
     for order in orders_list:
-        category = f"{order['category']}/{order['subject']}"
+        category = order['subject']
         if category not in categories_dict.keys():
             categories_dict[category] = {day: 0 for day in days}
         try:
@@ -318,7 +318,7 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date):
     categories_dict = dict()
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
-            category = f"{order['category']}/{order['subject']}"
+            category = order['subject']
             if category not in categories_dict.keys():
                 categories_dict[category] = {day: 0 for day in days}
             try:
@@ -345,7 +345,7 @@ def _orders_category_by_nm_list(nm_list, start_date):
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
             if order['nmId'] not in nm_list: continue
-            category = f"{order['category']}/{order['subject']}"
+            category = order['subject']
             if category not in categories_dict.keys():
                 categories_dict[category] = {day: 0 for day in days}
             try:
@@ -524,10 +524,18 @@ def orders_category(input_data, start_date=str(date.today()-timedelta(days=7))):
     header = ['По категориям'] + info.days_list(start_date)
     table = list()
     if type(input_data) == list:
-        if type(input_data[0]) == str: table = _orders_category_by_suppliers_list(input_data, start_date)
-        elif type(input_data[0]) == int: table = _orders_category_by_nm_list(input_data, start_date)
-    elif type(input_data) == str: table = _orders_category_by_supplier(input_data, start_date)
-    elif type(input_data) == int: table = _orders_category_by_nm_list([input_data], start_date)
+        if type(input_data[0]) == str:
+            header = ['Для всех'] + info.days_list(start_date)
+            table = _orders_category_by_suppliers_list(input_data, start_date)
+        elif type(input_data[0]) == int:
+            header = ['Для номенклатур'] + info.days_list(start_date)
+            table = _orders_category_by_nm_list(input_data, start_date)
+    elif type(input_data) == str:
+        header = [info.supplier_name(input_data)] + info.days_list(start_date)
+        table = _orders_category_by_supplier(input_data, start_date)
+    elif type(input_data) == int:
+        header = [input_data] + info.days_list(start_date)
+        table = _orders_category_by_nm_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table

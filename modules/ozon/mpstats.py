@@ -17,15 +17,15 @@ def _fetch_positions_by_sku_list(headers, sku_list, start_date):
 
 
 def _fetch_positions_by_supplier(headers, supplier, start_date):
-    products_list = ozon_analytics.fetch_products(supplier=supplier)
-    sku_list = [product['sku'] for product in products_list]
+    products_list = _fetch_info_by_supplier(headers, supplier)
+    sku_list = [product['id'] for product in products_list]
     return _fetch_positions_by_sku_list(headers, sku_list, start_date)
 
 
 def _fetch_positions_by_suppliers_list(headers, suppliers_list, start_date):
-    products_dict = ozon_analytics.fetch_products(suppliers_list=suppliers_list)
+    products_dict = _fetch_info_by_suppliers_list(headers, suppliers_list)
     return {supplier: _fetch_positions_by_sku_list(headers,
-                                                   [product['sku'] for product in products_dict[supplier]],
+                                                   [product['id'] for product in products_dict[supplier]],
                                                    start_date)
             for supplier in suppliers_list}
 
@@ -57,64 +57,68 @@ def _fetch_info_by_sku_list(headers, sku_list):
 
 def _positions_by_sku_list(sku_list, start_date):
     positions_dict = fetch_positions(sku_list=sku_list, start_date=start_date)
-    fetched_info_dict = fetch_info(sku_list=sku_list)
-    info_dict = {supplier: {item['id']: item for item in fetched_info}
-                 for supplier, fetched_info in fetched_info_dict.items()}
-    products_dict = ozon_analytics.fetch_products(suppliers_list=ozon_info.all_suppliers())
+    fetched_products_dict = ozon_analytics.fetch_products(suppliers_list=ozon_info.all_suppliers())
+    products_dict = {supplier: {item['sku']: item for item in fetched_info}
+                     for supplier, fetched_info in fetched_products_dict.items()}
     table = list()
     for supplier in ozon_info.all_suppliers():
         supplier_table = list()
-        for product in products_dict[supplier]:
-            if product['sku'] not in sku_list: continue
-            else:
-                sku = product['sku']
-                category = info_dict[supplier][sku]['category']
-                positions_list = positions_dict[sku]['categories'][category]
-                for i in range(len(positions_list)):
-                    if positions_list[i] == 'NaN': positions_list[i] = '-'
+        for sku, product in positions_dict.items():
+            if sku not in sku_list or sku not in products_dict[supplier].keys(): continue
+            try:
+                for category, positions_list in product['categories'].items():
+                    for i in range(len(positions_list)):
+                        if positions_list[i] == 'NaN': positions_list[i] = '-'
+                    supplier_table.append([ozon_info.supplier_name(supplier), sku,
+                                           products_dict[supplier][sku]['offer_id'],
+                                           category] + positions_list)
+            except AttributeError:
                 supplier_table.append([ozon_info.supplier_name(supplier), sku,
-                                       product['offer_id'],
-                                       category, info_dict[supplier][sku]['brand']] + positions_list)
+                                       products_dict[supplier][sku]['offer_id'], '-'] +
+                                      ['-'] * len(product['days']))
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
 
 def _positions_by_suppliers_list(suppliers_list, start_date):
     positions_dict = fetch_positions(suppliers_list=suppliers_list, start_date=start_date)
-    fetched_info_dict = fetch_info(suppliers_list=suppliers_list)
-    info_dict = {supplier: {item['id']: item for item in fetched_info}
-                 for supplier, fetched_info in fetched_info_dict.items()}
-    products_dict = ozon_analytics.fetch_products(suppliers_list=suppliers_list)
+    fetched_products_dict = ozon_analytics.fetch_products(suppliers_list=suppliers_list)
+    products_dict = {supplier: {item['sku']: item for item in fetched_info}
+                     for supplier, fetched_info in fetched_products_dict.items()}
     table = list()
     for supplier in suppliers_list:
         supplier_table = list()
-        for product in products_dict[supplier]:
-            sku = product['sku']
-            category = info_dict[supplier][sku]['category']
-            positions_list = positions_dict[supplier][sku]['categories'][category]
-            for i in range(len(positions_list)):
-                if positions_list[i] == 'NaN': positions_list[i] = '-'
-            supplier_table.append([ozon_info.supplier_name(supplier), sku,
-                                   product['offer_id'],
-                                   category, info_dict[supplier][sku]['brand']] + positions_list)
+        for sku, product in positions_dict[supplier].items():
+            try:
+                for category, positions_list in product['categories'].items():
+                    for i in range(len(positions_list)):
+                        if positions_list[i] == 'NaN': positions_list[i] = '-'
+                    supplier_table.append([ozon_info.supplier_name(supplier), sku,
+                                           products_dict[supplier][sku]['offer_id'],
+                                           category] + positions_list)
+            except AttributeError: supplier_table.append([ozon_info.supplier_name(supplier), sku,
+                                                         products_dict[supplier][sku]['offer_id'], '-'] +
+                                                         ['-']*len(product['days']))
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
 
 def _positions_by_supplier(supplier, start_date):
     positions_dict = fetch_positions(supplier=supplier, start_date=start_date)
-    info_dict = {item['id']: item for item in fetch_info(supplier=supplier)}
-    products_list = ozon_analytics.fetch_products(supplier=supplier)
+    products_list = {item['sku']: item for item in ozon_analytics.fetch_products(supplier=supplier)}
     table = list()
-    for product in products_list:
-        sku = product['sku']
-        category = info_dict[sku]['category']
-        positions_list = positions_dict[sku]['categories'][category]
-        for i in range(len(positions_list)):
-            if positions_list[i] == 'NaN': positions_list[i] = '-'
-        table.append([ozon_info.supplier_name(supplier), sku,
-                      product['offer_id'],
-                      category, info_dict[sku]['brand']] + positions_list)
+    for sku, product in positions_dict.items():
+        try:
+            for category, positions_list in product['categories'].items():
+                for i in range(len(positions_list)):
+                    if positions_list[i] == 'NaN': positions_list[i] = '-'
+                table.append([ozon_info.supplier_name(supplier), sku,
+                                       products_list[sku]['offer_id'],
+                                       category] + positions_list)
+        except AttributeError:
+            table.append([ozon_info.supplier_name(supplier), sku,
+                                   products_list[sku]['offer_id'], '-'] +
+                                  ['-'] * len(product['days']))
     return sorted(table, key=lambda item: item[2])
 
 
@@ -146,7 +150,7 @@ def fetch_positions(supplier=None, suppliers_list=None, sku_list=None, sku=None,
 
 
 def positions(input_data, start_date):
-    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет'] + \
              info.days_list(start_date, to_yesterday=True)
     table = list()
     if type(input_data) == list:

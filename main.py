@@ -274,7 +274,7 @@ if __name__ == '__main__':
             choice = 'wb'
         elif choice == 'ozon': ask_ozon()
         elif choice == 'ozon_positions':
-            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Позиции (тест)')
+            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Позиции')
             input_data = ask_ozon_input(worksheet)
             if choice == 'start': continue
             start_date = ask_start_date()

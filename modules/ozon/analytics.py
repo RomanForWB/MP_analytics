@@ -8,7 +8,7 @@ def _fetch_product_ids_by_supplier(supplier):
     headers = {'Client-Id': ozon_info.client_id(supplier),
                'Api-Key': ozon_info.api_key(supplier)}
     body = {"filter": {
-            "visibility": "IN_SALE"},
+            "visibility": "VISIBLE"},
             "page": 1,
             "page_size": 5000}
     response = requests.post(url=url, json=body, headers=headers)
@@ -28,13 +28,11 @@ def _fetch_products_by_supplier(supplier):
     body = {'product_id': product_id_list}
     response = requests.post(url=url, json=body, headers=headers)
     products_list = [product for product in response.json()['result']['items']]
-    for item in products_list: print(item)
     for i in range(len(products_list)):
         for source in products_list[i]['sources']:
             if source['source'] == 'fbo':
                 products_list[i]['sku'] = source['sku']
                 break
-    for item in products_list: print(item)
     return products_list
 
 

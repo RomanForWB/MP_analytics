@@ -42,7 +42,7 @@ def _fetch_info_by_supplier(headers, supplier):
 
 
 def _fetch_info_by_suppliers_list(headers, suppliers_list):
-    print("Получение информации о категориях...")
+    print("Получение информации о поставщиках...")
     return {supplier: _fetch_info_by_supplier(headers, supplier) for supplier in suppliers_list}
 
 
@@ -75,9 +75,8 @@ def _positions_by_supplier(supplier, start_date):
 
 def _positions_by_suppliers_list(suppliers_list, start_date):
     fetched_info_dict = fetch_info(suppliers_list=suppliers_list)
-    info_dict = dict()
-    for supplier, fetched_info in fetched_info_dict.items():
-        info_dict[supplier] = {item['id']: item for item in fetched_info}
+    info_dict = {supplier: {item['id']: item for item in fetched_info}
+                 for supplier, fetched_info in fetched_info_dict.items()}
     cards_dict = wb_analytics.fetch_cards(suppliers_list=suppliers_list)
     positions_dict = fetch_positions(suppliers_list=suppliers_list, start_date=start_date)
     result_table = list()
@@ -92,17 +91,16 @@ def _positions_by_suppliers_list(suppliers_list, start_date):
                     if positions_list[i] == 'NaN': positions_list[i] = '-'
                 supplier_table.append([wb_info.supplier_name(supplier), nm,
                                        card['supplierVendorCode'] + nomenclature['vendorCode'],
-                                       category, info_dict[nm]['brand']] + positions_list)
+                                       category, info_dict[supplier][nm]['brand']] + positions_list)
         result_table += sorted(supplier_table, key=lambda item: item[2])
     return result_table
 
 
 def _positions_by_nm_list(nm_list, start_date):
     fetched_info_dict = fetch_info(nm_list=nm_list)
-    info_dict = dict()
-    for supplier, fetched_info in fetched_info_dict.items():
-        info_dict[supplier] = {item['id']: item for item in fetched_info}
-    cards_dict = wb_analytics.fetch_cards(suppliers_list=list(info_dict.keys()))
+    info_dict = {supplier: {item['id']: item for item in fetched_info}
+                 for supplier, fetched_info in fetched_info_dict.items()}
+    cards_dict = wb_analytics.fetch_cards(suppliers_list=wb_info.all_suppliers())
     positions_dict = fetch_positions(nm_list=nm_list, start_date=start_date)
     result_table = list()
     for supplier in info_dict.keys():

@@ -1,15 +1,15 @@
 from json import load as json_load
 
 _ozon_keys = None
-_suppliers = {"maryina":
-                  {"name": "ИП Марьина А.А.",
-                   "seller_identifiers": ['ИП Марьина А.А.']},
-              "tumanyan":
+_suppliers = {"tumanyan":
                   {"name": "ИП Туманян А.А.",
                    "seller_identifiers": ["Mi Kar"]},
-              "ahmetov":
-                  {"name": "ИП Ахметов В.Р.",
-                   "seller_identifiers": ["ИП Ахметов В.Р."]}
+              # "maryina":
+              #     {"name": "ИП Марьина А.А.",
+              #      "seller_identifiers": ['ИП Марьина А.А.']},
+              # "ahmetov":
+              #     {"name": "ИП Ахметов В.Р.",
+              #      "seller_identifiers": ["ИП Ахметов В.Р."]}
               }
 
 

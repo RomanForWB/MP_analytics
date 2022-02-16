@@ -9,8 +9,7 @@ import modules.info as info
 def _fetch_cards_by_supplier(url, body, supplier):
     headers = {'Authorization': wb_info.api_key('token', supplier)}
     response = requests.post(url, json=body, headers=headers)
-    result = response.json()
-    return result['result']['cards']
+    return response.json()['result']['cards']
 
 
 def _fetch_cards_by_suppliers_list(url, body, suppliers_list):

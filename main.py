@@ -63,13 +63,15 @@ def ask_ozon():
     print("\n=======================================")
     print("================ Ozon =================")
     print("1 - Обновить все отчеты (в работе)")
-    print("2 - Отчет по позициям")
-    print("3 - В начало")
+    print("2 - Отчет по категориям")
+    print("3 - Отчет по позициям")
+    print("4 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'ozon_reports'
-    if choice.strip() == '2': choice = 'ozon_positions'
-    elif choice.strip() == '3': choice = 'start'
+    elif choice.strip() == '2': choice = 'ozon_categories'
+    elif choice.strip() == '3': choice = 'ozon_positions'
+    elif choice.strip() == '4': choice = 'start'
     else:
         choice = 'ozon'
         print("Неправильный выбор...")
@@ -87,10 +89,10 @@ def ask_start_date():
         print("3 - Свой вариант")
         day_choice = input("Выбор: ")
         if day_choice.strip() == '1':
-            start_date = str(date.today() - timedelta(days=7))
+            start_date = str(date.today() - timedelta(days=6))
             return start_date
         elif day_choice.strip() == '2':
-            start_date = str(date.today() - timedelta(days=30))
+            start_date = str(date.today() - timedelta(days=29))
             return start_date
         elif day_choice.strip() == '3':
             while(True):
@@ -142,7 +144,7 @@ def ask_wb_input(worksheet, skip_suppliers=False, skip_nm=False):
                 return supplier_choices[input_choice]
             elif google_choice is not None and input_choice == google_choice:
                 try:
-                    if worksheet.title == "Заказы (категории)": nm_column = 11
+                    if worksheet.title == "Заказы (категории)": nm_column = 10
                     else: nm_column = 2
                     return list(map(int, google_work.get_columns(worksheet, 1, nm_column)))
                 except ValueError: print("Проверьте значения списка номенклатур...")
@@ -281,5 +283,14 @@ if __name__ == '__main__':
             if choice == 'start': continue
             positions_table = ozon_mpstats.positions(input_data, start_date)
             google_work.insert_table(worksheet, positions_table, replace=True)
+            choice = 'ozon'
+        elif choice == 'ozon_categories':
+            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Категории')
+            input_data = ask_ozon_input(worksheet)
+            if choice == 'start': continue
+            start_date = ask_start_date()
+            if choice == 'start': continue
+            categories_table = ozon_mpstats.categories(input_data, start_date)
+            google_work.insert_table(worksheet, categories_table, replace=True)
             choice = 'ozon'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

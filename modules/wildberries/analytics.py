@@ -371,30 +371,48 @@ def _stocks_by_supplier(supplier, start_date):
     stocks_list = fetch_stocks(supplier=supplier, start_date=start_date)
     table = list()
     items_dict = dict()
-    for item in stocks_list:
+    for stock in stocks_list:
         dict_key = (wb_info.supplier_name(supplier),
-                    item['nmId'],
-                    item['supplierArticle'],
-                    f"{item['category']}/{item['subject']}",
-                    item['brand'],
-                    item['techSize'])
+                    stock['nmId'],
+                    stock['supplierArticle'],
+                    f"{stock['category']}/{stock['subject']}",
+                    stock['brand'],
+                    stock['techSize'])
         items_dict.setdefault(dict_key, [0, 0, 0, 0, 0, ''])
-        items_dict[dict_key][0] += item['quantityFull']
-        items_dict[dict_key][1] += item['quantityNotInOrders']
-        items_dict[dict_key][2] += item['quantity']
-        items_dict[dict_key][3] += item['inWayToClient']
-        items_dict[dict_key][4] += item['inWayFromClient']
-        if items_dict[dict_key][5] < item['lastChangeDate']: items_dict[dict_key][5] = item['lastChangeDate']
+        items_dict[dict_key][0] += stock['quantityFull']
+        items_dict[dict_key][1] += stock['quantityNotInOrders']
+        items_dict[dict_key][2] += stock['quantity']
+        items_dict[dict_key][3] += stock['inWayToClient']
+        items_dict[dict_key][4] += stock['inWayFromClient']
+        if items_dict[dict_key][5] < stock['lastChangeDate']: items_dict[dict_key][5] = stock['lastChangeDate']
     for key, value in items_dict.items():
         table.append(list(key) + value)
-    table.sort()
-    return table
+    return sorted(table, key=lambda item: item[2])
 
 
 def _stocks_by_suppliers_list(suppliers_list, start_date):
+    stocks_dict = fetch_stocks(suppliers_list=suppliers_list, start_date=start_date)
     table = list()
-    for supplier in suppliers_list:
-        table += _stocks_by_supplier(supplier, start_date)
+    items_dict = dict()
+    for supplier, stocks_list in stocks_dict.items():
+        supplier_table = list()
+        for stock in stocks_list:
+            dict_key = (wb_info.supplier_name(supplier),
+                        stock['nmId'],
+                        stock['supplierArticle'],
+                        f"{stock['category']}/{stock['subject']}",
+                        stock['brand'],
+                        stock['techSize'])
+            items_dict.setdefault(dict_key, [0, 0, 0, 0, 0, ''])
+            items_dict[dict_key][0] += stock['quantityFull']
+            items_dict[dict_key][1] += stock['quantityNotInOrders']
+            items_dict[dict_key][2] += stock['quantity']
+            items_dict[dict_key][3] += stock['inWayToClient']
+            items_dict[dict_key][4] += stock['inWayFromClient']
+            if items_dict[dict_key][5] < stock['lastChangeDate']: items_dict[dict_key][5] = stock['lastChangeDate']
+        for key, value in items_dict.items():
+            supplier_table.append(list(key) + value)
+        table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
 
@@ -404,21 +422,21 @@ def _stocks_by_nm_list(nm_list, start_date):
     items_dict = dict()
     for supplier, stocks_list in stocks_dict.items():
         supplier_table = list()
-        for item in stocks_list:
-            if item['nmId'] not in nm_list: continue
+        for stock in stocks_list:
+            if stock['nmId'] not in nm_list: continue
             dict_key = (wb_info.supplier_name(supplier),
-                        item['nmId'],
-                        item['supplierArticle'],
-                        f"{item['category']}/{item['subject']}",
-                        item['brand'],
-                        item['techSize'])
+                        stock['nmId'],
+                        stock['supplierArticle'],
+                        f"{stock['category']}/{stock['subject']}",
+                        stock['brand'],
+                        stock['techSize'])
             items_dict.setdefault(dict_key, [0, 0, 0, 0, 0, ''])
-            items_dict[dict_key][0] += item['quantityFull']
-            items_dict[dict_key][1] += item['quantityNotInOrders']
-            items_dict[dict_key][2] += item['quantity']
-            items_dict[dict_key][3] += item['inWayToClient']
-            items_dict[dict_key][4] += item['inWayFromClient']
-            if items_dict[dict_key][5] < item['lastChangeDate']: items_dict[dict_key][5] = item['lastChangeDate']
+            items_dict[dict_key][0] += stock['quantityFull']
+            items_dict[dict_key][1] += stock['quantityNotInOrders']
+            items_dict[dict_key][2] += stock['quantity']
+            items_dict[dict_key][3] += stock['inWayToClient']
+            items_dict[dict_key][4] += stock['inWayFromClient']
+            if items_dict[dict_key][5] < stock['lastChangeDate']: items_dict[dict_key][5] = stock['lastChangeDate']
         for key, value in items_dict.items():
             supplier_table.append(list(key) + value)
         table += sorted(supplier_table, key=lambda item: item[2])

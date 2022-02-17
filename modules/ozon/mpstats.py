@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import requests
 import modules.ozon.info as ozon_info
 import modules.async_requests as async_requests
@@ -74,7 +74,7 @@ def _positions_by_sku_list(sku_list, start_date):
                                            category] + positions_list)
             except AttributeError:
                 supplier_table.append([ozon_info.supplier_name(supplier), sku,
-                                       products_dict[supplier][sku]['offer_id'], '-'] +
+                                       products_dict[supplier][sku]['offer_id']] +
                                       ['-'] * len(product['days']))
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
@@ -97,7 +97,7 @@ def _positions_by_suppliers_list(suppliers_list, start_date):
                                            products_dict[supplier][sku]['offer_id'],
                                            category] + positions_list)
             except AttributeError: supplier_table.append([ozon_info.supplier_name(supplier), sku,
-                                                         products_dict[supplier][sku]['offer_id'], '-'] +
+                                                         products_dict[supplier][sku]['offer_id']] +
                                                          ['-']*len(product['days']))
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
@@ -117,9 +117,85 @@ def _positions_by_supplier(supplier, start_date):
                                        category] + positions_list)
         except AttributeError:
             table.append([ozon_info.supplier_name(supplier), sku,
-                                   products_list[sku]['offer_id'], '-'] +
+                                   products_list[sku]['offer_id']] +
                                   ['-'] * len(product['days']))
     return sorted(table, key=lambda item: item[2])
+
+
+def _categories_by_sku_list(sku_list, start_date):
+    days = info.days_list(start_date, to_yesterday=True)
+    positions_dict = fetch_positions(sku_list=sku_list, start_date=start_date)
+    fetched_products_dict = ozon_analytics.fetch_products(suppliers_list=ozon_info.all_suppliers())
+    products_dict = {supplier: {item['sku']: item for item in fetched_info}
+                     for supplier, fetched_info in fetched_products_dict.items()}
+    table = list()
+    for supplier in ozon_info.all_suppliers():
+        supplier_table = list()
+        for sku, product in positions_dict.items():
+            categories_by_days = list()
+            try:
+                for i in range(len(days)):
+                    categories_raw = [values[i] for values in product['categories'].values()]
+                    categories_count = len(categories_raw) - categories_raw.count('NaN')
+                    categories_by_days.append(categories_count)
+                supplier_table.append([ozon_info.supplier_name(supplier), sku,
+                                       products_dict[supplier][sku]['offer_id'],
+                                       list(product['categories'].keys())[0]] + categories_by_days)
+            except AttributeError:
+                supplier_table.append([ozon_info.supplier_name(supplier), sku,
+                                       products_dict[supplier][sku]['offer_id']] +
+                                      ['-'] * len(product['days']))
+        table += sorted(supplier_table, key=lambda item: item[2])
+    return table
+
+
+def _categories_by_supplier(supplier, start_date):
+    days = info.days_list(start_date, to_yesterday=True)
+    positions_dict = fetch_positions(supplier=supplier, start_date=start_date)
+    products_list = {item['sku']: item for item in ozon_analytics.fetch_products(supplier=supplier)}
+    table = list()
+    for sku, product in positions_dict.items():
+        categories_by_days = list()
+        try:
+            for i in range(len(days)):
+                categories_raw = [values[i] for values in product['categories'].values()]
+                categories_count = len(categories_raw) - categories_raw.count('NaN')
+                categories_by_days.append(categories_count)
+            table.append([ozon_info.supplier_name(supplier), sku,
+                          products_list[sku]['offer_id'],
+                          list(product['categories'].keys())[0]] + categories_by_days)
+        except AttributeError:
+            table.append([ozon_info.supplier_name(supplier), sku,
+                         products_list[sku]['offer_id']] +
+                         ['-'] * len(product['days']))
+    return sorted(table, key=lambda item: item[2])
+
+
+def _categories_by_suppliers_list(suppliers_list, start_date):
+    days = info.days_list(start_date, to_yesterday=True)
+    positions_dict = fetch_positions(suppliers_list=suppliers_list, start_date=start_date)
+    fetched_products_dict = ozon_analytics.fetch_products(suppliers_list=suppliers_list)
+    products_dict = {supplier: {item['sku']: item for item in fetched_info}
+                     for supplier, fetched_info in fetched_products_dict.items()}
+    table = list()
+    for supplier in suppliers_list:
+        supplier_table = list()
+        for sku, product in positions_dict[supplier].items():
+            categories_by_days = list()
+            try:
+                for i in range(len(days)):
+                    categories_raw = [values[i] for values in product['categories'].values()]
+                    categories_count = len(categories_raw) - categories_raw.count('NaN')
+                    categories_by_days.append(categories_count)
+                supplier_table.append([ozon_info.supplier_name(supplier), sku,
+                              products_dict[supplier][sku]['offer_id'],
+                              list(product['categories'].keys())[0]] + categories_by_days)
+            except AttributeError:
+                supplier_table.append([ozon_info.supplier_name(supplier), sku,
+                              products_dict[supplier][sku]['offer_id']] +
+                             ['-'] * len(product['days']))
+        table += sorted(supplier_table, key=lambda item: item[2])
+    return table
 
 
 def fetch_info(supplier=None, suppliers_list=None, sku=None, sku_list=None):
@@ -150,6 +226,7 @@ def fetch_positions(supplier=None, suppliers_list=None, sku_list=None, sku=None,
 
 
 def positions(input_data, start_date):
+    start_date = (datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет'] + \
              info.days_list(start_date, to_yesterday=True)
     table = list()
@@ -162,3 +239,17 @@ def positions(input_data, start_date):
     table.insert(0, header)
     return table
 
+
+def categories(input_data, start_date):
+    start_date = (datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет'] + \
+             info.days_list(start_date, to_yesterday=True)
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _categories_by_suppliers_list(input_data, start_date)
+        elif type(input_data[0]) == int: table = _categories_by_sku_list(input_data, start_date)
+    elif type(input_data) == str: table = _categories_by_supplier(input_data, start_date)
+    elif type(input_data) == int: table = _categories_by_sku_list([input_data], start_date)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table

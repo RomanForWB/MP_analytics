@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import requests
 import modules.wildberries.info as wb_info
 import modules.async_requests as async_requests
@@ -244,6 +244,7 @@ def fetch_info(supplier=None, suppliers_list=None, nm_list=None, nm=None):
 
 
 def positions(input_data, start_date):
+    start_date = (datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
              info.days_list(start_date, to_yesterday=True)
     table = list()
@@ -258,6 +259,7 @@ def positions(input_data, start_date):
 
 
 def categories(input_data, start_date):
+    start_date = (datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
              info.days_list(start_date, to_yesterday=True)
     table = list()

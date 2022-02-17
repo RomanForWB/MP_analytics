@@ -48,32 +48,55 @@ def _fetch_categories_by_ids(categories_ids):
                'Api-Key': ozon_info.api_key(ozon_info.all_suppliers()[0])}
     bodies_list = [{'category_id': category_id} for category_id in categories_ids]
     result = async_requests.by_bodies('POST', url, bodies_list, categories_ids, headers=headers, content_type='json', lib='httpx')
-    return result
+    return {id: category['result'][0]['title'] for id, category in result.items()}
+
+
+def _fetch_categories_by_supplier(supplier):
+    products_list = fetch_products(supplier=supplier)
+    category_ids = list(set([product['category_id'] for product in products_list]))
+    return _fetch_categories_by_ids(category_ids)
+
+
+def _fetch_categories_by_suppliers_list(suppliers_list):
+    products_dict = fetch_products(suppliers_list=suppliers_list)
+    category_ids = list()
+    for supplier, products_list in products_dict.items():
+        for product in products_list: category_ids.append(product['category_id'])
+    return _fetch_categories_by_ids(list(set(category_ids)))
 
 
 def _stocks_by_supplier(supplier):
     products_list = fetch_products(supplier=supplier)
-    table = list()
-    for product in products_list:
-        table.append([ozon_info.supplier_name(supplier), product['sku'],
-                      product['offer_id'], ])
+    categories_dict = fetch_categories(supplier=supplier)
+    table = [[ozon_info.supplier_name(supplier), product['sku'],
+             product['offer_id'], categories_dict[product['category_id']],
+             product['stocks']['present'], product['stocks']['coming'],
+             product['stocks']['reserved'], product['status']]
+             for product in products_list]
+    return sorted(table, key=lambda item: item[2])
 
 
 def fetch_products(supplier=None, suppliers_list=None):
-    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch cards.")
+    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch products.")
     elif supplier is not None: return _fetch_products_by_supplier(supplier)
     elif suppliers_list is not None: return _fetch_products_by_suppliers_list(suppliers_list)
 
 
-def stocks(input_data, start_date=str(date.today()-timedelta(days=7))):
+def fetch_categories(supplier=None, suppliers_list=None):
+    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch categories.")
+    elif supplier is not None: return _fetch_categories_by_supplier(supplier)
+    elif suppliers_list is not None: return _fetch_categories_by_suppliers_list(suppliers_list)
+
+
+def stocks(input_data):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет',
-              'На складе', 'В пути', 'Время обновления']
+              'На складе', 'В пути на склад', 'В пути к клиенту', 'Время обновления']
     table = list()
     if type(input_data) == list:
-        if type(input_data[0]) == str: table = _stocks_by_suppliers_list(input_data, start_date)
-        elif type(input_data[0]) == int: table = _stocks_by_nm_list(input_data, start_date)
-    elif type(input_data) == str: table = _stocks_by_supplier(input_data, start_date)
-    elif type(input_data) == int: table = _stocks_by_nm_list([input_data], start_date)
+        if type(input_data[0]) == str: table = _stocks_by_suppliers_list(input_data)
+        elif type(input_data[0]) == int: table = _stocks_by_nm_list(input_data)
+    elif type(input_data) == str: table = _stocks_by_supplier(input_data)
+    elif type(input_data) == int: table = _stocks_by_nm_list([input_data])
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table

@@ -65,13 +65,15 @@ def ask_ozon():
     print("1 - Обновить все отчеты (в работе)")
     print("2 - Отчет по категориям")
     print("3 - Отчет по позициям")
-    print("4 - В начало")
+    print("4 - Отчет по остаткам")
+    print("5 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'ozon_reports'
     elif choice.strip() == '2': choice = 'ozon_categories'
     elif choice.strip() == '3': choice = 'ozon_positions'
-    elif choice.strip() == '4': choice = 'start'
+    elif choice.strip() == '4': choice = 'ozon_stocks'
+    elif choice.strip() == '5': choice = 'start'
     else:
         choice = 'ozon'
         print("Неправильный выбор...")
@@ -292,5 +294,12 @@ if __name__ == '__main__':
             if choice == 'start': continue
             categories_table = ozon_mpstats.categories(input_data, start_date)
             google_work.insert_table(worksheet, categories_table, replace=True)
+            choice = 'ozon'
+        elif choice == 'ozon_stocks':
+            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Остатки')
+            input_data = ask_ozon_input(worksheet)
+            if choice == 'start': continue
+            stocks_table = ozon_analytics.stocks(input_data)
+            google_work.insert_table(worksheet, stocks_table, replace=True)
             choice = 'ozon'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

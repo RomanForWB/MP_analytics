@@ -1,4 +1,3 @@
-from datetime import date, timedelta, datetime
 import modules.ozon.info as ozon_info
 import modules.async_requests as async_requests
 import requests
@@ -56,7 +55,8 @@ def _fetch_categories_by_ids(categories_ids):
     headers = {'Client-Id': ozon_info.client_id(ozon_info.all_suppliers()[0]),
                'Api-Key': ozon_info.api_key(ozon_info.all_suppliers()[0])}
     bodies_list = [{'category_id': category_id} for category_id in categories_ids]
-    result = async_requests.by_bodies('POST', url, bodies_list, categories_ids, headers=headers, content_type='json', lib='httpx')
+    result = async_requests.by_bodies('POST', url, bodies_list, categories_ids,
+                                      headers=headers, content_type='json', lib='httpx')
     return {id: category['result'][0]['title'] for id, category in result.items()}
 
 

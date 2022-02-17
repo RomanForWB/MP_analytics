@@ -16,6 +16,7 @@ selenium = "*"
 pyqt5 = "*"
 sip = "*"
 pandas = "*"
+httpx = "*"
 
 [dev-packages]
 

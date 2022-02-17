@@ -1,8 +1,11 @@
 from datetime import date, datetime, timedelta
+import modules.ozon.analytics as ozon_analytics
+import modules.ozon.info as ozon_info
 import requests
+import httpx
+import asyncio
 
-url = 'https://www.ozon.ru/product/vodolazka-298859747/reviews'
-headers = {'Content-Type': 'application/json'}
-response = requests.get(url)
+category_ids = [17033665, 17033665, 17033665, 17033665]
 
-print(response.text)
+result = ozon_analytics._fetch_categories_by_ids(category_ids)
+print(result)

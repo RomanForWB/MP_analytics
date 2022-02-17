@@ -393,9 +393,9 @@ def _stocks_by_supplier(supplier, start_date):
 def _stocks_by_suppliers_list(suppliers_list, start_date):
     stocks_dict = fetch_stocks(suppliers_list=suppliers_list, start_date=start_date)
     table = list()
-    items_dict = dict()
     for supplier, stocks_list in stocks_dict.items():
         supplier_table = list()
+        items_dict = dict()
         for stock in stocks_list:
             dict_key = (wb_info.supplier_name(supplier),
                         stock['nmId'],
@@ -419,9 +419,9 @@ def _stocks_by_suppliers_list(suppliers_list, start_date):
 def _stocks_by_nm_list(nm_list, start_date):
     stocks_dict = fetch_stocks(suppliers_list=wb_info.all_suppliers(), start_date=start_date)
     table = list()
-    items_dict = dict()
     for supplier, stocks_list in stocks_dict.items():
         supplier_table = list()
+        items_dict = dict()
         for stock in stocks_list:
             if stock['nmId'] not in nm_list: continue
             dict_key = (wb_info.supplier_name(supplier),

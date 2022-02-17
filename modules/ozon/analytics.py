@@ -17,16 +17,25 @@ def _fetch_product_ids_by_supplier(supplier):
 
 
 def _fetch_product_ids_by_suppliers_list(suppliers_list):
-    return {supplier: _fetch_product_ids_by_supplier(supplier)
-            for supplier in suppliers_list}
+    url = 'https://api-seller.ozon.ru/v1/product/list'
+    headers_list = [{'Client-Id': ozon_info.client_id(supplier),
+                     'Api-Key': ozon_info.api_key(supplier)} for supplier in suppliers_list]
+    body = {"filter": {
+            "visibility": "VISIBLE"},
+            "page": 1,
+            "page_size": 5000}
+    results_dict = async_requests.by_headers('POST', url, headers_list, suppliers_list,
+                                             body=body, content_type='json', lib='httpx')
+    return {supplier: [item['product_id'] for item in result['result']['items']]
+            for supplier, result in results_dict.items()}
 
 
 def _fetch_products_by_supplier(supplier):
-    product_id_list = _fetch_product_ids_by_supplier(supplier)
+    product_ids = _fetch_product_ids_by_supplier(supplier)
     url = 'https://api-seller.ozon.ru/v2/product/info/list'
     headers = {'Client-Id': ozon_info.client_id(supplier),
                'Api-Key': ozon_info.api_key(supplier)}
-    body = {'product_id': product_id_list}
+    body = {'product_id': product_ids}
     response = requests.post(url=url, json=body, headers=headers)
     products_list = [product for product in response.json()['result']['items']]
     for i in range(len(products_list)):
@@ -74,6 +83,19 @@ def _stocks_by_supplier(supplier):
              product['stocks']['reserved'], product['status']]
              for product in products_list]
     return sorted(table, key=lambda item: item[2])
+
+
+def _stocks_by_suppliers_list(suppliers_list):
+    products_dict = fetch_products(suppliers_list=suppliers_list)
+    categories_dict = fetch_categories(suppliers_list=suppliers_list)
+    table = list()
+    for supplier, products_list in products_dict.items():
+        table += sorted([[ozon_info.supplier_name(supplier), product['sku'],
+                         product['offer_id'], categories_dict[product['category_id']],
+                         product['stocks']['present'], product['stocks']['coming'],
+                         product['stocks']['reserved'], product['status']]
+                         for product in products_list])
+    return table
 
 
 def fetch_products(supplier=None, suppliers_list=None):

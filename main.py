@@ -90,17 +90,12 @@ def ask_start_date():
         print("2 - За последние 30 дней")
         print("3 - Свой вариант")
         day_choice = input("Выбор: ")
-        if day_choice.strip() == '1':
-            start_date = str(date.today() - timedelta(days=6))
-            return start_date
-        elif day_choice.strip() == '2':
-            start_date = str(date.today() - timedelta(days=29))
-            return start_date
+        if day_choice.strip() == '1': return str(date.today() - timedelta(days=6))
+        elif day_choice.strip() == '2': return str(date.today() - timedelta(days=29))
         elif day_choice.strip() == '3':
-            while(True):
-                start_date = input("Введите дату (YYYY-MM-DD): ").strip()
-                if search(r'\d\d\d\d\-\d\d\-\d\d', start_date):
-                    return start_date
+            while True:
+                input_date = input("Введите дату (YYYY-MM-DD): ").strip()
+                if search(r'\d\d\d\d-\d\d-\d\d', input_date): return input_date
                 else: print("Неправильная дата...")
         else: print("Неправильный выбор...")
 

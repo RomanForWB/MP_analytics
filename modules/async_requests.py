@@ -170,7 +170,7 @@ async def _fetch_all_by_urls(http_method, url_list, ids,
     global counter
     counter = 0
     if lib == 'httpx':
-        timeout = httpx.Timeout(timeout=10.0)
+        timeout = httpx.Timeout(timeout=20.0)
         async with httpx.AsyncClient(timeout=timeout) as session:
             print(f"Подключение к {url_list[0].split('//')[1].split('/')[0]}...")
             print(f"Всего запросов: {len(url_list)}")
@@ -181,7 +181,7 @@ async def _fetch_all_by_urls(http_method, url_list, ids,
                                                          content_type=content_type,
                                                          lib=lib)
     else:
-        timeout = aiohttp.ClientTimeout(total=10)
+        timeout = aiohttp.ClientTimeout(total=20)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             print(f"Подключение к {url_list[0].split('//')[1].split('/')[0]}...")
             print(f"Всего запросов: {len(url_list)}")
@@ -201,7 +201,7 @@ async def _fetch_all_by_params(http_method, url, params_list, ids,
     global counter
     counter = 0
     if lib == 'httpx':
-        timeout = httpx.Timeout(timeout=10.0)
+        timeout = httpx.Timeout(timeout=20.0)
         async with httpx.AsyncClient(timeout=timeout) as session:
             print(f"Подключение к {url.split('//')[1].split('/')[0]}...")
             print(f"Всего запросов: {len(params_list)}")
@@ -211,7 +211,7 @@ async def _fetch_all_by_params(http_method, url, params_list, ids,
                                                            content_type=content_type,
                                                            lib=lib)
     else:
-        timeout = aiohttp.ClientTimeout(total=10)
+        timeout = aiohttp.ClientTimeout(total=20)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             print(f"Подключение к {url.split('//')[1].split('/')[0]}...")
             print(f"Всего запросов: {len(params_list)}")
@@ -230,7 +230,7 @@ async def _fetch_all_by_headers(http_method, url, headers_list, ids,
     global counter
     counter = 0
     if lib == 'httpx':
-        timeout = httpx.Timeout(timeout=10.0)
+        timeout = httpx.Timeout(timeout=20.0)
         async with httpx.AsyncClient(timeout=timeout) as session:
             print(f"Подключение к {url.split('//')[1].split('/')[0]}...")
             print(f"Всего запросов: {len(headers_list)}")
@@ -240,7 +240,7 @@ async def _fetch_all_by_headers(http_method, url, headers_list, ids,
                                                             content_type=content_type,
                                                             lib=lib)
     else:
-        timeout = aiohttp.ClientTimeout(total=10)
+        timeout = aiohttp.ClientTimeout(total=20)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             print(f"Подключение к {url.split('//')[1].split('/')[0]}...")
             print(f"Всего запросов: {len(headers_list)}")
@@ -259,7 +259,7 @@ async def _fetch_all_by_bodies(http_method, url, bodies_list, ids,
     global counter
     counter = 0
     if lib == 'httpx':
-        timeout = httpx.Timeout(timeout=10.0)
+        timeout = httpx.Timeout(timeout=20.0)
         async with httpx.AsyncClient(timeout=timeout) as session:
             print(f"Подключение к {url.split('//')[1].split('/')[0]}...")
             print(f"Всего запросов: {len(bodies_list)}")
@@ -269,7 +269,7 @@ async def _fetch_all_by_bodies(http_method, url, bodies_list, ids,
                                                            content_type=content_type,
                                                            lib=lib)
     else:
-        timeout = aiohttp.ClientTimeout(total=10)
+        timeout = aiohttp.ClientTimeout(total=20)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             print(f"Подключение к {url.split('//')[1].split('/')[0]}...")
             print(f"Всего запросов: {len(bodies_list)}")

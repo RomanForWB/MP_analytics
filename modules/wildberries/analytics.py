@@ -15,7 +15,8 @@ def _fetch_cards_by_supplier(url, body, supplier):
 def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
     headers_list = [{'Authorization': wb_info.api_key('token', supplier)}
                     for supplier in suppliers_list]
-    cards_dict = async_requests.by_headers('POST', url, headers_list, suppliers_list, body=body, content_type='json')
+    cards_dict = async_requests.fetch('POST', suppliers_list, url=url,
+                                      headers_list=headers_list, body=body, content_type='json')
     cards_dict = {supplier: cards['result']['cards'] for supplier, cards in cards_dict.items()}
     return cards_dict
 
@@ -33,10 +34,8 @@ def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):
     params_list = [{'key': wb_info.api_key('x64', supplier),
                     'dateFrom': str(start_date)}
                    for supplier in suppliers_list]
-    orders_dict = async_requests.by_params('GET', url, params_list, suppliers_list,
-                                           headers=headers,
-                                           content_type='json')
-    return orders_dict
+    return async_requests.fetch('GET', suppliers_list, url=url, params_list=params_list,
+                                headers=headers, content_type='json')
 
 
 def _fetch_stocks_by_supplier(url, supplier, start_date):
@@ -49,8 +48,8 @@ def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
     params_list = [{'key': wb_info.api_key('x64', supplier),
                     'dateFrom': start_date}
                    for supplier in suppliers_list]
-    stocks_dict = async_requests.by_params('GET', url, params_list, suppliers_list, content_type='json')
-    return stocks_dict
+    return async_requests.fetch('GET', suppliers_list, url=url,
+                                params_list=params_list, content_type='json')
 
 
 def _feedbacks_by_data(supplier, card, feedbacks_list):
@@ -464,15 +463,16 @@ def fetch_feedbacks(imt_list, count=1000):
     bodies_list = [{"imtId": imt,
                     "skip": 0,
                     "take": count} for imt in imt_list]
-    feedbacks_dict = async_requests.by_bodies('POST', url, bodies_list, imt_list, content_type='json')
+    feedbacks_dict = async_requests.fetch('POST', imt_list, url=url,
+                                          bodies_list=bodies_list, content_type='json')
     feedbacks_dict = {imt: feedbacks_info['feedbacks']
                       for imt, feedbacks_info in feedbacks_dict.items()}
     return feedbacks_dict
 
 
 def fetch_simple_category_and_brand(nm_list):
-    url_list = [f'https://wbx-content-v2.wbstatic.net/ru/{nm}.json' for nm in nm_list]
-    nm_dict = async_requests.by_urls('GET', url_list, nm_list, content_type='text')
+    urls_list = [f'https://wbx-content-v2.wbstatic.net/ru/{nm}.json' for nm in nm_list]
+    nm_dict = async_requests.fetch('GET', nm_list, urls_list=urls_list, content_type='text')
     simple_categories_dict = dict()
     for nm, card_info in nm_dict.items():
         card_info = json.loads(card_info)
@@ -481,7 +481,7 @@ def fetch_simple_category_and_brand(nm_list):
     return simple_categories_dict
 
 
-def fetch_orders(supplier=None, suppliers_list=None, start_date=str(date.today()-timedelta(days=7))):
+def fetch_orders(supplier=None, suppliers_list=None, start_date=str(date.today()-timedelta(days=6))):
     url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/orders'
     headers = {'Content-Type': 'application/json'}
     if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch orders.")
@@ -489,7 +489,7 @@ def fetch_orders(supplier=None, suppliers_list=None, start_date=str(date.today()
     elif suppliers_list is not None: return _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date)
 
 
-def fetch_stocks(supplier=None, suppliers_list=None, start_date=date.today()-timedelta(days=7)):
+def fetch_stocks(supplier=None, suppliers_list=None, start_date=date.today()-timedelta(days=6)):
     url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/stocks'
     if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch orders.")
     elif supplier is not None: return _fetch_stocks_by_supplier(url, supplier, start_date)

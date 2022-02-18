@@ -21,13 +21,10 @@ def _fetch_positions_by_suppliers_list(headers, suppliers_list, start_date):
 
 
 def _fetch_positions_by_nm_list(headers, nm_list, start_date):
-    url_list = [f'https://mpstats.io/api/wb/get/item/{nm}/by_category' for nm in nm_list]
+    urls_list = [f'https://mpstats.io/api/wb/get/item/{nm}/by_category' for nm in nm_list]
     params = {'d1': str(start_date), 'd2': str(date.today())}
-    positions_dict = async_requests.by_urls('GET', url_list, nm_list,
-                                            params=params,
-                                            headers=headers,
-                                            content_type='json')
-    return positions_dict
+    return async_requests.fetch('GET', nm_list, urls_list=urls_list, params=params,
+                                headers=headers, content_type='json')
 
 
 def _fetch_info_by_supplier(headers, supplier):

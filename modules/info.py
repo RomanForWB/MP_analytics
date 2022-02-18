@@ -61,10 +61,31 @@ def days_list(from_date, to_today=True, to_yesterday=False, to_date=None):
     elif to_yesterday: to_date = date.today() - timedelta(days=1)
     elif to_today: to_date = date.today()
     else: raise ValueError("Unable to recognize input data")
-
     days = list()
     tmp_day = datetime.strptime(from_date, '%Y-%m-%d').date()
     while tmp_day <= to_date:
         days.append(tmp_day.strftime('%d.%m'))
         tmp_day += timedelta(days=1)
     return days
+
+
+def dates_list(from_date, to_today=True, to_yesterday=False, to_date=None):
+    if to_date is not None: to_date = datetime.strptime(to_date, '%Y-%m-%d').date()
+    elif to_yesterday: to_date = date.today() - timedelta(days=1)
+    elif to_today: to_date = date.today()
+    else: raise ValueError("Unable to recognize input data")
+    dates = list()
+    tmp_date = datetime.strptime(from_date, '%Y-%m-%d').date()
+    while tmp_date <= to_date:
+        dates.append(tmp_date.strftime('%Y-%m-%d'))
+        tmp_date += timedelta(days=1)
+    return dates
+
+
+def current_monday():
+    current_date = datetime.today()
+    weekday_number = current_date.isoweekday()
+    return (current_date - timedelta(days=(weekday_number - 1))).date()
+
+def current_month_start_date():
+    return datetime.today().replace(day=1).date()

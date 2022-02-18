@@ -66,14 +66,16 @@ def ask_ozon():
     print("2 - Отчет по категориям")
     print("3 - Отчет по позициям")
     print("4 - Отчет по остаткам")
-    print("5 - В начало")
+    print("5 - Отчет (месяц)")
+    print("6 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'ozon_reports'
     elif choice.strip() == '2': choice = 'ozon_categories'
     elif choice.strip() == '3': choice = 'ozon_positions'
     elif choice.strip() == '4': choice = 'ozon_stocks'
-    elif choice.strip() == '5': choice = 'start'
+    elif choice.strip() == '5': choice = 'ozon_month_report'
+    elif choice.strip() == '6': choice = 'start'
     else:
         choice = 'ozon'
         print("Неправильный выбор...")
@@ -296,5 +298,14 @@ if __name__ == '__main__':
             if choice == 'start': continue
             stocks_table = ozon_analytics.stocks(input_data)
             google_work.insert_table(worksheet, stocks_table, replace=True)
+            choice = 'ozon'
+        elif choice == 'ozon_month_report':
+            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Отчет (месяц)')
+            input_data = ask_ozon_input(worksheet)
+            if choice == 'start': continue
+            start_date = ask_start_date()
+            if choice == 'start': continue
+            report_table = ozon_analytics.report(input_data, start_date)
+            google_work.insert_table(worksheet, report_table, replace=True)
             choice = 'ozon'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

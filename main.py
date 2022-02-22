@@ -9,6 +9,7 @@ import modules.wildberries.info as wb_info
 import modules.ozon.mpstats as ozon_mpstats
 import modules.ozon.analytics as ozon_analytics
 import modules.ozon.info as ozon_info
+import modules.google_special as google_special
 
 
 choice = 'start'
@@ -17,13 +18,17 @@ choice = 'start'
 def ask_start():
     """Asking a marketplace."""
     print("\n=======================================")
-    print("========== Торговая площадка ==========")
+    print("========== Торговые площадки ==========")
     print("1 - Wildberries")
     print("2 - Ozon")
+    print("3 - Сгенерировать отчеты Wildberries")
+    print("4 - Сгенерировать аналитику Wildberries")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb'
     elif choice.strip() == '2': choice = 'ozon'
+    elif choice.strip() == '3': choice = 'wb_all_reports'
+    elif choice.strip() == '4': choice = 'wb_all_analytics'
     else:
         choice = 'start'
         print("Неправильный выбор...")
@@ -38,10 +43,15 @@ def ask_wb():
     print("3 - Отчет по позициям")
     print("4 - Отчет по остаткам")
     print("5 - Отчет по отзывам")
-    print("6 - Отчет по заказам (кол-во)")
-    print("7 - Отчет по заказам (сумма)")
-    print("8 - Отчет по заказам (категории)")
-    print("9 - В начало")
+    print("6 - Отчет (день)")
+    print("7 - Отчет (неделя)")
+    print("8 - Отчет (месяц)")
+    print("9 - Заказы (все)")
+    print("10 - Заказы (топ 500)")
+    print("11 - Заказы (новинки)")
+    print("12 - Заказы по товарам (кол-во)")
+    print("13 - Заказы по товарам (сумма)")
+    print("14 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_reports'
@@ -49,10 +59,15 @@ def ask_wb():
     elif choice.strip() == '3': choice = 'wb_positions'
     elif choice.strip() == '4': choice = 'wb_stocks'
     elif choice.strip() == '5': choice = 'wb_feedbacks'
-    elif choice.strip() == '6': choice = 'wb_orders_count'
-    elif choice.strip() == '7': choice = 'wb_orders_value'
-    elif choice.strip() == '8': choice = 'wb_orders_category'
-    elif choice.strip() == '9': choice = 'start'
+    elif choice.strip() == '6': choice = 'wb_day_report'
+    elif choice.strip() == '7': choice = 'wb_week_report'
+    elif choice.strip() == '8': choice = 'wb_month_report'
+    elif choice.strip() == '9': choice = 'wb_orders_category_all'
+    elif choice.strip() == '10': choice = 'wb_orders_category_500'
+    elif choice.strip() == '11': choice = 'wb_orders_category_new'
+    elif choice.strip() == '12': choice = 'wb_orders_count'
+    elif choice.strip() == '13': choice = 'wb_orders_value'
+    elif choice.strip() == '14': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -98,6 +113,32 @@ def ask_start_date():
             while True:
                 input_date = input("Введите дату (YYYY-MM-DD): ").strip()
                 if search(r'\d\d\d\d-\d\d-\d\d', input_date): return input_date
+                else: print("Неправильная дата...")
+        else: print("Неправильный выбор...")
+
+
+def ask_report_period(skip_one=False):
+    """Ask user about report period.
+
+    :return: report start date (string 'YYYY-MM-DD')
+    :rtype: str
+    """
+    while True:
+        print("\n1 - По дню")
+        print("2 - За неделю")
+        print("3 - За месяц")
+        print("4 - Свой вариант")
+        day_choice = input("Выбор: ")
+        if day_choice.strip() == '1':
+            return str(date.today() - timedelta(days=8))
+        elif day_choice.strip() == '2':
+            return str(info.current_monday(skip_one))
+        elif day_choice.strip() == '3':
+            return str(info.current_month_start_date(skip_one))
+        elif day_choice.strip() == '4':
+            while True:
+                start_date = input("Введите дату начала (YYYY-MM-DD): ").strip()
+                if search(r'\d\d\d\d-\d\d-\d\d', start_date): return start_date
                 else: print("Неправильная дата...")
         else: print("Неправильный выбор...")
 
@@ -246,32 +287,63 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, feedbacks_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_count':
-            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (кол-во)')
-            input_data = ask_wb_input(worksheet)
-            if choice == 'start': continue
-            start_date = ask_start_date()
-            if choice == 'start': continue
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Заказы по товару (кол-во)')
+            input_data = wb_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=7))
             orders_table = wb_analytics.orders_count(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_value':
-            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (сумма)')
-            input_data = ask_wb_input(worksheet)
-            if choice == 'start': continue
-            start_date = ask_start_date()
-            if choice == 'start': continue
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Заказы по товару (сумма)')
+            input_data = wb_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=7))
             orders_table = wb_analytics.orders_value(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'wb'
-        elif choice == 'wb_orders_category':
-            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Заказы (категории)')
-            input_data = ask_wb_input(worksheet)
-            if choice == 'start': continue
-            start_date = ask_start_date()
-            if choice == 'start': continue
+        elif choice == 'wb_orders_category_all':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Заказы (все)')
+            input_data = wb_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=7))
+            orders_table = wb_analytics.orders_category(input_data, start_date)
+            google_work.clear(worksheet)
+            google_work.insert_table(worksheet, orders_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_orders_category_500':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Заказы (топ 500)')
+            input_data = list(map(int, google_work.get_columns(worksheet, 1, 10)))
+            start_date = str(date.today() - timedelta(days=7))
             orders_table = wb_analytics.orders_category(input_data, start_date)
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
+            choice = 'wb'
+        elif choice == 'wb_orders_category_new':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Заказы (новинки)')
+            input_data = list(map(int, google_work.get_columns(worksheet, 1, 10)))
+            start_date = str(date.today() - timedelta(days=7))
+            orders_table = wb_analytics.orders_category(input_data, start_date)
+            google_work.clear(worksheet, 'A:I')
+            google_work.insert_table(worksheet, orders_table, replace=False)
+            choice = 'wb'
+        elif choice == 'wb_day_report':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Отчет (день)')
+            input_data = wb_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=8))
+            report_table = wb_analytics.report(input_data, start_date)
+            google_special.wb_day_report(worksheet, report_table)
+            choice = 'wb'
+        elif choice == 'wb_week_report':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Отчет (неделя)')
+            input_data = wb_info.all_suppliers()
+            start_date = str(info.current_monday(skip_one=True))
+            report_table = wb_analytics.report(input_data, start_date)
+            google_special.wb_week_report(worksheet, report_table)
+            choice = 'wb'
+        elif choice == 'wb_month_report':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Отчет (месяц)')
+            input_data = wb_info.all_suppliers()
+            start_date = str(info.current_month_start_date(skip_one=True))
+            report_table = wb_analytics.report(input_data, start_date)
+            google_special.wb_month_report(worksheet, report_table)
             choice = 'wb'
         elif choice == 'ozon': ask_ozon()
         elif choice == 'ozon_positions':

@@ -52,6 +52,23 @@ def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
                                 params_list=params_list, content_type='json')
 
 
+def _fetch_report_by_supplier(url, supplier):
+    params = {'isCommussion': 2}
+    headers = {'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
+    response = requests.get(url, params=params, headers=headers)
+    return response.json()['data']
+
+
+def _fetch_report_by_suppliers_list(url, suppliers_list):
+    params = {'isCommussion': 2}
+    headers_list = [{'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
+                    for supplier in suppliers_list]
+    report_dict = async_requests.fetch('GET', suppliers_list, content_type='json',
+                                       url=url, params=params, headers_list=headers_list)
+    report_dict = {supplier: report['data'] for supplier, report in report_dict.items()}
+    return report_dict
+
+
 def _feedbacks_by_data(supplier, card, feedbacks_list):
     brand = ''  # бренд
     for addin in card['addin']:
@@ -205,7 +222,7 @@ def _orders_count_by_nm_list(nm_list, start_date):
 
 
 def _orders_value_by_supplier(supplier, start_date):
-    orders_list = fetch_orders(supplier, start_date)
+    orders_list = fetch_orders(supplier=supplier, start_date=start_date)
     days = info.days_list(start_date)
     nm_dict = dict()
     nm_info_dict = dict()
@@ -442,6 +459,47 @@ def _stocks_by_nm_list(nm_list, start_date):
     return table
 
 
+def _report_by_supplier(supplier, start_date):
+    report_dict = fetch_report(supplier)
+    days_dict = dict()
+    for year_values in report_dict['consolidatedYears']:
+        for month_values in year_values['consolidatedMonths']:
+            for day_values in month_values['consolidatedDays']:
+                day = day_values.pop('day').split('.')[0]
+                month = month_values['month']
+                year = year_values['year']
+                days_dict[f"{year}-{month}-{day}"] = day_values
+    table = [[day,
+              days_dict[day]['ordered'], days_dict[day]['goodsOrdered'],
+              days_dict[day]['paymentSalesRub'], days_dict[day]['paymentSalesPiece'],
+              days_dict[day]['logisticsCost'], days_dict[day]['totalToTransfer']]
+             for day in info.dates_list(from_date=start_date, to_yesterday=True)]
+    return table
+
+
+def _report_by_suppliers_list(suppliers_list, start_date):
+    report_dict = fetch_report(suppliers_list=suppliers_list)
+    days_dict = dict()
+    for supplier, report in report_dict.items():
+        for year_values in report['consolidatedYears']:
+            for month_values in year_values['consolidatedMonths']:
+                for day_values in month_values['consolidatedDays']:
+                    day = day_values.pop('day').split('.')[0]
+                    month = month_values['month']
+                    year = year_values['year']
+                    if days_dict.get(f"{year}-{month}-{day}") is None:
+                        days_dict[f"{year}-{month}-{day}"] = day_values
+                    else:
+                        for key, value in day_values.items():
+                            days_dict[f"{year}-{month}-{day}"][key] += value
+    table = [[day,
+              days_dict[day]['ordered'], days_dict[day]['goodsOrdered'],
+              days_dict[day]['paymentSalesRub'], days_dict[day]['paymentSalesPiece'],
+              days_dict[day]['logisticsCost'], days_dict[day]['totalToTransfer']]
+             for day in info.dates_list(from_date=start_date, to_yesterday=True)]
+    return table
+
+
 def fetch_cards(supplier=None, suppliers_list=None):
     url = "https://suppliers-api.wildberries.ru/card/list"
     body = {"id": 1,
@@ -491,9 +549,16 @@ def fetch_orders(supplier=None, suppliers_list=None, start_date=str(date.today()
 
 def fetch_stocks(supplier=None, suppliers_list=None, start_date=date.today()-timedelta(days=6)):
     url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/stocks'
-    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch orders.")
+    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch stocks.")
     elif supplier is not None: return _fetch_stocks_by_supplier(url, supplier, start_date)
     elif suppliers_list is not None: return _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date)
+
+
+def fetch_report(supplier=None, suppliers_list=None):
+    url = 'https://seller.wildberries.ru/ns/consolidated/analytics-back/api/v1/consolidated-table'
+    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch sales.")
+    elif supplier is not None: return _fetch_report_by_supplier(url, supplier)
+    elif suppliers_list is not None: return _fetch_report_by_suppliers_list(url, suppliers_list)
 
 
 def feedbacks(input_data, count=3):
@@ -510,7 +575,7 @@ def feedbacks(input_data, count=3):
     return table
 
 
-def orders_count(input_data, start_date=str(date.today()-timedelta(days=7))):
+def orders_count(input_data, start_date=str(date.today()-timedelta(days=6))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
              info.days_list(start_date) + \
              ['Итого', 'Средняя цена', 'Сумма заказов']
@@ -525,7 +590,7 @@ def orders_count(input_data, start_date=str(date.today()-timedelta(days=7))):
     return table
 
 
-def orders_value(input_data, start_date=str(date.today()-timedelta(days=7))):
+def orders_value(input_data, start_date=str(date.today()-timedelta(days=6))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд'] + \
              info.days_list(start_date) + \
              ['Итого', 'Средняя цена', 'Сумма заказов']
@@ -540,28 +605,20 @@ def orders_value(input_data, start_date=str(date.today()-timedelta(days=7))):
     return table
 
 
-def orders_category(input_data, start_date=str(date.today()-timedelta(days=7))):
-    header = ['По категориям'] + info.days_list(start_date)
+def orders_category(input_data, start_date=str(date.today()-timedelta(days=6))):
+    header = ['Категории'] + info.days_list(start_date)
     table = list()
     if type(input_data) == list:
-        if type(input_data[0]) == str:
-            header = ['Для всех'] + info.days_list(start_date)
-            table = _orders_category_by_suppliers_list(input_data, start_date)
-        elif type(input_data[0]) == int:
-            header = ['Для номенклатур'] + info.days_list(start_date)
-            table = _orders_category_by_nm_list(input_data, start_date)
-    elif type(input_data) == str:
-        header = [wb_info.supplier_name(input_data)] + info.days_list(start_date)
-        table = _orders_category_by_supplier(input_data, start_date)
-    elif type(input_data) == int:
-        header = [input_data] + info.days_list(start_date)
-        table = _orders_category_by_nm_list([input_data], start_date)
+        if type(input_data[0]) == str: table = _orders_category_by_suppliers_list(input_data, start_date)
+        elif type(input_data[0]) == int: table = _orders_category_by_nm_list(input_data, start_date)
+    elif type(input_data) == str: table = _orders_category_by_supplier(input_data, start_date)
+    elif type(input_data) == int:  table = _orders_category_by_nm_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table
 
 
-def stocks(input_data, start_date=str(date.today()-timedelta(days=7))):
+def stocks(input_data, start_date=str(date.today()-timedelta(days=6))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд',
               'Размер', 'На складе', 'Не в заказе', 'Доступно',
               'В пути к клиенту', 'В пути от клиента', 'Время обновления']
@@ -571,6 +628,19 @@ def stocks(input_data, start_date=str(date.today()-timedelta(days=7))):
         elif type(input_data[0]) == int: table = _stocks_by_nm_list(input_data, start_date)
     elif type(input_data) == str: table = _stocks_by_supplier(input_data, start_date)
     elif type(input_data) == int: table = _stocks_by_nm_list([input_data], start_date)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table
+
+
+def report(input_data, start_date=str(date.today()-timedelta(days=7))):
+    header = ['Дата', 'Заказано руб.', 'Заказано шт.', 'Выкуплено руб.', 'Выкуплено шт.', 'Логистика', 'К перечислению']
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _report_by_suppliers_list(input_data, start_date)
+        elif type(input_data[0]) == int: table = _report_by_nm_list(input_data, start_date)
+    elif type(input_data) == str: table = _report_by_supplier(input_data, start_date)
+    elif type(input_data) == int: table = _report_by_nm_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table

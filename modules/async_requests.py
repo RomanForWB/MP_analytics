@@ -4,6 +4,7 @@ counter = 0
 
 async def _get_fetch(session, id, content_type, lib, url, params, headers):
     global counter
+    individual_timer = 20
     individual_session = False
     if lib == 'httpx':
         while True:
@@ -22,9 +23,10 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
             except (httpx.NetworkError, RuntimeError):
                 print(f"\rПереподключение к {url.split('//')[1].split('/')[0]}...", end=' ')
                 if individual_session: session.close()
-                timeout = httpx.Timeout(timeout=20.0)
+                timeout = httpx.Timeout(timeout=float(individual_timer))
                 session = httpx.AsyncClient(timeout=timeout)
                 individual_session = True
+                individual_timer += 5
     else:
         while True:
             try:
@@ -42,14 +44,16 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
             except (aiohttp.ClientError, RuntimeError):
                 print(f"\rПереподключение к {url.split('//')[1].split('/')[0]}...", end=' ')
                 if individual_session: await session.close()
-                timeout = aiohttp.ClientTimeout(total=20)
+                timeout = aiohttp.ClientTimeout(total=individual_timer)
                 session = aiohttp.ClientSession(timeout=timeout)
                 individual_session = True
+                individual_timer += 5
 
 
 
 async def _post_fetch(session, id, body, content_type, lib, url, params, headers):
     global counter
+    individual_timer = 20
     individual_session = False
     if lib == 'httpx':
         while True:
@@ -68,9 +72,10 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
             except httpx.NetworkError:
                 print(f"\rПереподключение к {url.split('//')[1].split('/')[0]}...", end=' ')
                 if individual_session: session.close()
-                timeout = httpx.Timeout(timeout=20.0)
+                timeout = httpx.Timeout(timeout=float(individual_timer))
                 session = httpx.AsyncClient(timeout=timeout)
                 individual_session = True
+                individual_timer += 5
     else:
         while True:
             try:
@@ -87,9 +92,10 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
             except (aiohttp.ClientError, RuntimeError):
                 print(f"\rПереподключение к {url.split('//')[1].split('/')[0]}...", end=' ')
                 if individual_session: await session.close()
-                timeout = aiohttp.ClientTimeout(total=20)
+                timeout = aiohttp.ClientTimeout(total=individual_timer)
                 session = aiohttp.ClientSession(timeout=timeout)
                 individual_session = True
+                individual_timer += 5
 
 
 async def _fetch_all_tasks(http_method, session, ids,

@@ -27,8 +27,8 @@ def _fetch_product_ids_by_suppliers_list(suppliers_list):
             "visibility": "VISIBLE"},
             "page": 1,
             "page_size": 5000}
-    results_dict = async_requests.by_headers('POST', url, headers_list, suppliers_list,
-                                             body=body, content_type='json', lib='httpx')
+    results_dict = async_requests.fetch('POST', suppliers_list, url=url, headers_list=headers_list,
+                                        body=body, content_type='json', lib='httpx')
     return {supplier: [item['product_id'] for item in result['result']['items']]
             for supplier, result in results_dict.items()}
 
@@ -59,8 +59,8 @@ def _fetch_categories_by_ids(categories_ids):
     headers = {'Client-Id': ozon_info.client_id(ozon_info.all_suppliers()[0]),
                'Api-Key': ozon_info.api_key(ozon_info.all_suppliers()[0])}
     bodies_list = [{'category_id': category_id} for category_id in categories_ids]
-    result = async_requests.by_bodies('POST', url, bodies_list, categories_ids,
-                                      headers=headers, content_type='json', lib='httpx')
+    result = async_requests.fetch('POST', categories_ids, url=url, bodies_list=bodies_list,
+                                  headers=headers, content_type='json', lib='httpx')
     return {id: category['result'][0]['title'] for id, category in result.items()}
 
 
@@ -116,8 +116,9 @@ def _fetch_analytics_by_suppliers_list(suppliers_list, start_date):
             "dimension": ["day"],
             "limit": 1000,
             "offset": 0}
-    analytics_dict = async_requests.by_headers('POST', url, headers_list, suppliers_list,
-                                               body=body, content_type='json', lib='httpx')
+
+    analytics_dict = async_requests.fetch('POST', suppliers_list, url=url, headers_list=headers_list,
+                                          body=body, content_type='json', lib='httpx')
     return {supplier: {value['dimensions'][0]['id']:
                 {'orders_value': value['metrics'][0],
                  'orders_count': value['metrics'][1],
@@ -136,8 +137,8 @@ def _fetch_transactions_by_supplier(supplier, start_date):
                     "to": f"{day}T00:00:00.000Z"},
                     "posting_number": "",
                     "transaction_type": "all"} for day in dates]
-    result_dict = async_requests.by_bodies('POST', url, bodies_list, dates,
-                                           headers=headers, content_type='json', lib='httpx')
+    result_dict = async_requests.fetch('POST', dates, url=url, bodies_list=bodies_list,
+                                       headers=headers, content_type='json', lib='httpx')
     return {day: {'sales_value': result['result']['accruals_for_sale'] + result['result']['refunds_and_cancellations'],
                   'delivery_value': result['result']['processing_and_delivery'],
                   'comission_value': result['result']['sale_commission'],

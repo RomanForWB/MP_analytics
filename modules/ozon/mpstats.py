@@ -7,13 +7,10 @@ import modules.info as info
 
 
 def _fetch_positions_by_sku_list(headers, sku_list, start_date):
-    url_list = [f'https://mpstats.io/api/oz/get/item/{sku}/by_category' for sku in sku_list]
+    urls_list = [f'https://mpstats.io/api/oz/get/item/{sku}/by_category' for sku in sku_list]
     params = {'d1': str(start_date), 'd2': str(date.today())}
-    positions_dict = async_requests.by_urls('GET', url_list, sku_list,
-                                            params=params,
-                                            headers=headers,
-                                            content_type='json')
-    return positions_dict
+    return async_requests.fetch('GET', sku_list, urls_list=urls_list,
+                                params=params, headers=headers, content_type='json')
 
 
 def _fetch_positions_by_supplier(headers, supplier, start_date):

@@ -82,10 +82,28 @@ def dates_list(from_date, to_today=True, to_yesterday=False, to_date=None):
     return dates
 
 
-def current_monday():
-    current_date = datetime.today()
+def current_monday(skip_one=False):
+    if skip_one: current_date = datetime.today() - timedelta(days=1)
+    else: current_date = datetime.today()
     weekday_number = current_date.isoweekday()
     return (current_date - timedelta(days=(weekday_number - 1))).date()
 
-def current_month_start_date():
-    return datetime.today().replace(day=1).date()
+def current_month_start_date(skip_one=False):
+    if skip_one: today = datetime.today() - timedelta(days=1)
+    else: today = datetime.today()
+    return today.replace(day=1).date()
+
+
+def next_monday(from_date):
+    from_date = datetime.strptime(from_date, '%Y-%m-%d')
+    weekday_number = from_date.isoweekday()
+    return (from_date + timedelta(days=(8-weekday_number))).date()
+
+
+def next_month_start_date(from_date):
+    from_date = datetime.strptime(from_date, '%Y-%m-%d')
+    to_date = from_date.replace(day=28)
+    while True:
+        to_date += timedelta(days=1)
+        if to_date.day == 1: return to_date.date()
+

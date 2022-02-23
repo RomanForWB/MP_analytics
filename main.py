@@ -245,6 +245,15 @@ def ask_ozon_input(worksheet, skip_suppliers=False, skip_nm=False):
             print("Неправильный выбор...")
 
 
+def get_int_column(worksheet, header, column_number):
+    column = google_work.get_columns(worksheet, header, column_number)
+    int_values = list()
+    for item in column:
+        try: int_values.append(int(item))
+        except ValueError: pass
+    return int_values
+
+
 if __name__ == '__main__':
     # ================== начало диалога ==================
     while True:
@@ -266,13 +275,13 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, orders_table, replace=False)
             worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Заказы (топ 500)')
             categories_list = google_work.get_columns(worksheet, 1, 10)
-            input_data = list(map(int, google_work.get_columns(worksheet, 1, 11)))
+            input_data = get_int_column(worksheet, 1, 11)
             orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
             worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Заказы (новинки)')
             categories_list = google_work.get_columns(worksheet, 1, 10)
-            input_data = list(map(int, google_work.get_columns(worksheet, 1, 11)))
+            input_data = get_int_column(worksheet, 1, 11)
             orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
@@ -292,12 +301,12 @@ if __name__ == '__main__':
             choice = 'start'
         elif choice == 'wb_all_analytics':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
-            input_data = google_work.get_columns(worksheet, 1, 2)
+            input_data = get_int_column(worksheet, 1, 2)
             start_date = str(date.today() - timedelta(days=7))
             categories_table = wb_mpstats.categories(input_data, start_date)
             google_work.insert_table(worksheet, categories_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Позиции')
-            input_data = google_work.get_columns(worksheet, 1, 2)
+            input_data = get_int_column(worksheet, 1, 2)
             positions_table = wb_mpstats.positions(input_data, start_date)
             google_work.insert_table(worksheet, positions_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Остатки')

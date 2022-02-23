@@ -106,4 +106,3 @@ def next_month_start_date(from_date):
     while True:
         to_date += timedelta(days=1)
         if to_date.day == 1: return to_date.date()
-

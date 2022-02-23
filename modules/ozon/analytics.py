@@ -116,7 +116,6 @@ def _fetch_analytics_by_suppliers_list(suppliers_list, start_date):
             "dimension": ["day"],
             "limit": 1000,
             "offset": 0}
-
     analytics_dict = async_requests.fetch('POST', suppliers_list, url=url, headers_list=headers_list,
                                           body=body, content_type='json', lib='httpx')
     return {supplier: {value['dimensions'][0]['id']:

@@ -4,7 +4,7 @@ counter = 0
 
 async def _get_fetch(session, id, content_type, lib, url, params, headers):
     global counter
-    individual_timer = 20
+    individual_timer = 10
     individual_session = False
     if lib == 'httpx':
         while True:
@@ -53,7 +53,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
 
 async def _post_fetch(session, id, body, content_type, lib, url, params, headers):
     global counter
-    individual_timer = 20
+    individual_timer = 10
     individual_session = False
     if lib == 'httpx':
         while True:
@@ -134,11 +134,12 @@ async def _fetch_all(http_method, ids, content_type='text', lib='aiohttp',
                      url=None, urls_list=None,
                      body=None, bodies_list=None,
                      params=None, params_list=None,
-                     headers=None, headers_list=None):
+                     headers=None, headers_list=None,
+                     timeout=10):
     global counter
     counter = 0
     if lib == 'httpx':
-        timeout = httpx.Timeout(timeout=20.0)
+        timeout = httpx.Timeout(timeout=float(timeout))
         async with httpx.AsyncClient(timeout=timeout) as session:
             result_list = await _fetch_all_tasks(http_method, session, ids,
                                                  url=url, urls_list=urls_list,
@@ -147,7 +148,7 @@ async def _fetch_all(http_method, ids, content_type='text', lib='aiohttp',
                                                  params=params, params_list=params_list,
                                                  headers=headers, headers_list=headers_list)
     else:
-        timeout = aiohttp.ClientTimeout(total=20)
+        timeout = aiohttp.ClientTimeout(total=timeout)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             result_list = await _fetch_all_tasks(http_method, session, ids,
                                                  url=url, urls_list=urls_list,
@@ -162,7 +163,8 @@ def fetch(http_method, ids, content_type='text', lib='aiohttp',
           url=None, urls_list=None,
           body=None, bodies_list=None,
           params=None, params_list=None,
-          headers=None, headers_list=None):
+          headers=None, headers_list=None,
+          timeout=10):
     for iter_list in [bodies_list, params_list, headers_list, urls_list]:
         if iter_list is not None and len(iter_list) != len(ids):
             raise IndexError("Length of iterable list must be equal to ids list.")
@@ -171,4 +173,5 @@ def fetch(http_method, ids, content_type='text', lib='aiohttp',
                                   url=url, urls_list=urls_list,
                                   body=body, bodies_list=bodies_list,
                                   params=params, params_list=params_list,
-                                  headers=headers, headers_list=headers_list))
+                                  headers=headers, headers_list=headers_list,
+                                  timeout=timeout))

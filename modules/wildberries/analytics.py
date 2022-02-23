@@ -13,19 +13,17 @@ _report = dict()
 
 def _fetch_cards_by_supplier(url, body, supplier):
     result = _cards.get(supplier)
-    if result is not None: return deepcopy(result)
-    else:
+    if result is None:
         headers = {'Authorization': wb_info.api_key('token', supplier)}
         response = requests.post(url, json=body, headers=headers)
         result = response.json()['result']['cards']
         _cards[supplier] = result
-    return result
+    return deepcopy(result)
 
 
 def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
     result = _cards.get(tuple(suppliers_list))
-    if result is not None: return deepcopy(result)
-    else:
+    if result is None:
         headers_list = [{'Authorization': wb_info.api_key('token', supplier)}
                         for supplier in suppliers_list]
         cards_dict = async_requests.fetch('POST', suppliers_list, url=url,
@@ -33,7 +31,7 @@ def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
                                           timeout=120)
         result = {supplier: cards['result']['cards'] for supplier, cards in cards_dict.items()}
         _cards[tuple(suppliers_list)] = result
-    return result
+    return deepcopy(result)
 
 
 def _fetch_orders_by_supplier(url, headers, supplier, start_date):
@@ -48,7 +46,7 @@ def _fetch_orders_by_supplier(url, headers, supplier, start_date):
                 if 200 <= response.status_code < 300:
                     result = response.json()
                     _orders[(supplier, start_date)] = result
-                    return result
+                    return deepcopy(result)
                 else: continue
             except requests.exceptions.ChunkedEncodingError: pass
 
@@ -60,44 +58,40 @@ def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):
 
 def _fetch_stocks_by_supplier(url, supplier, start_date):
     result = _stocks.get((supplier, start_date))
-    if result is not None: return deepcopy(result)
-    else:
+    if result is None:
         params = {'key': wb_info.api_key('x64', supplier), 'dateFrom': start_date}
         response = requests.get(url, params=params)
         result = response.json()
         _stocks[(supplier, start_date)] = result
-        return result
+    return deepcopy(result)
 
 
 def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
     result = _stocks.get((tuple(suppliers_list), start_date))
-    if result is not None: return deepcopy(result)
-    else:
+    if result is None:
         params_list = [{'key': wb_info.api_key('x64', supplier),
                         'dateFrom': start_date}
                        for supplier in suppliers_list]
         result = async_requests.fetch('GET', suppliers_list, url=url,
                                     params_list=params_list, content_type='json')
         _stocks[(tuple(suppliers_list), start_date)] = result
-        return result
+    return deepcopy(result)
 
 
 def _fetch_report_by_supplier(url, supplier):
     result = _report.get(supplier)
-    if result is not None: return deepcopy(result)
-    else:
+    if result is None:
         params = {'isCommussion': 2}
         headers = {'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
         response = requests.get(url, params=params, headers=headers)
         result = response.json()['data']
         _report[supplier] = result
-        return result
+    return deepcopy(result)
 
 
 def _fetch_report_by_suppliers_list(url, suppliers_list):
     result = _report.get(tuple(suppliers_list))
-    if result is not None: return deepcopy(result)
-    else:
+    if result is None:
         params = {'isCommussion': 2}
         headers_list = [{'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
                         for supplier in suppliers_list]
@@ -105,7 +99,7 @@ def _fetch_report_by_suppliers_list(url, suppliers_list):
                                            url=url, params=params, headers_list=headers_list)
         result = {supplier: report['data'] for supplier, report in report_dict.items()}
         _report[tuple(suppliers_list)] = result
-        return result
+    return deepcopy(result)
 
 
 def _feedbacks_by_data(supplier, card, feedbacks_list):

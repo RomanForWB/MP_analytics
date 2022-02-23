@@ -1,9 +1,20 @@
 import aiohttp, asyncio, httpx
 
 counter = 0
+failure_counter = None
+
+def ask_stop():
+    print("\nПолучение данных невозможно...")
+    print("1 - Продолжить попытки")
+    print("2 - Остановиться на полученных данных")
+    choice = input("Выбор: ")
+    if '2' in choice: return True
+    else: return False
+
 
 async def _get_fetch(session, id, content_type, lib, url, params, headers):
     global counter
+    global failure_counter
     individual_timer = 10
     individual_session = False
     if lib == 'httpx':
@@ -12,6 +23,11 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
                 response = await session.get(url, params=params, headers=headers)
                 if response.status_code < 200 or response.status_code >= 300:
                     print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
+                    if failure_counter is None: return [id, None]
+                    failure_counter -= 1
+                    if failure_counter <= 0:
+                        if ask_stop(): failure_counter = None
+                        else: failure_counter = counter*20
                 else:
                     if content_type.lower() == 'json': result = response.json()
                     else: result = response.text
@@ -33,6 +49,11 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
                 async with session.get(url, params=params, headers=headers) as response:
                     if response.status < 200 or response.status >= 300:
                         print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
+                        if failure_counter is None: return [id, None]
+                        failure_counter -= 1
+                        if failure_counter <= 0:
+                            if ask_stop(): failure_counter = None
+                            else: failure_counter = counter * 20
                     else:
                         if content_type.lower() == 'json': result = await response.json()
                         else: result = await response.text()
@@ -53,6 +74,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
 
 async def _post_fetch(session, id, body, content_type, lib, url, params, headers):
     global counter
+    global failure_counter
     individual_timer = 10
     individual_session = False
     if lib == 'httpx':
@@ -61,6 +83,11 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
                 response = await session.post(url, params=params, json=body, headers=headers)
                 if response.status_code < 200 or response.status_code >= 300:
                     print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
+                    if failure_counter is None: return [id, None]
+                    failure_counter -= 1
+                    if failure_counter <= 0:
+                        if ask_stop(): failure_counter = None
+                        else: failure_counter = counter * 20
                 else:
                     if content_type.lower() == 'json': result = response.json()
                     else: result = response.text
@@ -80,7 +107,13 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
         while True:
             try:
                 async with session.post(url, params=params, json=body, headers=headers) as response:
-                    if response.status < 200 or response.status >= 300: pass
+                    if response.status < 200 or response.status >= 300:
+                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
+                        if failure_counter is None: return [id, None]
+                        failure_counter -= 1
+                        if failure_counter <= 0:
+                            if ask_stop(): failure_counter = None
+                            else: failure_counter = counter * 20
                     else:
                         if content_type.lower() == 'json': result = await response.json()
                         else: result = await response.text()
@@ -125,6 +158,8 @@ async def _fetch_all_tasks(http_method, session, ids,
             tasks.append(asyncio.create_task(_post_fetch(session, ids[i],
                                       body=task_body, content_type=content_type, lib=lib,
                                       url=task_url, params=task_params, headers=task_headers)))
+    global failure_counter
+    failure_counter = len(tasks)*10
     results = await asyncio.gather(*tasks)
     print()
     return results
@@ -156,7 +191,11 @@ async def _fetch_all(http_method, ids, content_type='text', lib='aiohttp',
                                                  body=body, bodies_list=bodies_list,
                                                  params=params, params_list=params_list,
                                                  headers=headers, headers_list=headers_list)
-    return {item[0]: item[1] for item in result_list}
+    result_dict = dict()
+    for item in result_list:
+        if item[1] is None: pass
+        else: result_dict[item[0]] = item[1]
+    return result_dict
 
 
 def fetch(http_method, ids, content_type='text', lib='aiohttp',

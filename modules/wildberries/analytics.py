@@ -4,9 +4,11 @@ from copy import deepcopy
 import modules.async_requests as async_requests
 import modules.wildberries.info as wb_info
 import modules.info as info
+from time import sleep
 
 
 _cards = dict()
+_day_orders = dict()
 _orders = dict()
 _stocks = dict()
 _report = dict()
@@ -36,6 +38,45 @@ def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
 
 
 def _fetch_orders_by_supplier(url, headers, supplier, start_date):
+    #================== async variant =====================
+    # result = _orders.get((supplier, start_date))
+    # if result is not None: return deepcopy(result)
+    # else:
+    #     dates_list = info.dates_list(from_date=str(start_date), to_today=True)
+    #     params_list = [{'key': wb_info.api_key('x64', supplier),
+    #                     'dateFrom': day,
+    #                     'flag': 1} for day in dates_list]
+    #     orders_by_day = async_requests.fetch('GET', dates_list, content_type='json',
+    #                                          url=url, params_list=params_list, headers=headers, timeout=60)
+    #     result = [item for order_list in orders_by_day.values() for item in order_list]
+    #     _orders[(supplier, start_date)] = result
+    # return deepcopy(result)
+    # ================== by day session variant =====================
+    # result = _orders.get((supplier, start_date))
+    # if result is not None: return deepcopy(result)
+    # else:
+    #     dates_list = info.dates_list(from_date=str(start_date), to_today=True)
+    #     while True:
+    #         try:
+    #             result = list()
+    #             with requests.Session() as session:
+    #                 for day in dates_list:
+    #                     params = {'key': wb_info.api_key('x64', supplier),
+    #                               'dateFrom': day, 'flag': 1}
+    #                     while True:
+    #                         response = session.get(url=url, params=params, headers=headers)
+    #                         print(response.status_code)
+    #                         if 200 <= response.status_code < 300:
+    #                             result += response.json()
+    #                             break
+    #                         else:
+    #                             print(response.headers)
+    #             _orders[(supplier, start_date)] = result
+    #             return deepcopy(result)
+    #         except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError): pass
+    #
+    # ================== basic variant =====================
+    print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
     result = _orders.get((supplier, start_date))
     if result is not None: return deepcopy(result)
     else:
@@ -43,7 +84,6 @@ def _fetch_orders_by_supplier(url, headers, supplier, start_date):
             params = {'key': wb_info.api_key('x64', supplier),
                       'dateFrom': str(start_date)}
             try:
-                print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
                 response = requests.get(url, params=params, headers=headers, timeout=60)
                 if 200 <= response.status_code < 300:
                     result = response.json()
@@ -58,24 +98,52 @@ def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):
                    for supplier in suppliers_list}
 
 
+def _fetch_day_orders_by_supplier(url, headers, supplier, day):
+    print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
+    params = {'key': wb_info.api_key('x64', supplier),
+              'dateFrom': str(day), 'flag': 1}
+    result = _day_orders.get((supplier, day))
+    if result is not None: return deepcopy(result)
+    else:
+        while True:
+            try:
+                response = requests.get(url, params=params, headers=headers, timeout=60)
+                if 200 <= response.status_code < 300:
+                    result = response.json()
+                    _day_orders[(supplier, day)] = result
+                    return deepcopy(result)
+                else: continue
+            except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError): pass
+
+
+def _fetch_day_orders_by_suppliers_list(url, headers, suppliers_list, day):
+    return {supplier: _fetch_day_orders_by_supplier(url, headers, supplier, day)
+            for supplier in suppliers_list}
+
+
 def _fetch_stocks_by_supplier(url, supplier, start_date):
+    params = {'key': wb_info.api_key('x64', supplier), 'dateFrom': str(start_date)}
     result = _stocks.get((supplier, start_date))
     if result is None:
-        params = {'key': wb_info.api_key('x64', supplier), 'dateFrom': start_date}
-        response = requests.get(url, params=params)
-        result = response.json()
-        _stocks[(supplier, start_date)] = result
-    return deepcopy(result)
+        while True:
+            try:
+                response = requests.get(url, params=params)
+                if 200 <= response.status_code < 300:
+                    result = response.json()
+                    _stocks[(supplier, start_date)] = result
+                    return deepcopy(result)
+                else: continue
+            except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError): pass
 
 
 def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
     result = _stocks.get((tuple(suppliers_list), start_date))
     if result is None:
         params_list = [{'key': wb_info.api_key('x64', supplier),
-                        'dateFrom': start_date}
+                        'dateFrom': str(start_date)}
                        for supplier in suppliers_list]
         result = async_requests.fetch('GET', suppliers_list, url=url,
-                                    params_list=params_list, content_type='json')
+                                      params_list=params_list, content_type='json', timeout=360)
         _stocks[(tuple(suppliers_list), start_date)] = result
     return deepcopy(result)
 
@@ -356,8 +424,8 @@ def _orders_category_by_supplier(supplier, start_date, visible_categories):
         except KeyError: pass
 
     table = list()
-    total = [0 for day in days]
-    other = [0 for day in days]
+    total = [0] * len(days)
+    other = [0] * len(days)
     for category, days_info in categories_dict.items():
         values = [days_info[day] for day in days]
         if category in visible_categories: table.append([category] + values)
@@ -386,8 +454,8 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categ
             except KeyError: pass
 
     table = list()
-    total = [0 for day in days]
-    other = [0 for day in days]
+    total = [0]*len(days)
+    other = [0]*len(days)
     for category, days_info in categories_dict.items():
         values = [days_info[day] for day in days]
         if category in visible_categories: table.append([category] + values)
@@ -547,6 +615,94 @@ def _report_by_suppliers_list(suppliers_list, start_date):
     return table
 
 
+def _shipments_by_suppliers_list(suppliers_list):
+    today = str(date.today())
+    start_date = str(date.today() - timedelta(days=7))
+    stocks_dict = fetch_stocks(suppliers_list=suppliers_list)
+    orders_dict = fetch_orders(suppliers_list=suppliers_list, start_date=start_date)
+    table = list()
+    for supplier in suppliers_list:
+        items_dict = dict()
+        for stock in stocks_dict[supplier]:
+            dict_key = (wb_info.supplier_name(supplier),
+                        stock['nmId'],
+                        stock['supplierArticle'],
+                        f"{stock['category']}/{stock['subject']}",
+                        stock['brand'],
+                        stock['techSize'])
+            items_dict.setdefault(dict_key, {'orders': 0, 'stock': 0, 'date': start_date})
+            items_dict[dict_key]['stock'] += stock['quantity']
+            if items_dict[dict_key]['date'] < stock['lastChangeDate']: items_dict[dict_key]['date'] = stock[
+                'lastChangeDate']
+        for order in orders_dict[supplier]:
+            if today in order['date']: continue
+            dict_key = (wb_info.supplier_name(supplier),
+                        order['nmId'],
+                        order['supplierArticle'],
+                        f"{order['category']}/{order['subject']}",
+                        order['brand'],
+                        order['techSize'])
+            items_dict.setdefault(dict_key, {'orders': 0, 'stock': 0, 'date': start_date})
+            items_dict[dict_key]['orders'] += order['quantity']
+        supplier_table = list()
+        for key, value in items_dict.items():
+            if value['stock'] - value['orders'] > 0: ship = 0
+            elif value['stock'] - value['orders'] < -10: ship = value['orders'] - value['stock']
+            elif value['orders'] == 0:
+                if value['stock'] < 10: ship = 10 - value['stock']
+                else: ship = 0
+            else:
+                if ((value['stock'] - value['orders']) * (1.5 + value['stock']/value['orders'])) > -10: ship = 10
+                else: ship = -(value['stock'] - value['orders']) * (1.5 + value['stock']/value['orders'])
+            supplier_table.append(list(key) + [value['orders'], value['stock'],
+                                               value['stock'] - value['orders'],
+                                               ship, value['date']])
+        table += sorted(supplier_table, key=lambda item: item[2])
+    return table
+
+
+def _shipments_by_supplier(supplier):
+    today = str(date.today())
+    start_date = str(date.today()-timedelta(days=7))
+    stocks_list = fetch_stocks(supplier=supplier)
+    orders_list = fetch_orders(supplier=supplier, start_date=start_date)
+    items_dict = dict()
+    for stock in stocks_list:
+        dict_key = (wb_info.supplier_name(supplier),
+                    stock['nmId'],
+                    stock['supplierArticle'],
+                    f"{stock['category']}/{stock['subject']}",
+                    stock['brand'],
+                    stock['techSize'])
+        items_dict.setdefault(dict_key, {'orders': 0, 'stock': 0, 'date': start_date})
+        items_dict[dict_key]['stock'] += stock['quantity']
+        if items_dict[dict_key]['date'] < stock['lastChangeDate']: items_dict[dict_key]['date'] = stock['lastChangeDate']
+    for order in orders_list:
+        if today in order['date']: continue
+        dict_key = (wb_info.supplier_name(supplier),
+                    order['nmId'],
+                    order['supplierArticle'],
+                    f"{order['category']}/{order['subject']}",
+                    order['brand'],
+                    order['techSize'])
+        items_dict.setdefault(dict_key, {'orders': 0, 'stock': 0, 'date': start_date})
+        items_dict[dict_key]['orders'] += order['quantity']
+    table = list()
+    for key, value in items_dict.items():
+        if value['stock'] - value['orders'] > 0: ship = 0
+        elif value['stock'] - value['orders'] < -10: ship = value['orders'] - value['stock']
+        elif value['orders'] == 0:
+            if value['stock'] < 10: ship = 10 - value['stock']
+            else: ship = 0
+        else:
+            if ((value['stock'] - value['orders']) * (1.5 + value['stock'] / value['orders'])) > -10: ship = 10
+            else: ship = -(value['stock'] - value['orders']) * (1.5 + value['stock'] / value['orders'])
+        table.append(list(key) + [value['orders'], value['stock'],
+                                  value['stock'] - value['orders'],
+                                  ship, value['date']])
+    return sorted(table, key=lambda item: item[2])
+
+
 def fetch_cards(supplier=None, suppliers_list=None):
     url = "https://suppliers-api.wildberries.ru/card/list"
     body = {"id": 1,
@@ -583,7 +739,15 @@ def fetch_orders(supplier=None, suppliers_list=None, start_date=str(date.today()
     elif suppliers_list is not None: return _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date)
 
 
-def fetch_stocks(supplier=None, suppliers_list=None, start_date=date.today()-timedelta(days=6)):
+def fetch_day_orders(supplier=None, suppliers_list=None, day=str(date.today()-timedelta(days=1))):
+    url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/orders'
+    headers = {'Content-Type': 'application/json'}
+    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch orders.")
+    elif supplier is not None: return _fetch_day_orders_by_supplier(url, headers, supplier, day)
+    elif suppliers_list is not None: return _fetch_day_orders_by_suppliers_list(url, headers, suppliers_list, day)
+
+
+def fetch_stocks(supplier=None, suppliers_list=None, start_date=str(date.today()-timedelta(days=6))):
     url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/stocks'
     if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch stocks.")
     elif supplier is not None: return _fetch_stocks_by_supplier(url, supplier, start_date)
@@ -677,6 +841,20 @@ def report(input_data, start_date=str(date.today()-timedelta(days=7))):
         elif type(input_data[0]) == int: table = _report_by_nm_list(input_data, start_date)
     elif type(input_data) == str: table = _report_by_supplier(input_data, start_date)
     elif type(input_data) == int: table = _report_by_nm_list([input_data], start_date)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table
+
+
+def shipments(input_data):
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет', 'Бренд',
+              'Размер', 'Заказы', 'Остаток', 'Дефицит', 'Отгрузка', 'Время обновления']
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _shipments_by_suppliers_list(input_data)
+        elif type(input_data[0]) == int: table = _shipments_by_nm_list(input_data)
+    elif type(input_data) == str: table = _shipments_by_supplier(input_data)
+    elif type(input_data) == int: table = _shipments_by_nm_list([input_data])
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table

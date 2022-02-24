@@ -42,30 +42,32 @@ def ask_wb():
     print("2 - Отчет по позициям")
     print("3 - Отчет по остаткам")
     print("4 - Отчет по отзывам")
-    print("5 - Отчет (день)")
-    print("6 - Отчет (неделя)")
-    print("7 - Отчет (месяц)")
-    print("8 - Заказы (все)")
-    print("9 - Заказы (топ 500)")
-    print("10 - Заказы (новинки)")
-    print("11 - Заказы по товарам (кол-во)")
-    print("12 - Заказы по товарам (сумма)")
-    print("13 - В начало")
+    print("5 - Отчет по отгрузке")
+    print("6 - Отчет (день)")
+    print("7 - Отчет (неделя)")
+    print("8 - Отчет (месяц)")
+    print("9 - Заказы (все)")
+    print("10 - Заказы (топ 500)")
+    print("11 - Заказы (новинки)")
+    print("12 - Заказы по товарам (кол-во)")
+    print("13 - Заказы по товарам (сумма)")
+    print("14 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
     elif choice.strip() == '2': choice = 'wb_positions'
     elif choice.strip() == '3': choice = 'wb_stocks'
     elif choice.strip() == '4': choice = 'wb_feedbacks'
-    elif choice.strip() == '5': choice = 'wb_day_report'
-    elif choice.strip() == '6': choice = 'wb_week_report'
-    elif choice.strip() == '7': choice = 'wb_month_report'
-    elif choice.strip() == '8': choice = 'wb_orders_category_all'
-    elif choice.strip() == '9': choice = 'wb_orders_category_500'
-    elif choice.strip() == '10': choice = 'wb_orders_category_new'
-    elif choice.strip() == '11': choice = 'wb_orders_count'
-    elif choice.strip() == '12': choice = 'wb_orders_value'
-    elif choice.strip() == '13': choice = 'start'
+    elif choice.strip() == '5': choice = 'wb_shipments'
+    elif choice.strip() == '6': choice = 'wb_day_report'
+    elif choice.strip() == '7': choice = 'wb_week_report'
+    elif choice.strip() == '8': choice = 'wb_month_report'
+    elif choice.strip() == '9': choice = 'wb_orders_category_all'
+    elif choice.strip() == '10': choice = 'wb_orders_category_500'
+    elif choice.strip() == '11': choice = 'wb_orders_category_new'
+    elif choice.strip() == '12': choice = 'wb_orders_count'
+    elif choice.strip() == '13': choice = 'wb_orders_value'
+    elif choice.strip() == '14': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -317,6 +319,10 @@ if __name__ == '__main__':
             input_data = wb_info.all_suppliers()
             feedbacks_table = wb_analytics.feedbacks(input_data)
             google_work.insert_table(worksheet, feedbacks_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Отгрузка')
+            input_data = wb_info.all_suppliers()
+            shipments_table = wb_analytics.shipments(input_data)
+            google_work.insert_table(worksheet, shipments_table, replace=True)
             choice = 'start'
         elif choice == 'wb_categories':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
@@ -349,6 +355,13 @@ if __name__ == '__main__':
             if choice == 'start': continue
             feedbacks_table = wb_analytics.feedbacks(input_data)
             google_work.insert_table(worksheet, feedbacks_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_shipments':
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Отгрузка')
+            input_data = ask_wb_input(worksheet, skip_nm=True)
+            if choice == 'start': continue
+            shipments_table = wb_analytics.shipments(input_data)
+            google_work.insert_table(worksheet, shipments_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_count':
             worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'динамика, шт')

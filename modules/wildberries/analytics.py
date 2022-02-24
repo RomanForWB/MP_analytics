@@ -76,10 +76,11 @@ def _fetch_orders_by_supplier(url, headers, supplier, start_date):
     #         except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError): pass
     #
     # ================== basic variant =====================
-    print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
+
     result = _orders.get((supplier, start_date))
     if result is not None: return deepcopy(result)
     else:
+        print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
         while True:
             params = {'key': wb_info.api_key('x64', supplier),
                       'dateFrom': str(start_date)}

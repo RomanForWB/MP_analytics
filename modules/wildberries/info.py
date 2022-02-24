@@ -16,7 +16,10 @@ _suppliers = {"maryina":
                    "seller_identifiers": ["ИП Ахметов В Р", "ИП Ахметов Владимир Рафаэльевич"]},
               "fursov":
                   {"name": "ИП Фурсов И.Н.",
-                   "seller_identifiers": ["ИП Фурсов И Н"]}
+                   "seller_identifiers": ["ИП Фурсов И Н"]},
+              "lepeshkin":
+                  {"name": "ИП Лепешкин Д.И.",
+                   "seller_identifiers": ["ИП Лепешкин Д И"]},
               }
 
 

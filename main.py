@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from re import search
+from re import search, sub
 
 import modules.google_work as google_work
 import modules.info as info
@@ -251,7 +251,9 @@ def get_int_column(worksheet, header, column_number):
     column = google_work.get_columns(worksheet, header, column_number)
     int_values = list()
     for item in column:
-        try: int_values.append(int(item))
+        try:
+            item = sub(r"[^0-9]", '', item)
+            int_values.append(int(item))
         except ValueError: pass
     return int_values
 

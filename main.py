@@ -268,7 +268,7 @@ if __name__ == '__main__':
             worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'динамика, руб')
             orders_table = wb_analytics.orders_value(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'заказы общий')
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'заказы общие')
             categories_list = google_work.get_columns(worksheet, 1, 10)
             orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
             google_work.clear(worksheet, 'A:I')

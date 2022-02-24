@@ -71,7 +71,7 @@ def wb_week_report(worksheet, report_table):
     plan_row = ['']
     for i in range(len(first_column)):
         if 'Динамика' in first_column[i]:
-            outcomes = google_work.get_columns(worksheet, 1, 9)[:(i - 2)]
+            outcomes = google_work.get_columns(worksheet, 1, 9)[:(i - 3)]
             for k in range(len(outcomes)):
                 try:
                     outcomes[k] = int(re.sub("\s+", '', outcomes[k]))
@@ -195,7 +195,7 @@ def wb_month_report(worksheet, report_table):
     plan_row = ['']
     for i in range(len(first_column)):
         if 'Динамика' in first_column[i]:
-            outcomes = google_work.get_columns(worksheet, 1, 9)[:(i - 2)]
+            outcomes = google_work.get_columns(worksheet, 1, 9)[:(i - 3)]
             for k in range(len(outcomes)):
                 try: outcomes[k] = int(re.sub("\s+", '', outcomes[k]))
                 except ValueError: outcomes[k] = 0

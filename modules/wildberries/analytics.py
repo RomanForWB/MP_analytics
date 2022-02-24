@@ -11,6 +11,7 @@ _orders = dict()
 _stocks = dict()
 _report = dict()
 
+
 def _fetch_cards_by_supplier(url, body, supplier):
     result = _cards.get(supplier)
     if result is None:
@@ -42,13 +43,14 @@ def _fetch_orders_by_supplier(url, headers, supplier, start_date):
             params = {'key': wb_info.api_key('x64', supplier),
                       'dateFrom': str(start_date)}
             try:
-                response = requests.get(url, params=params, headers=headers)
+                print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
+                response = requests.get(url, params=params, headers=headers, timeout=60)
                 if 200 <= response.status_code < 300:
                     result = response.json()
                     _orders[(supplier, start_date)] = result
                     return deepcopy(result)
                 else: continue
-            except requests.exceptions.ChunkedEncodingError: pass
+            except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError): pass
 
 
 def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):

@@ -1,4 +1,5 @@
 from gspread import authorize
+from google.auth.exceptions import GoogleAuthError
 from oauth2client.service_account import ServiceAccountCredentials
 # EMAIL: roman-wb@roman-wb.iam.gserviceaccount.com
 
@@ -12,11 +13,13 @@ def initialize_connection():
 
 def open_sheet(google_sheet_key, sheet_name=1):
     print(f'Подключение к https://docs.google.com/spreadsheets/d/{google_sheet_key}...')
-    gc = initialize_connection()
-    google_sheet = gc.open_by_key(google_sheet_key)
-    if sheet_name == 1: worksheet = google_sheet.get_worksheet(0)
-    else: worksheet = google_sheet.worksheet(sheet_name)
-    return worksheet
+    while True:
+        try:
+            gc = initialize_connection()
+            google_sheet = gc.open_by_key(google_sheet_key)
+            if sheet_name == 1: return google_sheet.get_worksheet(0)
+            else: return google_sheet.worksheet(sheet_name)
+        except GoogleAuthError: pass
 
 
 def get_columns(worksheet, header_count, *column_numbers):

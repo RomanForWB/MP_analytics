@@ -1,12 +1,10 @@
 import aiohttp, asyncio, httpx
-import modules.proxies as proxies
 
 counter = 0
 failure_counter = None
-proxies_list = list()
 
 def ask_stop():
-    print("\nПолучение данных невозможно...")
+    print("\nПолучение данных задерживается...")
     print("1 - Продолжить попытки")
     print("2 - Остановиться на полученных данных")
     choice = input("Выбор: ")
@@ -14,7 +12,7 @@ def ask_stop():
     else: return False
 
 
-async def _get_fetch(session, id, content_type, lib, url, params, headers, proxy):
+async def _get_fetch(session, id, content_type, lib, url, params, headers):
     global counter
     global failure_counter
     individual_timer = 10
@@ -48,7 +46,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers, proxy
     else:
         while True:
             try:
-                async with session.get(url, params=params, headers=headers, proxy=proxy) as response:
+                async with session.get(url, params=params, headers=headers) as response:
                     if response.status < 200 or response.status >= 300:
                         print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
                         if failure_counter is None: return [id, None]
@@ -69,21 +67,17 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers, proxy
                 if individual_session: await session.close()
                 timeout = aiohttp.ClientTimeout(total=individual_timer)
                 session = aiohttp.ClientSession(timeout=timeout)
-                if proxies_list.index(proxy) == len(proxies_list) - 1: proxy = None
-                else: proxy = proxies_list[proxies_list.index(proxy) + 1]
             except (aiohttp.ClientError, RuntimeError):
                 print(f"\rПереподключение к {url.split('//')[1].split('/')[0]}...", end=' ')
                 if individual_session: await session.close()
                 timeout = aiohttp.ClientTimeout(total=individual_timer)
                 session = aiohttp.ClientSession(timeout=timeout)
-                if proxies_list.index(proxy) == len(proxies_list) - 1: proxy = None
-                else: proxy = proxies_list[proxies_list.index(proxy) + 1]
                 individual_session = True
                 individual_timer += 5
 
 
 
-async def _post_fetch(session, id, body, content_type, lib, url, params, headers, proxy):
+async def _post_fetch(session, id, body, content_type, lib, url, params, headers):
     global counter
     global failure_counter
     individual_timer = 10
@@ -117,7 +111,7 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
     else:
         while True:
             try:
-                async with session.post(url, params=params, json=body, headers=headers, proxy=proxy) as response:
+                async with session.post(url, params=params, json=body, headers=headers) as response:
                     if response.status < 200 or response.status >= 300:
                         print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
                         if failure_counter is None: return [id, None]
@@ -138,15 +132,11 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
                 if individual_session: await session.close()
                 timeout = aiohttp.ClientTimeout(total=individual_timer)
                 session = aiohttp.ClientSession(timeout=timeout)
-                if proxies_list.index(proxy) == len(proxies_list) - 1: proxy = None
-                else: proxy = proxies_list[proxies_list.index(proxy) + 1]
             except (aiohttp.ClientError, RuntimeError):
                 print(f"\rПереподключение к {url.split('//')[1].split('/')[0]}...", end=' ')
                 if individual_session: await session.close()
                 timeout = aiohttp.ClientTimeout(total=individual_timer)
                 session = aiohttp.ClientSession(timeout=timeout)
-                if proxies_list.index(proxy) == len(proxies_list) - 1: proxy = None
-                else: proxy = proxies_list[proxies_list.index(proxy) + 1]
                 individual_session = True
                 individual_timer += 5
 
@@ -156,14 +146,9 @@ async def _fetch_all_tasks(http_method, session, ids,
                            url=None, urls_list=None,
                            body=None, bodies_list=None,
                            params=None, params_list=None,
-                           headers=None, headers_list=None,
-                           proxy=False):
-    global proxies_list
+                           headers=None, headers_list=None):
     if urls_list is not None: print(f"Подключение к {urls_list[0].split('//')[1].split('/')[0]}...")
     else: print(f"Подключение к {url.split('//')[1].split('/')[0]}...")
-    if proxy:
-        print(f"Получение списка прокси серверов...")
-        proxies_list = proxies.get_free_proxies()
     print(f"Всего запросов: {len(ids)}")
     tasks = list()
     for i in range(len(ids)):
@@ -175,15 +160,13 @@ async def _fetch_all_tasks(http_method, session, ids,
         else: task_params = params
         if bodies_list is not None: task_body = bodies_list[i]
         else: task_body = body
-        if proxy: task_proxy = proxies_list[i % (len(proxies_list))]
-        else: task_proxy = None
         if http_method.lower() == 'get':
             tasks.append(asyncio.create_task(_get_fetch(session, ids[i],
-                                     content_type=content_type, lib=lib, proxy=task_proxy,
+                                     content_type=content_type, lib=lib,
                                      url=task_url, params=task_params, headers=task_headers)))
         elif http_method.lower() == 'post':
             tasks.append(asyncio.create_task(_post_fetch(session, ids[i],
-                                      body=task_body, content_type=content_type, lib=lib, proxy=task_proxy,
+                                      body=task_body, content_type=content_type, lib=lib,
                                       url=task_url, params=task_params, headers=task_headers)))
     global failure_counter
     failure_counter = 50+len(tasks)*10
@@ -197,7 +180,7 @@ async def _fetch_all(http_method, ids, content_type='text', lib='aiohttp',
                      body=None, bodies_list=None,
                      params=None, params_list=None,
                      headers=None, headers_list=None,
-                     timeout=10, proxy=False):
+                     timeout=10):
     global counter
     counter = 0
     if lib == 'httpx':
@@ -208,7 +191,7 @@ async def _fetch_all(http_method, ids, content_type='text', lib='aiohttp',
                                                  content_type=content_type, lib=lib,
                                                  body=body, bodies_list=bodies_list,
                                                  params=params, params_list=params_list,
-                                                 headers=headers, headers_list=headers_list, proxy=proxy)
+                                                 headers=headers, headers_list=headers_list)
     else:
         timeout = aiohttp.ClientTimeout(total=timeout)
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -217,7 +200,7 @@ async def _fetch_all(http_method, ids, content_type='text', lib='aiohttp',
                                                  content_type=content_type, lib=lib,
                                                  body=body, bodies_list=bodies_list,
                                                  params=params, params_list=params_list,
-                                                 headers=headers, headers_list=headers_list, proxy=proxy)
+                                                 headers=headers, headers_list=headers_list)
     result_dict = dict()
     for item in result_list:
         if item[1] is None: pass
@@ -230,7 +213,7 @@ def fetch(http_method, ids, content_type='text', lib='aiohttp',
           body=None, bodies_list=None,
           params=None, params_list=None,
           headers=None, headers_list=None,
-          timeout=10, proxy=False):
+          timeout=10):
     for iter_list in [bodies_list, params_list, headers_list, urls_list]:
         if iter_list is not None and len(iter_list) != len(ids):
             raise IndexError("Length of iterable list must be equal to ids list.")
@@ -240,4 +223,4 @@ def fetch(http_method, ids, content_type='text', lib='aiohttp',
                                   body=body, bodies_list=bodies_list,
                                   params=params, params_list=params_list,
                                   headers=headers, headers_list=headers_list,
-                                  timeout=timeout, proxy=proxy))
+                                  timeout=timeout))

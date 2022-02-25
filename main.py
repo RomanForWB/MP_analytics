@@ -448,7 +448,7 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, stocks_table, replace=True)
             choice = 'ozon'
         elif choice == 'ozon_month_report':
-            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Отчет (месяц)')
+            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Отчет (месяц) (тест)')
             input_data = ask_ozon_input(worksheet)
             if choice == 'start': continue
             start_date = ask_start_date()

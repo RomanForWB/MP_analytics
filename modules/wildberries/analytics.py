@@ -31,7 +31,7 @@ def _fetch_cards_by_supplier(url, body, supplier):
 def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
     result = _cards.get(tuple(suppliers_list))
     if result is None:
-        headers_list = [{'Authorization': wb_info.api_key('to_ken', supplier)}
+        headers_list = [{'Authorization': wb_info.api_key('token', supplier)}
                         for supplier in suppliers_list]
         cards_dict = async_requests.fetch('POST', suppliers_list, url=url,
                                           headers_list=headers_list, body=body, content_type='json',

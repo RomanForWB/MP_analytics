@@ -251,6 +251,24 @@ def _report_by_supplier(supplier, start_date):
              transactions_dict[day]['total_value']] for day, analytics in analytics_dict.items()]
 
 
+def _report_by_suppliers_list(suppliers_list, start_date):
+    analytics_dict = fetch_analytics(suppliers_list=suppliers_list, start_date=start_date)
+    transactions_dict = fetch_transactions(suppliers_list=suppliers_list, start_date=start_date)
+    dates = info.dates_list(from_date=start_date, to_yesterday=True)
+    table = [[day, sum([analytics_dict[supplier][day]['orders_count'] for supplier in suppliers_list]),
+                  sum([analytics_dict[supplier][day]['orders_value'] for supplier in suppliers_list]),
+                  sum([analytics_dict[supplier][day]['delivered_count'] - \
+                       analytics_dict[supplier][day]['returns_count'] - \
+                       analytics_dict[supplier][day]['cancellations_count'] for supplier in suppliers_list]),
+                  sum([transactions_dict[supplier][day]['sales_value'] for supplier in suppliers_list]),
+                  sum([transactions_dict[supplier][day]['delivery_value'] for supplier in suppliers_list]),
+                  sum([transactions_dict[supplier][day]['comission_value'] for supplier in suppliers_list]),
+                  sum([transactions_dict[supplier][day]['service_value'] for supplier in suppliers_list]),
+                  sum([transactions_dict[supplier][day]['total_value'] for supplier in suppliers_list])]
+                  for day in dates]
+    return table
+
+
 def report(input_data, start_date):
     header = ['Дата', 'Заказы шт.', 'Заказы руб.', 'Выкуплено шт.', 'Выкуплено руб.',
               'Доставка руб.', 'Комиссия руб.', 'Доп. услуги руб.', 'К перечислению']

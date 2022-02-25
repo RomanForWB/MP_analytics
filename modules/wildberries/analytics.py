@@ -31,7 +31,7 @@ def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
                         for supplier in suppliers_list]
         cards_dict = async_requests.fetch('POST', suppliers_list, url=url,
                                           headers_list=headers_list, body=body, content_type='json',
-                                          timeout=120)
+                                          timeout=60)
         result = {supplier: cards['result']['cards'] for supplier, cards in cards_dict.items()}
         _cards[tuple(suppliers_list)] = result
     return deepcopy(result)
@@ -85,7 +85,7 @@ def _fetch_orders_by_supplier(url, headers, supplier, start_date):
             params = {'key': wb_info.api_key('x64', supplier),
                       'dateFrom': str(start_date)}
             try:
-                response = requests.get(url, params=params, headers=headers, timeout=60)
+                response = requests.get(url, params=params, headers=headers, timeout=20)
                 if 200 <= response.status_code < 300:
                     result = response.json()
                     _orders[(supplier, start_date)] = result
@@ -108,7 +108,7 @@ def _fetch_day_orders_by_supplier(url, headers, supplier, day):
     else:
         while True:
             try:
-                response = requests.get(url, params=params, headers=headers, timeout=60)
+                response = requests.get(url, params=params, headers=headers, timeout=20)
                 if 200 <= response.status_code < 300:
                     result = response.json()
                     _day_orders[(supplier, day)] = result
@@ -128,7 +128,7 @@ def _fetch_stocks_by_supplier(url, supplier, start_date):
     if result is None:
         while True:
             try:
-                response = requests.get(url, params=params)
+                response = requests.get(url, params=params, timeout=20)
                 if 200 <= response.status_code < 300:
                     result = response.json()
                     _stocks[(supplier, start_date)] = result
@@ -144,7 +144,7 @@ def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
                         'dateFrom': str(start_date)}
                        for supplier in suppliers_list]
         result = async_requests.fetch('GET', suppliers_list, url=url,
-                                      params_list=params_list, content_type='json', timeout=360)
+                                      params_list=params_list, content_type='json')
         _stocks[(tuple(suppliers_list), start_date)] = result
     return deepcopy(result)
 

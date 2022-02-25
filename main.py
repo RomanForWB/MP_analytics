@@ -247,14 +247,15 @@ def ask_ozon_input(worksheet, skip_suppliers=False, skip_nm=False):
             print("Неправильный выбор...")
 
 
-def get_int_column(worksheet, header, column_number):
+def get_int_column(worksheet, header, column_number, keep_lenght=True):
     column = google_work.get_columns(worksheet, header, column_number)
     int_values = list()
     for item in column:
         try:
             item = sub(r"[^0-9]", '', item)
             int_values.append(int(item))
-        except ValueError: pass
+        except ValueError:
+            if keep_lenght: int_values.append(0)
     return int_values
 
 
@@ -430,26 +431,19 @@ if __name__ == '__main__':
         elif choice == 'ozon': ask_ozon()
         elif choice == 'ozon_positions':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Позиции')
-            input_data = ask_ozon_input(worksheet)
-            if choice == 'start': continue
-            start_date = ask_start_date()
-            if choice == 'start': continue
-            positions_table = ozon_mpstats.positions(input_data, start_date)
+            input_data = get_int_column(worksheet, 1, 2)
+            positions_table = ozon_mpstats.positions(input_data)
             google_work.insert_table(worksheet, positions_table, replace=True)
             choice = 'ozon'
         elif choice == 'ozon_categories':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Категории')
-            input_data = ask_ozon_input(worksheet)
-            if choice == 'start': continue
-            start_date = ask_start_date()
-            if choice == 'start': continue
-            categories_table = ozon_mpstats.categories(input_data, start_date)
+            input_data = get_int_column(worksheet, 1, 2)
+            categories_table = ozon_mpstats.categories(input_data)
             google_work.insert_table(worksheet, categories_table, replace=True)
             choice = 'ozon'
         elif choice == 'ozon_stocks':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Остатки')
-            input_data = ask_ozon_input(worksheet)
-            if choice == 'start': continue
+            input_data = ozon_info.all_suppliers()
             stocks_table = ozon_analytics.stocks(input_data)
             google_work.insert_table(worksheet, stocks_table, replace=True)
             choice = 'ozon'

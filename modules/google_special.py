@@ -18,17 +18,20 @@ ru_month = {1: 'января',
             11: 'ноября',
             12: 'декабря'}
 
+
 def wb_day_report(worksheet, report_table):
     first_column = google_work.get_columns(worksheet, 0, 1)
     for i in range(len(first_column)):
         if 'Динамика' in first_column[i]:
             worksheet.delete_rows(1, i-1)
             break
+
     report_table[0] += ['*% выкупа']
     for i in range(1, len(report_table)):
         day = datetime.strptime(report_table[i][0], '%Y-%m-%d')
         report_table[i][0] = f'{day.day} {ru_month[int(day.month)]}'
         report_table[i].append(report_table[i][3]/report_table[i][1])
+
     report_table.append(['Общий итог 7 дней',
                         sum([row[1] for row in report_table[2:]]),
                         sum([row[2] for row in report_table[2:]]),
@@ -53,6 +56,7 @@ def wb_day_report(worksheet, report_table):
                       report_table[-2][5] / report_table[-9][5] - 1,
                       report_table[-2][6] / report_table[-9][6] - 1,
                       report_table[-2][7] / report_table[-9][7] - 1]
+
     google_work.insert_table(worksheet, [dynamics_1_row, dynamics_7_row], start_cell='A2')
     worksheet.insert_rows(report_table)
     worksheet.format('A1:H1', {"textFormat": {"bold": True, "fontFamily": 'Times New Roman', "fontSize": 14},
@@ -68,31 +72,32 @@ def wb_day_report(worksheet, report_table):
 
 def wb_week_report(worksheet, report_table):
     first_column = google_work.get_columns(worksheet, 0, 1)
-    plan_row = ['']
+    plan_row = list()
+
     for i in range(len(first_column)):
         if 'Динамика' in first_column[i]:
+
             outcomes = google_work.get_columns(worksheet, 1, 9)[:(i - 3)]
             for k in range(len(outcomes)):
-                try:
-                    outcomes[k] = int(re.sub("\s+", '', outcomes[k]))
-                except ValueError:
-                    outcomes[k] = 0
+                try: outcomes[k] = int(re.sub(r"[^0-9]", '', outcomes[k]))
+                except ValueError: outcomes[k] = 0
             outcomes_column = ['Отгрузки руб.'] + outcomes
+
             plan = worksheet.row_values(i + 3)[1:]
-            plan_row = ['План'] + [int(re.sub("\s+|,|%", '', item)) for item in plan]
+            plan_row = ['План'] + [int(re.sub("[^0-9]", '', item)) for item in plan]
             plan_row[7] = plan_row[7] / 100
             worksheet.delete_rows(1, i - 1)
             break
+
     report_table[0] += ['*% выкупа', 'Отгрузки руб.']
     days = [row[0] for row in report_table[1:]]
     for i in range(1, len(report_table)):
         day = datetime.strptime(report_table[i][0], '%Y-%m-%d')
         report_table[i][0] = f'{day.day} {ru_month[int(day.month)]}'
         report_table[i].append(report_table[i][3] / report_table[i][1])
-        try:
-            report_table[i].append(outcomes_column[i])
-        except IndexError:
-            report_table[i].append(0)
+        try: report_table[i].append(outcomes_column[i])
+        except IndexError: report_table[i].append(0)
+
     report_table.append(['Общий итог недели',
                         sum([row[1] for row in report_table[1:]]),
                         sum([row[2] for row in report_table[1:]]),
@@ -105,29 +110,26 @@ def wb_week_report(worksheet, report_table):
 
     if len(report_table) < 4: dynamics_1_row = ['Динамика 1 день']
     else: dynamics_1_row = ['Динамика 1 день',
-                      report_table[-2][1] / report_table[-3][1] - 1,
-                      report_table[-2][2] / report_table[-3][2] - 1,
-                      report_table[-2][3] / report_table[-3][3] - 1,
-                      report_table[-2][4] / report_table[-3][4] - 1,
-                      report_table[-2][5] / report_table[-3][5] - 1,
-                      report_table[-2][6] / report_table[-3][6] - 1,
-                      report_table[-2][7] / report_table[-3][7] - 1,
-                      ""]
-
-
+                            report_table[-2][1] / report_table[-3][1] - 1,
+                            report_table[-2][2] / report_table[-3][2] - 1,
+                            report_table[-2][3] / report_table[-3][3] - 1,
+                            report_table[-2][4] / report_table[-3][4] - 1,
+                            report_table[-2][5] / report_table[-3][5] - 1,
+                            report_table[-2][6] / report_table[-3][6] - 1,
+                            report_table[-2][7] / report_table[-3][7] - 1,
+                            ""]
 
     fact_row = copy(report_table[-1])
     fact_row[0] = 'Факт'
-
     gap_row = ['Отставание $',
-                      plan_row[1] - fact_row[1],
-                      plan_row[2] - fact_row[2],
-                      plan_row[3] - fact_row[3],
-                      plan_row[4] - fact_row[4],
-                      plan_row[5] - fact_row[5],
-                      plan_row[6] - fact_row[6],
-                      '',
-                      plan_row[8] - fact_row[8]]
+               plan_row[1] - fact_row[1],
+               plan_row[2] - fact_row[2],
+               plan_row[3] - fact_row[3],
+               plan_row[4] - fact_row[4],
+               plan_row[5] - fact_row[5],
+               plan_row[6] - fact_row[6],
+               '',
+               plan_row[8] - fact_row[8]]
     gap_percent_row = ['Отставание',
                        gap_row[1]/plan_row[1],
                        gap_row[2]/plan_row[2],
@@ -192,19 +194,23 @@ def wb_week_report(worksheet, report_table):
 
 def wb_month_report(worksheet, report_table):
     first_column = google_work.get_columns(worksheet, 0, 1)
-    plan_row = ['']
+    plan_row = list()
+
     for i in range(len(first_column)):
         if 'Динамика' in first_column[i]:
+
             outcomes = google_work.get_columns(worksheet, 1, 9)[:(i - 3)]
             for k in range(len(outcomes)):
                 try: outcomes[k] = int(re.sub("\s+", '', outcomes[k]))
                 except ValueError: outcomes[k] = 0
             outcomes_column = ['Отгрузки руб.'] + outcomes
+
             plan = worksheet.row_values(i+4)[1:]
             plan_row = ['План'] + [int(re.sub("\s+|,|%", '', item)) for item in plan]
             plan_row[7] = plan_row[7]/100
             worksheet.delete_rows(1, i - 1)
             break
+
     report_table[0] += ['*% выкупа', 'Отгрузки руб.']
     days = [row[0] for row in report_table[1:]]
     for i in range(1, len(report_table)):
@@ -213,6 +219,7 @@ def wb_month_report(worksheet, report_table):
         report_table[i].append(report_table[i][3]/report_table[i][1])
         try: report_table[i].append(outcomes_column[i])
         except IndexError: report_table[i].append(0)
+
     report_table.append(['Общий итог месяца',
                         sum([row[1] for row in report_table[1:]]),
                         sum([row[2] for row in report_table[1:]]),
@@ -225,28 +232,27 @@ def wb_month_report(worksheet, report_table):
 
     if len(report_table) < 4: dynamics_1_row = ['Динамика 1 день']
     else: dynamics_1_row = ['Динамика 1 день',
-                      report_table[-2][1] / report_table[-3][1] - 1,
-                      report_table[-2][2] / report_table[-3][2] - 1,
-                      report_table[-2][3] / report_table[-3][3] - 1,
-                      report_table[-2][4] / report_table[-3][4] - 1,
-                      report_table[-2][5] / report_table[-3][5] - 1,
-                      report_table[-2][6] / report_table[-3][6] - 1,
-                      report_table[-2][7] / report_table[-3][7] - 1,
-                      '']
+                            report_table[-2][1] / report_table[-3][1] - 1,
+                            report_table[-2][2] / report_table[-3][2] - 1,
+                            report_table[-2][3] / report_table[-3][3] - 1,
+                            report_table[-2][4] / report_table[-3][4] - 1,
+                            report_table[-2][5] / report_table[-3][5] - 1,
+                            report_table[-2][6] / report_table[-3][6] - 1,
+                            report_table[-2][7] / report_table[-3][7] - 1,
+                            '']
 
     if len(report_table) < 10: dynamics_7_row = ['Динамика 7 дней']
     else: dynamics_7_row = ['Динамика 7 дней',
-                      report_table[-2][1] / report_table[-9][1] - 1,
-                      report_table[-2][2] / report_table[-9][2] - 1,
-                      report_table[-2][3] / report_table[-9][3] - 1,
-                      report_table[-2][4] / report_table[-9][4] - 1,
-                      report_table[-2][5] / report_table[-9][5] - 1,
-                      report_table[-2][6] / report_table[-9][6] - 1,
-                      report_table[-2][7] / report_table[-9][7] - 1,
-                      ""]
+                            report_table[-2][1] / report_table[-9][1] - 1,
+                            report_table[-2][2] / report_table[-9][2] - 1,
+                            report_table[-2][3] / report_table[-9][3] - 1,
+                            report_table[-2][4] / report_table[-9][4] - 1,
+                            report_table[-2][5] / report_table[-9][5] - 1,
+                            report_table[-2][6] / report_table[-9][6] - 1,
+                            report_table[-2][7] / report_table[-9][7] - 1,
+                            ""]
     fact_row = copy(report_table[-1])
     fact_row[0] = 'Факт'
-
     gap_row = ['Отставание $',
                plan_row[1] - fact_row[1],
                plan_row[2] - fact_row[2],
@@ -274,6 +280,7 @@ def wb_month_report(worksheet, report_table):
                 1 - gap_percent_row[6],
                 fact_row[7] / plan_row[7],
                 1 - gap_percent_row[8]]
+
     first_month_date = info.next_month_start_date(days[-1])
     days_to_end = len(info.days_list(from_date=days[-1], to_date=str(first_month_date)))
     today_plan_row = ['План на сегодня',
@@ -307,7 +314,6 @@ def wb_month_report(worksheet, report_table):
     google_work.insert_table(worksheet, [dynamics_1_row, dynamics_7_row, [''], plan_row, fact_row,
                                          gap_percent_row, gap_row, done_row, today_plan_row,
                                          moving_to_row, moving_to_percent_row], start_cell='A2')
-
     worksheet.insert_rows(report_table)
     worksheet.format('A1:I1', {"textFormat": {"bold": True, "fontFamily": 'Times New Roman', "fontSize": 14},
                                "backgroundColor": {"red": 0.8515625,

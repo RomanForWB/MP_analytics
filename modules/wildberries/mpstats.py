@@ -40,15 +40,15 @@ def _fetch_info_by_supplier(headers, supplier):
         url = 'https://mpstats.io/api/wb/get/seller'
         body = {"startRow": 0, "endRow": 5000}
         result = list()
-        while True:
-            try:
-                for identifier in wb_info.seller_identifiers(supplier):
+        for identifier in wb_info.seller_identifiers(supplier):
+            while True:
+                try:
                     params = {'path': identifier}
                     response = requests.post(url, headers=headers, json=body, params=params)
                     result += response.json()['data']
-                _info[supplier] = result
-                break
-            except requests.exceptions.HTTPError: pass
+                    break
+                except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+        _info[supplier] = result
     return deepcopy(result)
 
 
@@ -292,6 +292,3 @@ def categories(input_data, start_date):
     table.insert(0, header)
     return table
 
-
-# ================== тестовые запуски ==================
-if __name__ == '__main__': pass

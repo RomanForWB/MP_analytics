@@ -4,7 +4,6 @@ from copy import deepcopy
 import modules.async_requests as async_requests
 import modules.wildberries.info as wb_info
 import modules.info as info
-from time import sleep
 
 
 _cards = dict()
@@ -16,18 +15,23 @@ _report = dict()
 
 def _fetch_cards_by_supplier(url, body, supplier):
     result = _cards.get(supplier)
+    headers = {'Authorization': wb_info.api_key('token', supplier)}
     if result is None:
-        headers = {'Authorization': wb_info.api_key('token', supplier)}
-        response = requests.post(url, json=body, headers=headers)
-        result = response.json()['result']['cards']
-        _cards[supplier] = result
+        while True:
+            try:
+                response = requests.post(url, json=body, headers=headers)
+                if 200 <= response.status_code < 300:
+                    result = response.json()['result']['cards']
+                    _cards[supplier] = result
+                    break
+            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
     return deepcopy(result)
 
 
 def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
     result = _cards.get(tuple(suppliers_list))
     if result is None:
-        headers_list = [{'Authorization': wb_info.api_key('token', supplier)}
+        headers_list = [{'Authorization': wb_info.api_key('to_ken', supplier)}
                         for supplier in suppliers_list]
         cards_dict = async_requests.fetch('POST', suppliers_list, url=url,
                                           headers_list=headers_list, body=body, content_type='json',
@@ -38,7 +42,7 @@ def _fetch_cards_by_suppliers_list(url, body, suppliers_list):
 
 
 def _fetch_orders_by_supplier(url, headers, supplier, start_date):
-    #================== async variant =====================
+    # ================== async variant =====================
     # result = _orders.get((supplier, start_date))
     # if result is not None: return deepcopy(result)
     # else:
@@ -47,7 +51,7 @@ def _fetch_orders_by_supplier(url, headers, supplier, start_date):
     #                     'dateFrom': day,
     #                     'flag': 1} for day in dates_list]
     #     orders_by_day = async_requests.fetch('GET', dates_list, content_type='json',
-    #                                          url=url, params_list=params_list, headers=headers, timeout=60)
+    #                                          url=url, params_list=params_list, headers=headers)
     #     result = [item for order_list in orders_by_day.values() for item in order_list]
     #     _orders[(supplier, start_date)] = result
     # return deepcopy(result)
@@ -91,7 +95,7 @@ def _fetch_orders_by_supplier(url, headers, supplier, start_date):
                     _orders[(supplier, start_date)] = result
                     return deepcopy(result)
                 else: continue
-            except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError): pass
+            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
 
 
 def _fetch_orders_by_suppliers_list(url, headers, suppliers_list, start_date):
@@ -114,7 +118,7 @@ def _fetch_day_orders_by_supplier(url, headers, supplier, day):
                     _day_orders[(supplier, day)] = result
                     return deepcopy(result)
                 else: continue
-            except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError): pass
+            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
 
 
 def _fetch_day_orders_by_suppliers_list(url, headers, suppliers_list, day):
@@ -132,9 +136,10 @@ def _fetch_stocks_by_supplier(url, supplier, start_date):
                 if 200 <= response.status_code < 300:
                     result = response.json()
                     _stocks[(supplier, start_date)] = result
-                    return deepcopy(result)
+                    break
                 else: continue
-            except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError): pass
+            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+    return deepcopy(result)
 
 
 def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
@@ -151,12 +156,16 @@ def _fetch_stocks_by_suppliers_list(url, suppliers_list, start_date):
 
 def _fetch_report_by_supplier(url, supplier):
     result = _report.get(supplier)
+    params = {'isCommussion': 2}
+    headers = {'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
     if result is None:
-        params = {'isCommussion': 2}
-        headers = {'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
-        response = requests.get(url, params=params, headers=headers)
-        result = response.json()['data']
-        _report[supplier] = result
+        while True:
+            try:
+                response = requests.get(url, params=params, headers=headers)
+                result = response.json()['data']
+                _report[supplier] = result
+                break
+            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
     return deepcopy(result)
 
 

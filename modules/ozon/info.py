@@ -4,12 +4,12 @@ _ozon_keys = None
 _suppliers = {"tumanyan":
                   {"name": "ИП Туманян А.А.",
                    "seller_identifiers": ["Mi Kar"]},
-              # "maryina":
-              #     {"name": "ИП Марьина А.А.",
-              #      "seller_identifiers": ['ИП Марьина А.А.']},
-              # "ahmetov":
-              #     {"name": "ИП Ахметов В.Р.",
-              #      "seller_identifiers": ["ИП Ахметов В.Р."]}
+              "maryina":
+                  {"name": "ИП Марьина А.А.",
+                   "seller_identifiers": ['ИП Марьина А.А.']},
+              "ahmetov":
+                  {"name": "ИП Ахметов В.Р.",
+                   "seller_identifiers": ["ИП Ахметов В.Р."]}
               }
 
 

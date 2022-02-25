@@ -6,4 +6,8 @@ def get_free_proxies():
     soup = bs(requests.get(url).content, "html.parser")
     soup_text = soup.find("textarea", {"class": "form-control"}).text
     ips_list = soup_text.splitlines()[3:]
+    ips_list = ['http://' + item for item in ips_list]
     return ips_list
+
+if __name__ == '__main__':
+    print(get_free_proxies())

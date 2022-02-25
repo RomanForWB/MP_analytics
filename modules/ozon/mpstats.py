@@ -1,16 +1,25 @@
 from datetime import date, timedelta, datetime
 import requests
+from copy import deepcopy
 import modules.ozon.info as ozon_info
 import modules.async_requests as async_requests
 import modules.ozon.analytics as ozon_analytics
 import modules.info as info
 
+_positions = dict()
+_info = dict()
+
 
 def _fetch_positions_by_sku_list(headers, sku_list, start_date):
-    urls_list = [f'https://mpstats.io/api/oz/get/item/{sku}/by_category' for sku in sku_list]
-    params = {'d1': str(start_date), 'd2': str(date.today())}
-    return async_requests.fetch('GET', sku_list, urls_list=urls_list,
-                                params=params, headers=headers, content_type='json')
+    result = _positions.get(tuple(sku_list))
+    if result is None:
+        start_date = (datetime.strptime(start_date, '%Y-%m-%d') + timedelta(days=1)).date()
+        urls_list = [f'https://mpstats.io/api/oz/get/item/{sku}/by_category' for sku in sku_list]
+        params = {'d1': str(start_date), 'd2': str(date.today())}
+        result = async_requests.fetch('GET', sku_list, urls_list=urls_list,
+                                    params=params, headers=headers, content_type='json')
+        _positions[tuple(sku_list)] = result
+    return deepcopy(result)
 
 
 def _fetch_positions_by_supplier(headers, supplier, start_date):
@@ -28,18 +37,24 @@ def _fetch_positions_by_suppliers_list(headers, suppliers_list, start_date):
 
 
 def _fetch_info_by_supplier(headers, supplier):
-    url = 'https://mpstats.io/api/oz/get/seller'
-    body = {"startRow": 0, "endRow": 5000}
-    items = list()
-    for identifier in ozon_info.seller_identifiers(supplier):
-        params = {'path': identifier}
-        response = requests.post(url, headers=headers, json=body, params=params)
-        items += response.json()['data']
-    return items
+    result = _info.get(supplier)
+    if result is None:
+        url = 'https://mpstats.io/api/oz/get/seller'
+        body = {"startRow": 0, "endRow": 5000}
+        result = list()
+        for identifier in ozon_info.seller_identifiers(supplier):
+            while True:
+                try:
+                    params = {'path': identifier}
+                    response = requests.post(url, headers=headers, json=body, params=params)
+                    result += response.json()['data']
+                    break
+                except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+        _info[supplier] = result
+    return deepcopy(result)
 
 
 def _fetch_info_by_suppliers_list(headers, suppliers_list):
-    print("Получение информации о поставщиках...")
     return {supplier: _fetch_info_by_supplier(headers, supplier) for supplier in suppliers_list}
 
 
@@ -72,7 +87,7 @@ def _positions_by_sku_list(sku_list, start_date):
             except AttributeError:
                 supplier_table.append([ozon_info.supplier_name(supplier), sku,
                                        products_dict[supplier][sku]['offer_id']] +
-                                      ['-'] * len(product['days']))
+                                      ['-'] * (len(product['days'])+1))
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
@@ -95,7 +110,7 @@ def _positions_by_suppliers_list(suppliers_list, start_date):
                                            category] + positions_list)
             except AttributeError: supplier_table.append([ozon_info.supplier_name(supplier), sku,
                                                          products_dict[supplier][sku]['offer_id']] +
-                                                         ['-']*len(product['days']))
+                                                         ['-']*(len(product['days'])+1))
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
@@ -115,7 +130,7 @@ def _positions_by_supplier(supplier, start_date):
         except AttributeError:
             table.append([ozon_info.supplier_name(supplier), sku,
                                    products_list[sku]['offer_id']] +
-                                  ['-'] * len(product['days']))
+                                  ['-'] * (len(product['days'])+1))
     return sorted(table, key=lambda item: item[2])
 
 
@@ -141,7 +156,7 @@ def _categories_by_sku_list(sku_list, start_date):
             except AttributeError:
                 supplier_table.append([ozon_info.supplier_name(supplier), sku,
                                        products_dict[supplier][sku]['offer_id']] +
-                                      ['-'] * len(product['days']))
+                                       ['-'] * (len(product['days'])+1))
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
@@ -164,7 +179,7 @@ def _categories_by_supplier(supplier, start_date):
         except AttributeError:
             table.append([ozon_info.supplier_name(supplier), sku,
                          products_list[sku]['offer_id']] +
-                         ['-'] * len(product['days']))
+                         ['-'] * (len(product['days'])+1))
     return sorted(table, key=lambda item: item[2])
 
 
@@ -190,7 +205,7 @@ def _categories_by_suppliers_list(suppliers_list, start_date):
             except AttributeError:
                 supplier_table.append([ozon_info.supplier_name(supplier), sku,
                               products_dict[supplier][sku]['offer_id']] +
-                             ['-'] * len(product['days']))
+                             ['-'] * (len(product['days'])+1))
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
@@ -222,8 +237,7 @@ def fetch_positions(supplier=None, suppliers_list=None, sku_list=None, sku=None,
     elif sku_list is not None: return _fetch_positions_by_sku_list(headers, sku_list, start_date)
 
 
-def positions(input_data, start_date):
-    start_date = (datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
+def positions(input_data, start_date=str(date.today()-timedelta(days=7))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет'] + \
              info.days_list(start_date, to_yesterday=True)
     table = list()
@@ -237,8 +251,7 @@ def positions(input_data, start_date):
     return table
 
 
-def categories(input_data, start_date):
-    start_date = (datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
+def categories(input_data, start_date=str(date.today()-timedelta(days=7))):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет'] + \
              info.days_list(start_date, to_yesterday=True)
     table = list()

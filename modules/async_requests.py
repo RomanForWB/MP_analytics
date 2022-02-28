@@ -27,7 +27,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
                     failure_counter -= 1
                     if failure_counter <= 0:
                         if ask_stop(): failure_counter = None
-                        else: failure_counter = 10000 + counter * 20
+                        else: failure_counter = 1000 + counter * 20
                 else:
                     if content_type.lower() == 'json': result = response.json()
                     else: result = response.text
@@ -53,7 +53,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
                         failure_counter -= 1
                         if failure_counter <= 0:
                             if ask_stop(): failure_counter = None
-                            else: failure_counter = 10000 + counter * 20
+                            else: failure_counter = 1000 + counter * 20
                     else:
                         if content_type.lower() == 'json': result = await response.json()
                         else: result = await response.text()

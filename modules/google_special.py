@@ -149,15 +149,16 @@ def wb_week_report(worksheet, report_table):
                 fact_row[7]/plan_row[7],
                 1 - gap_percent_row[8]]
     days_to_end = 7 - len(days)
-    today_plan_row = ['План на сегодня',
-                      gap_row[1]/days_to_end,
-                      gap_row[2]/days_to_end,
-                      gap_row[3]/days_to_end,
-                      gap_row[4]/days_to_end,
-                      gap_row[5]/days_to_end,
-                      gap_row[6]/days_to_end,
-                      plan_row[7],
-                      gap_row[8]/days_to_end]
+    if days_to_end <= 0: today_plan_row = ['План на сегодня', '', '', '', '', '', '', '', '']
+    else: today_plan_row = ['План на сегодня',
+                            gap_row[1]/days_to_end,
+                            gap_row[2]/days_to_end,
+                            gap_row[3]/days_to_end,
+                            gap_row[4]/days_to_end,
+                            gap_row[5]/days_to_end,
+                            gap_row[6]/days_to_end,
+                            plan_row[7],
+                            gap_row[8]/days_to_end]
     moving_to_row = ['Идём на $',
                      fact_row[1]/len(days)*7,
                      fact_row[2]/len(days)*7,
@@ -191,6 +192,7 @@ def wb_week_report(worksheet, report_table):
                       "backgroundColor": {"red": 0.8515625,
                                           "green": 0.9296875,
                                           "blue": 0.94921875}})
+
 
 def wb_month_report(worksheet, report_table):
     first_column = google_work.get_columns(worksheet, 0, 1)
@@ -283,15 +285,16 @@ def wb_month_report(worksheet, report_table):
 
     first_month_date = info.next_month_start_date(days[-1])
     days_to_end = len(info.days_list(from_date=days[-1], to_date=str(first_month_date)))
-    today_plan_row = ['План на сегодня',
-                      gap_row[1]/days_to_end,
-                      gap_row[2]/days_to_end,
-                      gap_row[3]/days_to_end,
-                      gap_row[4]/days_to_end,
-                      gap_row[5]/days_to_end,
-                      gap_row[6]/days_to_end,
-                      plan_row[7],
-                      gap_row[8]/days_to_end]
+    if days_to_end <= 0: today_plan_row = ['План на сегодня', '', '', '', '', '', '', '', '']
+    else: today_plan_row = ['План на сегодня',
+                            gap_row[1]/days_to_end,
+                            gap_row[2]/days_to_end,
+                            gap_row[3]/days_to_end,
+                            gap_row[4]/days_to_end,
+                            gap_row[5]/days_to_end,
+                            gap_row[6]/days_to_end,
+                            plan_row[7],
+                            gap_row[8]/days_to_end]
     moving_to_row = ['Идём на $',
                      fact_row[1]/len(days)*(len(days)+days_to_end),
                      fact_row[2]/len(days)*(len(days)+days_to_end),

@@ -33,12 +33,12 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
                     else: result = response.text
                     counter += 1
                     print(f'\rОбработано: {counter}', end=' ')
-                    if individual_session: session.close()
+                    if individual_session: await session.aclose()
                     return [id, result]
             except httpx.TimeoutException: pass
             except (httpx.NetworkError, RuntimeError):
                 print(f"\rПереподключение к {url.split('//')[1].split('/')[0]}...", end=' ')
-                if individual_session: session.close()
+                if individual_session: await session.aclose()
                 timeout = httpx.Timeout(timeout=float(individual_timer))
                 session = httpx.AsyncClient(timeout=timeout)
                 individual_session = True
@@ -98,12 +98,12 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
                     else: result = response.text
                     counter += 1
                     print(f'\rОбработано: {counter}', end=' ')
-                    if individual_session: session.close()
+                    if individual_session: await session.aclose()
                     return [id, result]
             except httpx.TimeoutException: pass
             except httpx.NetworkError:
                 print(f"\rПереподключение к {url.split('//')[1].split('/')[0]}...", end=' ')
-                if individual_session: session.close()
+                if individual_session: await session.aclose()
                 timeout = httpx.Timeout(timeout=float(individual_timer))
                 session = httpx.AsyncClient(timeout=timeout)
                 individual_session = True

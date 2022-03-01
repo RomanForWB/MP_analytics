@@ -5,8 +5,8 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLabel,
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtTest import QTest
 
-import modules.wildberries.analytics as wb_analytics
 import modules.wildberries.info as wb_info
+import modules.wildberries.fetch as wb_fetch
 
 supplier = ''
 
@@ -126,7 +126,7 @@ class Renamer(QWidget):
 
     def add_new_results(self):
         global supplier
-        cards = wb_analytics.fetch_cards(supplier=supplier)
+        cards = wb_fetch.cards(supplier=supplier)
         for i in range(len(cards)):
             self.rows.append([])
             self.rows[i].append(QLabel(str(cards[i]['imtId'])))

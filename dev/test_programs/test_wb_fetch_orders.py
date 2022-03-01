@@ -1,4 +1,4 @@
-import modules.wildberries.analytics as wildberries
+import modules.wildberries.fetch as fetch
 
-result = wildberries.fetch_orders(supplier='ahmetov')
+result = fetch.orders(supplier='ahmetov')
 for item in result: print(item)

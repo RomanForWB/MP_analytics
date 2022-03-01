@@ -284,7 +284,7 @@ def wb_month_report(worksheet, report_table):
                 1 - gap_percent_row[8]]
 
     first_month_date = info.next_month_start_date(days[-1])
-    days_to_end = len(info.days_list(from_date=days[-1], to_date=str(first_month_date)))
+    days_to_end = len(info.days_list(from_date=days[-1], to_date=str(first_month_date))) - 2
     if days_to_end <= 0: today_plan_row = ['План на сегодня', '', '', '', '', '', '', '', '']
     else: today_plan_row = ['План на сегодня',
                             gap_row[1]/days_to_end,

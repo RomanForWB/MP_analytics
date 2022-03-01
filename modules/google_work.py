@@ -3,23 +3,28 @@ from google.auth.exceptions import GoogleAuthError
 from oauth2client.service_account import ServiceAccountCredentials
 # EMAIL: roman-wb@roman-wb.iam.gserviceaccount.com
 
+_connection = None
 
-def initialize_connection():
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    credentials = ServiceAccountCredentials.from_json_keyfile_name('keys/credentials.json', scope)
-    gc = authorize(credentials)
-    return gc
+
+def initialize_connection(new=False):
+    global _connection
+    if _connection is not None and new == False: return _connection
+    else:
+        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        credentials = ServiceAccountCredentials.from_json_keyfile_name('keys/credentials.json', scope)
+        _connection = authorize(credentials)
+        return _connection
 
 
 def open_sheet(google_sheet_key, sheet_name=1):
     print(f'Подключение к https://docs.google.com/spreadsheets/d/{google_sheet_key}...')
     while True:
         try:
-            gc = initialize_connection()
-            google_sheet = gc.open_by_key(google_sheet_key)
+            connection = initialize_connection()
+            google_sheet = connection.open_by_key(google_sheet_key)
             if sheet_name == 1: return google_sheet.get_worksheet(0)
             else: return google_sheet.worksheet(sheet_name)
-        except GoogleAuthError: pass
+        except GoogleAuthError: initialize_connection(new=True)
 
 
 def get_columns(worksheet, header_count, *column_numbers):

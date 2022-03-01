@@ -2,15 +2,14 @@ from datetime import date, timedelta
 from re import search, sub
 
 import modules.google_work as google_work
+import modules.google_special as google_special
 import modules.info as info
-import modules.wildberries.mpstats as wb_mpstats
+
 import modules.wildberries.analytics as wb_analytics
 import modules.wildberries.info as wb_info
-import modules.ozon.mpstats as ozon_mpstats
+
 import modules.ozon.analytics as ozon_analytics
 import modules.ozon.info as ozon_info
-import modules.google_special as google_special
-
 
 choice = 'start'
 
@@ -43,15 +42,16 @@ def ask_wb():
     print("3 - Отчет по остаткам")
     print("4 - Отчет по отзывам")
     print("5 - Отчет по отгрузке")
-    print("6 - Отчет (день)")
-    print("7 - Отчет (неделя)")
-    print("8 - Отчет (месяц)")
-    print("9 - Заказы (все)")
-    print("10 - Заказы (топ 500)")
-    print("11 - Заказы (новинки)")
-    print("12 - Заказы по товарам (кол-во)")
-    print("13 - Заказы по товарам (сумма)")
-    print("14 - В начало")
+    print("6 - Отчет по проценту выкупа")
+    print("7 - Отчет (день)")
+    print("8 - Отчет (неделя)")
+    print("9 - Отчет (месяц)")
+    print("10 - Заказы (все)")
+    print("11 - Заказы (топ 500)")
+    print("12 - Заказы (новинки)")
+    print("13 - Заказы по товарам (кол-во)")
+    print("14 - Заказы по товарам (сумма)")
+    print("15 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -59,15 +59,16 @@ def ask_wb():
     elif choice.strip() == '3': choice = 'wb_stocks'
     elif choice.strip() == '4': choice = 'wb_feedbacks'
     elif choice.strip() == '5': choice = 'wb_shipments'
-    elif choice.strip() == '6': choice = 'wb_day_report'
-    elif choice.strip() == '7': choice = 'wb_week_report'
-    elif choice.strip() == '8': choice = 'wb_month_report'
-    elif choice.strip() == '9': choice = 'wb_orders_category_all'
-    elif choice.strip() == '10': choice = 'wb_orders_category_500'
-    elif choice.strip() == '11': choice = 'wb_orders_category_new'
-    elif choice.strip() == '12': choice = 'wb_orders_count'
-    elif choice.strip() == '13': choice = 'wb_orders_value'
-    elif choice.strip() == '14': choice = 'start'
+    elif choice.strip() == '6': choice = 'wb_buyout_percent'
+    elif choice.strip() == '7': choice = 'wb_day_report'
+    elif choice.strip() == '8': choice = 'wb_week_report'
+    elif choice.strip() == '9': choice = 'wb_month_report'
+    elif choice.strip() == '10': choice = 'wb_orders_category_all'
+    elif choice.strip() == '11': choice = 'wb_orders_category_500'
+    elif choice.strip() == '12': choice = 'wb_orders_category_new'
+    elif choice.strip() == '13': choice = 'wb_orders_count'
+    elif choice.strip() == '14': choice = 'wb_orders_value'
+    elif choice.strip() == '15': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -308,11 +309,11 @@ if __name__ == '__main__':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
             input_data = get_int_column(worksheet, 1, 2)
             start_date = str(date.today() - timedelta(days=7))
-            categories_table = wb_mpstats.categories(input_data, start_date)
+            categories_table = wb_analytics.categories(input_data, start_date)
             google_work.insert_table(worksheet, categories_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Позиции')
             input_data = get_int_column(worksheet, 1, 2)
-            positions_table = wb_mpstats.positions(input_data, start_date)
+            positions_table = wb_analytics.positions(input_data, start_date)
             google_work.insert_table(worksheet, positions_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Остатки')
             input_data = wb_info.all_suppliers()
@@ -333,7 +334,7 @@ if __name__ == '__main__':
             if choice == 'start': continue
             start_date = ask_start_date()
             if choice == 'start': continue
-            categories_table = wb_mpstats.categories(input_data, start_date)
+            categories_table = wb_analytics.categories(input_data, start_date)
             google_work.insert_table(worksheet, categories_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_positions':
@@ -342,7 +343,7 @@ if __name__ == '__main__':
             if choice == 'start': continue
             start_date = ask_start_date()
             if choice == 'start': continue
-            positions_table = wb_mpstats.positions(input_data, start_date)
+            positions_table = wb_analytics.positions(input_data, start_date)
             google_work.insert_table(worksheet, positions_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_stocks':
@@ -428,17 +429,23 @@ if __name__ == '__main__':
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_month_report(worksheet, report_table)
             choice = 'wb'
+        elif choice == 'wb_buyout_percent':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Процент выкупа')
+            input_data = wb_info.all_suppliers()
+            buyout_table = wb_analytics.buyout_percent(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            choice = 'wb'
         elif choice == 'ozon': ask_ozon()
         elif choice == 'ozon_positions':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Позиции')
             input_data = get_int_column(worksheet, 1, 2)
-            positions_table = ozon_mpstats.positions(input_data)
+            positions_table = ozon_analytics.positions(input_data)
             google_work.insert_table(worksheet, positions_table, replace=True)
             choice = 'ozon'
         elif choice == 'ozon_categories':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Категории')
             input_data = get_int_column(worksheet, 1, 2)
-            categories_table = ozon_mpstats.categories(input_data)
+            categories_table = ozon_analytics.categories(input_data)
             google_work.insert_table(worksheet, categories_table, replace=True)
             choice = 'ozon'
         elif choice == 'ozon_stocks':

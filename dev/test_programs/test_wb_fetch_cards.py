@@ -1,7 +1,7 @@
-import modules.wildberries.analytics as wildberries
+import modules.wildberries.fetch as fetch
 
 supplier = 'ahmetov'
-result = wildberries.fetch_cards(supplier=supplier)
+result = fetch.cards(supplier=supplier)
 # for item in result:
 #     print(item)
 for key, value in result[0].items():

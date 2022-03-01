@@ -42,16 +42,19 @@ def ask_wb():
     print("3 - Отчет по остаткам")
     print("4 - Отчет по отзывам")
     print("5 - Отчет по отгрузке")
-    print("6 - Отчет по проценту выкупа")
-    print("7 - Отчет (день)")
-    print("8 - Отчет (неделя)")
-    print("9 - Отчет (месяц)")
-    print("10 - Заказы (все)")
-    print("11 - Заказы (топ 500)")
-    print("12 - Заказы (новинки)")
-    print("13 - Заказы по товарам (кол-во)")
-    print("14 - Заказы по товарам (сумма)")
-    print("15 - В начало")
+    print("6 - Отчет по проценту выкупа (размер)")
+    print("7 - Отчет по проценту выкупа (цвет)")
+    print("8 - Отчет по проценту выкупа (артикул)")
+    print("9 - Отчет по проценту выкупа (предмет)")
+    print("10 - Отчет (день)")
+    print("11 - Отчет (неделя)")
+    print("12 - Отчет (месяц)")
+    print("13 - Заказы (все)")
+    print("14 - Заказы (топ 500)")
+    print("15 - Заказы (новинки)")
+    print("16 - Заказы по товарам (кол-во)")
+    print("17 - Заказы по товарам (сумма)")
+    print("18 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -59,16 +62,19 @@ def ask_wb():
     elif choice.strip() == '3': choice = 'wb_stocks'
     elif choice.strip() == '4': choice = 'wb_feedbacks'
     elif choice.strip() == '5': choice = 'wb_shipments'
-    elif choice.strip() == '6': choice = 'wb_buyout_percent'
-    elif choice.strip() == '7': choice = 'wb_day_report'
-    elif choice.strip() == '8': choice = 'wb_week_report'
-    elif choice.strip() == '9': choice = 'wb_month_report'
-    elif choice.strip() == '10': choice = 'wb_orders_category_all'
-    elif choice.strip() == '11': choice = 'wb_orders_category_500'
-    elif choice.strip() == '12': choice = 'wb_orders_category_new'
-    elif choice.strip() == '13': choice = 'wb_orders_count'
-    elif choice.strip() == '14': choice = 'wb_orders_value'
-    elif choice.strip() == '15': choice = 'start'
+    elif choice.strip() == '6': choice = 'wb_buyout_percent_size'
+    elif choice.strip() == '7': choice = 'wb_buyout_percent_color'
+    elif choice.strip() == '8': choice = 'wb_buyout_percent_article'
+    elif choice.strip() == '9': choice = 'wb_buyout_percent_category'
+    elif choice.strip() == '10': choice = 'wb_day_report'
+    elif choice.strip() == '11': choice = 'wb_week_report'
+    elif choice.strip() == '12': choice = 'wb_month_report'
+    elif choice.strip() == '13': choice = 'wb_orders_category_all'
+    elif choice.strip() == '14': choice = 'wb_orders_category_500'
+    elif choice.strip() == '15': choice = 'wb_orders_category_new'
+    elif choice.strip() == '16': choice = 'wb_orders_count'
+    elif choice.strip() == '17': choice = 'wb_orders_value'
+    elif choice.strip() == '18': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -266,6 +272,22 @@ if __name__ == '__main__':
         if choice == 'start': ask_start()
         elif choice == 'wb': ask_wb()
         elif choice == 'wb_all_reports':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт-размер')
+            input_data = wb_info.all_suppliers()
+            buyout_table = wb_analytics.buyout_percent_size(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт-цвет')
+            input_data = wb_info.all_suppliers()
+            buyout_table = wb_analytics.buyout_percent_color(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт')
+            input_data = wb_info.all_suppliers()
+            buyout_table = wb_analytics.buyout_percent_article(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'предмет')
+            input_data = wb_info.all_suppliers()
+            buyout_table = wb_analytics.buyout_percent_category(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'динамика, шт')
             input_data = wb_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=7))
@@ -429,10 +451,28 @@ if __name__ == '__main__':
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_month_report(worksheet, report_table)
             choice = 'wb'
-        elif choice == 'wb_buyout_percent':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Процент выкупа')
+        elif choice == 'wb_buyout_percent_size':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт-размер')
             input_data = wb_info.all_suppliers()
-            buyout_table = wb_analytics.buyout_percent(input_data)
+            buyout_table = wb_analytics.buyout_percent_size(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_buyout_percent_color':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт-цвет')
+            input_data = wb_info.all_suppliers()
+            buyout_table = wb_analytics.buyout_percent_color(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_buyout_percent_article':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт')
+            input_data = wb_info.all_suppliers()
+            buyout_table = wb_analytics.buyout_percent_article(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_buyout_percent_category':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'предмет')
+            input_data = wb_info.all_suppliers()
+            buyout_table = wb_analytics.buyout_percent_category(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'ozon': ask_ozon()

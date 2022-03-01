@@ -59,12 +59,12 @@ def wb_day_report(worksheet, report_table):
 
     google_work.insert_table(worksheet, [dynamics_1_row, dynamics_7_row], start_cell='A2')
     worksheet.insert_rows(report_table)
-    worksheet.format('A1:H1', {"textFormat": {"bold": True, "fontFamily": 'Times New Roman', "fontSize": 14},
+    worksheet.format('A1:H1', {"textFormat": {"bold": True, "fontFamily": 'Verdana', "fontSize": 12},
                                "backgroundColor": {"red": 0.8515625,
                                                    "green": 0.9296875,
                                                    "blue": 0.94921875}})
     worksheet.format(f'A{len(report_table)}:H{len(report_table)}',
-                     {"textFormat": {"bold": True, "fontFamily": 'Times New Roman', "fontSize": 14},
+                     {"textFormat": {"bold": True, "fontFamily": 'Verdana', "fontSize": 12},
                       "backgroundColor": {"red": 0.8515625,
                                           "green": 0.9296875,
                                           "blue": 0.94921875}})
@@ -181,14 +181,14 @@ def wb_week_report(worksheet, report_table):
     google_work.insert_table(worksheet, [dynamics_1_row, [''], plan_row, fact_row,
                                          gap_percent_row, gap_row, done_row, today_plan_row,
                                          moving_to_row, moving_to_percent_row], start_cell='A2')
-
+    report_table = report_table[:-1] + [['']]*days_to_end + [report_table[-1]]
     worksheet.insert_rows(report_table)
-    worksheet.format('A1:I1', {"textFormat": {"bold": True, "fontFamily": 'Times New Roman', "fontSize": 14},
+    worksheet.format('A1:I1', {"textFormat": {"bold": True, "fontFamily": 'Verdana', "fontSize": 12},
                                "backgroundColor": {"red": 0.8515625,
                                                    "green": 0.9296875,
                                                    "blue": 0.94921875}})
     worksheet.format(f'A{len(report_table)}:I{len(report_table)}',
-                     {"textFormat": {"bold": True, "fontFamily": 'Times New Roman', "fontSize": 14},
+                     {"textFormat": {"bold": True, "fontFamily": 'Verdana', "fontSize": 12},
                       "backgroundColor": {"red": 0.8515625,
                                           "green": 0.9296875,
                                           "blue": 0.94921875}})
@@ -318,12 +318,12 @@ def wb_month_report(worksheet, report_table):
                                          gap_percent_row, gap_row, done_row, today_plan_row,
                                          moving_to_row, moving_to_percent_row], start_cell='A2')
     worksheet.insert_rows(report_table)
-    worksheet.format('A1:I1', {"textFormat": {"bold": True, "fontFamily": 'Times New Roman', "fontSize": 14},
+    worksheet.format('A1:I1', {"textFormat": {"bold": True, "fontFamily": 'Verdana', "fontSize": 12},
                                "backgroundColor": {"red": 0.8515625,
                                                    "green": 0.9296875,
                                                    "blue": 0.94921875}})
     worksheet.format(f'A{len(report_table)}:I{len(report_table)}',
-                     {"textFormat": {"bold": True, "fontFamily": 'Times New Roman', "fontSize": 14},
+                     {"textFormat": {"bold": True, "fontFamily": 'Verdana', "fontSize": 12},
                       "backgroundColor": {"red": 0.8515625,
                                           "green": 0.9296875,
                                           "blue": 0.94921875}})

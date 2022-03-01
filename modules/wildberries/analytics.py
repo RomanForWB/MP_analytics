@@ -355,6 +355,10 @@ def orders_value(input_data, start_date=str(date.today()-timedelta(days=6))):
 def _orders_category_by_supplier(supplier, start_date, visible_categories):
     orders_list = fetch.orders(supplier=supplier, start_date=start_date)
     days = info.days_list(start_date)
+    buyouts_dict = dict()
+    for item in fetch.buyouts():
+        buyouts_dict.setdefault(int(item[1]), {'buyouts': []})
+        buyouts_dict[int(item[1])]['buyouts'].append([datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
     categories_dict = dict()
     for order in orders_list:
         if order['category'] == 'Обувь': category = 'Обувь'
@@ -365,7 +369,14 @@ def _orders_category_by_supplier(supplier, start_date, visible_categories):
             day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
             final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
             categories_dict[category][day] += final_price
+            if buyouts_dict.get(order['nmId']) is not None:
+                buyouts_dict[order['nmId']].update({'category': category, 'price': final_price})
         except KeyError: pass
+
+    for nm, values in buyouts_dict.items():
+        if values.get('category') is not None:
+            for buyout in values['buyouts']:
+                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= values['price']
 
     table = list()
     total = [0] * len(days)
@@ -384,6 +395,11 @@ def _orders_category_by_supplier(supplier, start_date, visible_categories):
 def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categories):
     orders_dict = fetch.orders(suppliers_list=suppliers_list, start_date=start_date)
     days = info.days_list(start_date)
+    buyouts_dict = dict()
+    for item in fetch.buyouts():
+        buyouts_dict.setdefault(int(item[1]), {'buyouts': []})
+        buyouts_dict[int(item[1])]['buyouts'].append(
+            [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
     categories_dict = dict()
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
@@ -395,7 +411,14 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categ
                 day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
                 final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
                 categories_dict[category][day] += final_price
+                if buyouts_dict.get(order['nmId']) is not None:
+                    buyouts_dict[order['nmId']].update({'category': category, 'price': final_price})
             except KeyError: pass
+
+    for nm, values in buyouts_dict.items():
+        if values.get('category') is not None:
+            for buyout in values['buyouts']:
+                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= values['price']
 
     table = list()
     total = [0]*len(days)
@@ -414,6 +437,11 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categ
 def _orders_category_by_nm_list(nm_list, start_date, visible_categories):
     orders_dict = fetch.orders(suppliers_list=wb_info.all_suppliers(), start_date=start_date)
     days = info.days_list(start_date)
+    buyouts_dict = dict()
+    for item in fetch.buyouts():
+        buyouts_dict.setdefault(int(item[1]), {'buyouts': []})
+        buyouts_dict[int(item[1])]['buyouts'].append(
+            [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
     categories_dict = dict()
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
@@ -426,7 +454,14 @@ def _orders_category_by_nm_list(nm_list, start_date, visible_categories):
                 day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
                 final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
                 categories_dict[category][day] += final_price
+                if buyouts_dict.get(order['nmId']) is not None:
+                    buyouts_dict[order['nmId']].update({'category': category, 'price': final_price})
             except KeyError: pass
+
+    for nm, values in buyouts_dict.items():
+        if values.get('category') is not None:
+            for buyout in values['buyouts']:
+                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= values['price']
 
     table = list()
     total = [0 for day in days]

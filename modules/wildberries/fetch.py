@@ -3,6 +3,7 @@ import requests
 from copy import deepcopy
 import modules.async_requests as async_requests
 import modules.session_requests as session_requests
+import modules.google_work as google_work
 import modules.wildberries.info as wb_info
 import modules.info as info
 
@@ -281,6 +282,14 @@ def feedbacks(imt_list, count=1000):
     feedbacks_dict = {imt: feedbacks_info['feedbacks']
                       for imt, feedbacks_info in feedbacks_dict.items()}
     return feedbacks_dict
+
+
+def buyouts():
+    ws = google_work.open_sheet(info.google_key('wb_reports'), 'выкупы')
+    buyout_columns = google_work.get_columns(ws, 1, 1, 2, 3)
+    buyouts_list = [[buyout_columns[0][i], buyout_columns[1][i], buyout_columns[2][i]]
+                    for i in range(len(buyout_columns[0]))]
+    return buyouts_list
 
 
 # ==============================================

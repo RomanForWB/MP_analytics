@@ -241,7 +241,7 @@ def buyouts():
     global _buyouts
     result = _buyouts
     if result is None:
-        ws = google_work.open_sheet(info.google_key('wb_reports'), 'выкупы')
+        ws = google_work.open_sheet(info.google_key('wb_day_reports'), 'выкупы')
         buyout_columns = google_work.get_columns(ws, 1, 1, 2, 3)
         result = [[buyout_columns[0][i], buyout_columns[1][i], buyout_columns[2][i]]
                         for i in range(len(buyout_columns[0]))]
@@ -253,7 +253,7 @@ def cost():
     global _cost
     result = _cost
     if result is None:
-        ws = google_work.open_sheet(info.google_key('wb_reports'), 'закуп')
+        ws = google_work.open_sheet(info.google_key('wb_week_reports'), 'закуп')
         cost_columns = google_work.get_columns(ws, 1, 1, 2, 3)
         result = {'nm': {int(cost_columns[1][i]): int(cost_columns[2][i])
                          for i in range(len(cost_columns[0]))},

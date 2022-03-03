@@ -1,4 +1,3 @@
-import requests
 from datetime import date, timedelta, datetime
 from copy import deepcopy
 import modules.info as info

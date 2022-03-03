@@ -1,5 +1,4 @@
 from datetime import date, timedelta
-import requests
 from copy import deepcopy
 import modules.async_requests as async_requests
 import modules.session_requests as session_requests
@@ -255,9 +254,11 @@ def cost():
     result = _cost
     if result is None:
         ws = google_work.open_sheet(info.google_key('wb_reports'), 'закуп')
-        cost_columns = google_work.get_columns(ws, 1, 2, 3)
-        result = {int(cost_columns[0][i]): int(cost_columns[1][i])
-                  for i in range(len(cost_columns[0]))}
+        cost_columns = google_work.get_columns(ws, 1, 1, 2, 3)
+        result = {'nm': {int(cost_columns[1][i]): int(cost_columns[2][i])
+                         for i in range(len(cost_columns[0]))},
+                  'article': {cost_columns[0][i].split('/')[0]+'/': int(cost_columns[2][i])
+                              for i in range(len(cost_columns[0]))}}
         _cost = result
     return deepcopy(result)
 

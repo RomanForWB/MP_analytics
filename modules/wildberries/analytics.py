@@ -1283,7 +1283,10 @@ def _profit_by_supplier(supplier, weeks):
     cost_dict = fetch.cost()
     table = list()
     for key, value in items_dict.items():
-        if cost_dict.get(key[1]) is not None: cost = cost_dict[key[1]]
+        if cost_dict['nm'].get(key[1]) is not None:
+            cost = cost_dict['nm'][key[1]]
+        elif cost_dict['article'].get(key[2].split('/')[0]+'/') is not None:
+            cost = cost_dict['article'][key[2].split('/')[0]+'/']
         else: cost = 0
         table.append(list(key) + [value['sales_value'], value['sales_count'],
                                   value['delivery_value'], value['return_value'],
@@ -1339,7 +1342,10 @@ def _profit_by_suppliers_list(suppliers_list, weeks):
         cost_dict = fetch.cost()
         supplier_table = list()
         for key, value in items_dict.items():
-            if cost_dict.get(key[1]) is not None: cost = cost_dict[key[1]]
+            if cost_dict['nm'].get(key[1]) is not None:
+                cost = cost_dict['nm'][key[1]]
+            elif cost_dict['article'].get(key[2].split('/')[0]+'/') is not None:
+                cost = cost_dict['article'][key[2].split('/')[0]+'/']
             else: cost = 0
             supplier_table.append(list(key) + [value['sales_value'], value['sales_count'],
                                       value['delivery_value'], value['return_value'],

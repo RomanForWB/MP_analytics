@@ -1,10 +1,7 @@
-import requests
-from datetime import date, datetime, timedelta
-from copy import deepcopy
+from datetime import date, timedelta
 import modules.info as info
 import modules.ozon.info as ozon_info
 import modules.ozon.fetch as fetch
-import modules.async_requests as async_requests
 
 _product_ids = dict()
 _products = dict()

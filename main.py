@@ -1,9 +1,10 @@
 from datetime import date, timedelta
 from re import search, sub
 
+import modules.info as info
+
 import modules.google_work as google_work
 import modules.google_special as google_special
-import modules.info as info
 
 import modules.wildberries.analytics as wb_analytics
 import modules.wildberries.info as wb_info
@@ -274,57 +275,57 @@ if __name__ == '__main__':
         if choice == 'start': ask_start()
         elif choice == 'wb': ask_wb()
         elif choice == 'wb_all_reports':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт-размер')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт-размер')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_size(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт-цвет')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт-цвет')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_color(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_article(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'предмет')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'предмет')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_category(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'динамика, шт')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, шт')
             input_data = wb_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=7))
             orders_table = wb_analytics.orders_count(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'динамика, руб')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, руб')
             orders_table = wb_analytics.orders_value(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'заказы общие')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'заказы общие')
             categories_list = google_work.get_columns(worksheet, 1, 10)
             orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'заказы топ 500')
-            categories_list = google_work.get_columns(worksheet, 1, 10)
-            input_data = get_int_column(worksheet, 1, 11)
-            orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
-            google_work.clear(worksheet, 'A:I')
-            google_work.insert_table(worksheet, orders_table, replace=False)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'новинки')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'заказы топ 500')
             categories_list = google_work.get_columns(worksheet, 1, 10)
             input_data = get_int_column(worksheet, 1, 11)
             orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'День')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'новинки')
+            categories_list = google_work.get_columns(worksheet, 1, 10)
+            input_data = get_int_column(worksheet, 1, 11)
+            orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
+            google_work.clear(worksheet, 'A:I')
+            google_work.insert_table(worksheet, orders_table, replace=False)
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'День')
             input_data = wb_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=8))
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_day_report(worksheet, report_table)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Неделя')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'Неделя')
             start_date = str(info.current_monday(skip_one=True))
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_week_report(worksheet, report_table)
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Месяц')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'Месяц')
             start_date = str(info.current_month_start_date(skip_one=True))
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_month_report(worksheet, report_table)
@@ -392,21 +393,21 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, shipments_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_count':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'динамика, шт')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, шт')
             input_data = wb_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=7))
             orders_table = wb_analytics.orders_count(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_value':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'динамика, руб')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, руб')
             input_data = wb_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=7))
             orders_table = wb_analytics.orders_value(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_category_all':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'заказы общие')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'заказы общие')
             input_data = wb_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=7))
             categories_list = google_work.get_columns(worksheet, 1, 10)
@@ -415,7 +416,7 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, orders_table, replace=False)
             choice = 'wb'
         elif choice == 'wb_orders_category_500':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'заказы топ 500')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'заказы топ 500')
             categories_list = google_work.get_columns(worksheet, 1, 10)
             input_data = list(map(int, google_work.get_columns(worksheet, 1, 11)))
             start_date = str(date.today() - timedelta(days=7))
@@ -424,7 +425,7 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, orders_table, replace=False)
             choice = 'wb'
         elif choice == 'wb_orders_category_new':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'новинки')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'новинки')
             categories_list = google_work.get_columns(worksheet, 1, 10)
             input_data = list(map(int, google_work.get_columns(worksheet, 1, 11)))
             start_date = str(date.today() - timedelta(days=7))
@@ -433,52 +434,52 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, orders_table, replace=False)
             choice = 'wb'
         elif choice == 'wb_day_report':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'День')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'День')
             input_data = wb_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=8))
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_day_report(worksheet, report_table)
             choice = 'wb'
         elif choice == 'wb_week_report':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Неделя')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'Неделя')
             input_data = wb_info.all_suppliers()
             start_date = str(info.current_monday(skip_one=True))
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_week_report(worksheet, report_table)
             choice = 'wb'
         elif choice == 'wb_month_report':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'Месяц')
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'Месяц')
             input_data = wb_info.all_suppliers()
             start_date = str(info.current_month_start_date(skip_one=True))
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_month_report(worksheet, report_table)
             choice = 'wb'
         elif choice == 'wb_buyout_percent_size':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт-размер')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт-размер')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_size(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_buyout_percent_color':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт-цвет')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт-цвет')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_color(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_buyout_percent_article':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'арт')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_article(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_buyout_percent_category':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'предмет')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'предмет')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_category(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_profit':
-            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'ОП')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'ОП')
             input_data = wb_info.all_suppliers()
             profit_table = wb_analytics.profit(input_data)
             google_work.insert_table(worksheet, profit_table, replace=True)

@@ -446,7 +446,7 @@ def _orders_category_by_nm_list(nm_list, start_date, visible_categories=None):
     days = info.days_list(start_date)
     buyouts_dict = dict()
     for item in fetch.buyouts():
-        buyouts_dict.setdefault(int(item[1]), {'buyouts': []})
+        buyouts_dict.setdefault(int(item[1]), {'buyouts': [], 'price': int(item[3])})
         buyouts_dict[int(item[1])]['buyouts'].append(
             [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
     categories_dict = dict()
@@ -462,7 +462,7 @@ def _orders_category_by_nm_list(nm_list, start_date, visible_categories=None):
                 final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
                 categories_dict[category][day] += final_price
                 if buyouts_dict.get(order['nmId']) is not None:
-                    buyouts_dict[order['nmId']].update({'category': category, 'price': final_price})
+                    buyouts_dict[order['nmId']].update({'category': category})
             except KeyError: pass
 
     for nm, values in buyouts_dict.items():

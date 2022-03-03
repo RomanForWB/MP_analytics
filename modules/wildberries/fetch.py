@@ -243,8 +243,8 @@ def buyouts():
     result = _buyouts
     if result is None:
         ws = google_work.open_sheet(info.google_key('wb_day_reports'), 'выкупы')
-        buyout_columns = google_work.get_columns(ws, 1, 1, 2, 3)
-        result = [[buyout_columns[0][i], buyout_columns[1][i], buyout_columns[2][i]]
+        buyout_columns = google_work.get_columns(ws, 1, 1, 2, 3, 4)
+        result = [[buyout_columns[0][i], buyout_columns[1][i], buyout_columns[2][i], buyout_columns[3][i],]
                         for i in range(len(buyout_columns[0]))]
         _buyouts = result
     return deepcopy(result)

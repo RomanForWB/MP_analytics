@@ -275,19 +275,19 @@ if __name__ == '__main__':
         if choice == 'start': ask_start()
         elif choice == 'wb': ask_wb()
         elif choice == 'wb_all_reports':
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт-размер')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт-размер')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_size(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт-цвет')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт-цвет')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_color(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_article(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'предмет')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп предмет')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_category(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
@@ -455,31 +455,31 @@ if __name__ == '__main__':
             google_special.wb_month_report(worksheet, report_table)
             choice = 'wb'
         elif choice == 'wb_buyout_percent_size':
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт-размер')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт-размер')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_size(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_buyout_percent_color':
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт-цвет')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт-цвет')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_color(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_buyout_percent_article':
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'арт')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_article(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_buyout_percent_category':
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'предмет')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп предмет')
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_category(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_profit':
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'ОП')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент арт-размер')
             input_data = wb_info.all_suppliers()
             profit_table = wb_analytics.profit(input_data)
             google_work.insert_table(worksheet, profit_table, replace=True)

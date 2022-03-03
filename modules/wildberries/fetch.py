@@ -3,9 +3,11 @@ import requests
 from copy import deepcopy
 import modules.async_requests as async_requests
 import modules.session_requests as session_requests
+import modules.single_requests as single_requests
 import modules.google_work as google_work
 import modules.wildberries.info as wb_info
 import modules.info as info
+import json
 
 _cards = dict()
 _day_orders = dict()
@@ -13,6 +15,8 @@ _orders = dict()
 _stocks = dict()
 _report = dict()
 _detail_report = dict()
+_buyouts = None
+_cost = None
 
 _mpstats_info = dict()
 _mpstats_positions = dict()
@@ -31,32 +35,19 @@ def _detail_report_by_supplier(supplier, weeks, last_date=None):
                 params = {'key': wb_info.api_key('x64', supplier),
                           'dateFrom': str(last_date),
                           'dateTo': str(last_date)}
-                while True:
-                    try:
-                        response = requests.get(url, params=params, headers=headers)
-                        if 200 <= response.status_code < 300:
-                            first_result = response.json()
-                            break
-                    except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
-                if first_result is None: continue
-                else: break
-        while True:
-            try:
-                with requests.Session() as session:
-                    result = list()
-                    print(f"\rПолучение информации о продажах {wb_info.supplier_name(supplier)}.. (0/4)", end='')
-                    for i in range(weeks):
-                        end_date = last_date - timedelta(days=7*i)
-                        start_date = last_date - timedelta(days=(7*i)+6)
-                        params = {'key': wb_info.api_key('x64', supplier),
-                                  'dateFrom': str(start_date),
-                                  'dateTo': str(end_date)}
-                        try: result += session.get(url, params=params, headers=headers).json()
-                        except TypeError: pass
-                        print(f"\rПолучение информации о продажах {wb_info.supplier_name(supplier)}.. ({i+1}/4)", end='')
-                print()
-                break
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+                first_result = single_requests.fetch('GET', content_type='json', url=url,
+                                                     params=params, headers=headers)
+                if first_result is not None: break
+
+        params_list = [{'key': wb_info.api_key('x64', supplier),
+                                  'dateFrom': str(last_date - timedelta(days=(7*i)+6)),
+                                  'dateTo': str(last_date - timedelta(days=7*i))} for i in range(weeks)]
+        result_dict = session_requests.fetch('get', [i for i in range(weeks)], params_list=params_list,
+                                             url=url, headers=headers, content_type='text', timeout=10)
+        result = list()
+        for key, value in result_dict.items():
+            if value == 'null': pass
+            else: result += json.loads(value)
         _detail_report[supplier] = result
     return deepcopy(result)
 
@@ -70,15 +61,9 @@ def _detail_report_by_suppliers_list(suppliers_list, weeks):
         params = {'key': wb_info.api_key('x64', suppliers_list[0]),
                   'dateFrom': str(last_date),
                   'dateTo': str(last_date)}
-        while True:
-            try:
-                response = requests.get(url, params=params, headers=headers)
-                if 200 <= response.status_code < 300:
-                    first_result = response.json()
-                    break
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
-        if first_result is None: continue
-        else: break
+        first_result = single_requests.fetch('GET', content_type='json', url=url,
+                                             params=params, headers=headers)
+        if first_result is not None: break
     return {supplier: _detail_report_by_supplier(supplier, weeks, last_date=last_date)
             for supplier in suppliers_list}
 
@@ -93,14 +78,9 @@ def _cards_by_supplier(url, body, supplier):
     result = _cards.get(supplier)
     headers = {'Authorization': wb_info.api_key('token', supplier)}
     if result is None:
-        while True:
-            try:
-                response = requests.post(url, json=body, headers=headers)
-                if 200 <= response.status_code < 300:
-                    result = response.json()['result']['cards']
-                    _cards[supplier] = result
-                    break
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+        result = single_requests.fetch('POST', content_type='json', url=url,
+                                       body=body, headers=headers)['result']['cards']
+        _cards[supplier] = result
     return deepcopy(result)
 
 
@@ -135,26 +115,18 @@ def cards(supplier=None, suppliers_list=None):
 
 def _orders_by_supplier(url, headers, supplier, start_date):
     result = _orders.get((supplier, start_date))
-    if result is not None: return deepcopy(result)
-    else:
-        print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
-        while True:
-            params = {'key': wb_info.api_key('x64', supplier),
-                      'dateFrom': str(start_date)}
-            try:
-                response = requests.get(url, params=params, headers=headers, timeout=20)
-                if 200 <= response.status_code < 300:
-                    result = response.json()
-                    _orders[(supplier, start_date)] = result
-                    return deepcopy(result)
-                else: continue
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+    if result is None:
+        params = {'key': wb_info.api_key('x64', supplier),
+                  'dateFrom': str(start_date)}
+        result = single_requests.fetch('GET', content_type='json', url=url,
+                                       params=params, headers=headers, timeout=20)
+        _orders[(supplier, start_date)] = result
+    return deepcopy(result)
 
 
 def _orders_by_suppliers_list(url, headers, suppliers_list, start_date):
     result = _orders.get((tuple(suppliers_list), start_date))
-    if result is not None: return deepcopy(result)
-    else:
+    if result is None:
         params_list = [{'key': wb_info.api_key('x64', supplier),
                         'dateFrom': str(start_date)} for supplier in suppliers_list]
         result = session_requests.fetch('GET', suppliers_list, content_type='json',
@@ -172,21 +144,14 @@ def orders(supplier=None, suppliers_list=None, start_date=str(date.today()-timed
 
 
 def _fetch_day_orders_by_supplier(url, headers, supplier, day):
-    print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
-    params = {'key': wb_info.api_key('x64', supplier),
-              'dateFrom': str(day), 'flag': 1}
     result = _day_orders.get((supplier, day))
-    if result is not None: return deepcopy(result)
-    else:
-        while True:
-            try:
-                response = requests.get(url, params=params, headers=headers, timeout=20)
-                if 200 <= response.status_code < 300:
-                    result = response.json()
-                    _day_orders[(supplier, day)] = result
-                    return deepcopy(result)
-                else: continue
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+    if result is None:
+        print(f'Получение информации о заказах {wb_info.supplier_name(supplier)}..')
+        params = {'key': wb_info.api_key('x64', supplier),
+                  'dateFrom': str(day), 'flag': 1}
+        result = single_requests.fetch('GET', content_type='json', url=url, params=params, headers=headers, timeout=20)
+        _day_orders[(supplier, day)] = result
+    return deepcopy(result)
 
 
 def _fetch_day_orders_by_suppliers_list(url, headers, suppliers_list, day):
@@ -203,18 +168,11 @@ def fetch_day_orders(supplier=None, suppliers_list=None, day=str(date.today()-ti
 
 
 def _stocks_by_supplier(url, supplier, start_date):
-    params = {'key': wb_info.api_key('x64', supplier), 'dateFrom': str(start_date)}
     result = _stocks.get((supplier, start_date))
     if result is None:
-        while True:
-            try:
-                response = requests.get(url, params=params, timeout=20)
-                if 200 <= response.status_code < 300:
-                    result = response.json()
-                    _stocks[(supplier, start_date)] = result
-                    break
-                else: continue
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+        params = {'key': wb_info.api_key('x64', supplier), 'dateFrom': str(start_date)}
+        result = single_requests.fetch('GET', content_type='json', url=url, params=params, timeout=20)
+        _stocks[(supplier, start_date)] = result
     return deepcopy(result)
 
 
@@ -239,16 +197,12 @@ def stocks(supplier=None, suppliers_list=None, start_date=str(date.today()-timed
 
 def _report_by_supplier(url, supplier):
     result = _report.get(supplier)
-    params = {'isCommussion': 2}
-    headers = {'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
     if result is None:
-        while True:
-            try:
-                response = requests.get(url, params=params, headers=headers)
-                result = response.json()['data']
-                _report[supplier] = result
-                break
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+        params = {'isCommussion': 2}
+        headers = {'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
+        result = single_requests.fetch('GET', content_type='json', url=url,
+                                       params=params, headers=headers, timeout=20)['data']
+        _report[supplier] = result
     return deepcopy(result)
 
 
@@ -285,11 +239,27 @@ def feedbacks(imt_list, count=1000):
 
 
 def buyouts():
-    ws = google_work.open_sheet(info.google_key('wb_reports'), 'выкупы')
-    buyout_columns = google_work.get_columns(ws, 1, 1, 2, 3)
-    buyouts_list = [[buyout_columns[0][i], buyout_columns[1][i], buyout_columns[2][i]]
-                    for i in range(len(buyout_columns[0]))]
-    return buyouts_list
+    global _buyouts
+    result = _buyouts
+    if result is None:
+        ws = google_work.open_sheet(info.google_key('wb_reports'), 'выкупы')
+        buyout_columns = google_work.get_columns(ws, 1, 1, 2, 3)
+        result = [[buyout_columns[0][i], buyout_columns[1][i], buyout_columns[2][i]]
+                        for i in range(len(buyout_columns[0]))]
+        _buyouts = result
+    return deepcopy(result)
+
+
+def cost():
+    global _cost
+    result = _cost
+    if result is None:
+        ws = google_work.open_sheet(info.google_key('wb_reports'), 'закуп')
+        cost_columns = google_work.get_columns(ws, 1, 2, 3)
+        result = {int(cost_columns[0][i]): int(cost_columns[1][i])
+                  for i in range(len(cost_columns[0]))}
+        _cost = result
+    return deepcopy(result)
 
 
 # ==============================================
@@ -341,13 +311,9 @@ def _mpstats_info_by_supplier(headers, supplier):
         body = {"startRow": 0, "endRow": 5000}
         result = list()
         for identifier in wb_info.seller_identifiers(supplier):
-            while True:
-                try:
-                    params = {'path': identifier}
-                    response = requests.post(url, headers=headers, json=body, params=params)
-                    result += response.json()['data']
-                    break
-                except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+            params = {'path': identifier}
+            result += single_requests.fetch('POST', content_type='json', url=url,
+                                            body=body, params=params, headers=headers)['data']
         _mpstats_info[supplier] = result
     return deepcopy(result)
 

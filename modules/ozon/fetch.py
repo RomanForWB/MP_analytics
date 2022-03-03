@@ -4,6 +4,7 @@ from copy import deepcopy
 import modules.info as info
 import modules.ozon.info as ozon_info
 import modules.async_requests as async_requests
+import modules.single_requests as single_requests
 
 _product_ids = dict()
 _products = dict()
@@ -16,21 +17,14 @@ _mpstats_info = dict()
 
 def _product_ids_by_supplier(supplier):
     result = _product_ids.get(supplier)
-    url = 'https://api-seller.ozon.ru/v1/product/list'
-    headers = {'Client-Id': ozon_info.client_id(supplier),
-               'Api-Key': ozon_info.api_key(supplier)}
-    body = {"filter": {
-        "visibility": "VISIBLE"},
-        "page": 1,
-        "page_size": 5000}
     if result is None:
-        while True:
-            try:
-                response = requests.post(url=url, json=body, headers=headers)
-                result = [item['product_id'] for item in response.json()['result']['items']]
-                _product_ids[supplier] = result
-                break
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+        url = 'https://api-seller.ozon.ru/v1/product/list'
+        headers = {'Client-Id': ozon_info.client_id(supplier),
+                   'Api-Key': ozon_info.api_key(supplier)}
+        body = {"filter": {"visibility": "VISIBLE"}, "page": 1, "page_size": 5000}
+        result = [item['product_id'] for item in
+                  single_requests.fetch('POST', content_type='json', url=url, body=body, headers=headers)['result']['items']]
+        _product_ids[supplier] = result
     return deepcopy(result)
 
 
@@ -40,10 +34,7 @@ def _product_ids_by_suppliers_list(suppliers_list):
         url = 'https://api-seller.ozon.ru/v1/product/list'
         headers_list = [{'Client-Id': ozon_info.client_id(supplier),
                          'Api-Key': ozon_info.api_key(supplier)} for supplier in suppliers_list]
-        body = {"filter": {
-                "visibility": "VISIBLE"},
-                "page": 1,
-                "page_size": 5000}
+        body = {"filter": {"visibility": "VISIBLE"}, "page": 1, "page_size": 5000}
         results_dict = async_requests.fetch('POST', suppliers_list, url=url, headers_list=headers_list,
                                             body=body, content_type='json', lib='httpx')
         result = {supplier: [item['product_id'] for item in result['result']['items']]
@@ -60,12 +51,8 @@ def _products_by_supplier(supplier):
         headers = {'Client-Id': ozon_info.client_id(supplier),
                    'Api-Key': ozon_info.api_key(supplier)}
         body = {'product_id': product_ids}
-        while True:
-            try:
-                response = requests.post(url=url, json=body, headers=headers)
-                result = [product for product in response.json()['result']['items']]
-                break
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+        result = single_requests.fetch('POST', content_type='json', url=url,
+                                       body=body, headers=headers)['result']['items']
         for i in range(len(result)):
             for source in result[i]['sources']:
                 if source['source'] == 'fbo':
@@ -122,52 +109,48 @@ def categories(supplier=None, suppliers_list=None):
 
 def _analytics_by_supplier(supplier, start_date):
     result = _analytics.get((supplier, start_date))
-    url = 'https://api-seller.ozon.ru/v1/analytics/data'
-    headers = {'Client-Id': ozon_info.client_id(supplier),
-               'Api-Key': ozon_info.api_key(supplier)}
-    body = {"date_from": str(start_date),
-            "date_to": str(date.today()),
-            "metrics": ["revenue",
-                        "ordered_units",
-                        "delivered_units",
-                        "returns",
-                        "cancellations"],
-            "dimension": ["day"],
-            "limit": 1000,
-            "offset": 0}
     if result is None:
-        while True:
-            try:
-                response = requests.post(url, headers=headers, json=body)
-                result = {value['dimensions'][0]['id']:
+        url = 'https://api-seller.ozon.ru/v1/analytics/data'
+        headers = {'Client-Id': ozon_info.client_id(supplier),
+                   'Api-Key': ozon_info.api_key(supplier)}
+        body = {"date_from": str(start_date),
+                "date_to": str(date.today()),
+                "metrics": ["revenue",
+                            "ordered_units",
+                            "delivered_units",
+                            "returns",
+                            "cancellations"],
+                "dimension": ["day"],
+                "limit": 1000,
+                "offset": 0}
+        result = {value['dimensions'][0]['id']:
                             {'orders_value': value['metrics'][0],
                              'orders_count': value['metrics'][1],
                              'delivered_count': value['metrics'][2],
                              'returns_count': value['metrics'][3],
                              'cancellations_count': value['metrics'][4]}
-                        for value in response.json()['result']['data']}
-                _analytics[(supplier, start_date)] = result
-                break
-            except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+                        for value in single_requests.fetch('POST', content_type='json', url=url, body=body,
+                                                           headers=headers)['result']['data']}
+        _analytics[(supplier, start_date)] = result
     return deepcopy(result)
 
 
 def _analytics_by_suppliers_list(suppliers_list, start_date):
     result = _analytics.get((tuple(suppliers_list), start_date))
-    url = 'https://api-seller.ozon.ru/v1/analytics/data'
-    headers_list = [{'Client-Id': ozon_info.client_id(supplier),
-                    'Api-Key': ozon_info.api_key(supplier)} for supplier in suppliers_list]
-    body = {"date_from": str(start_date),
-            "date_to": str(date.today()),
-            "metrics": ["revenue",
-                        "ordered_units",
-                        "delivered_units",
-                        "returns",
-                        "cancellations"],
-            "dimension": ["day"],
-            "limit": 1000,
-            "offset": 0}
     if result is None:
+        url = 'https://api-seller.ozon.ru/v1/analytics/data'
+        headers_list = [{'Client-Id': ozon_info.client_id(supplier),
+                         'Api-Key': ozon_info.api_key(supplier)} for supplier in suppliers_list]
+        body = {"date_from": str(start_date),
+                "date_to": str(date.today()),
+                "metrics": ["revenue",
+                            "ordered_units",
+                            "delivered_units",
+                            "returns",
+                            "cancellations"],
+                "dimension": ["day"],
+                "limit": 1000,
+                "offset": 0}
         analytics_dict = async_requests.fetch('POST', suppliers_list, url=url, headers_list=headers_list,
                                           body=body, content_type='json', lib='httpx')
         result = {supplier: {value['dimensions'][0]['id']:
@@ -272,13 +255,9 @@ def _mpstats_info_by_supplier(headers, supplier):
         body = {"startRow": 0, "endRow": 5000}
         result = list()
         for identifier in ozon_info.seller_identifiers(supplier):
-            while True:
-                try:
-                    params = {'path': identifier}
-                    response = requests.post(url, headers=headers, json=body, params=params)
-                    result += response.json()['data']
-                    break
-                except (requests.exceptions.RequestException, requests.exceptions.BaseHTTPError): pass
+            params = {'path': identifier}
+            result += single_requests.fetch('POST', content_type='json', url=url,
+                                            body=body, params=params, headers=headers)['data']
         _mpstats_info[supplier] = result
     return deepcopy(result)
 

@@ -54,7 +54,8 @@ def ask_wb():
     print("15 - Заказы (новинки)")
     print("16 - Заказы по товарам (кол-во)")
     print("17 - Заказы по товарам (сумма)")
-    print("18 - В начало")
+    print("18 - Рентабельность (размер)")
+    print("19 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -74,7 +75,8 @@ def ask_wb():
     elif choice.strip() == '15': choice = 'wb_orders_category_new'
     elif choice.strip() == '16': choice = 'wb_orders_count'
     elif choice.strip() == '17': choice = 'wb_orders_value'
-    elif choice.strip() == '18': choice = 'start'
+    elif choice.strip() == '18': choice = 'wb_profit'
+    elif choice.strip() == '19': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -474,6 +476,12 @@ if __name__ == '__main__':
             input_data = wb_info.all_suppliers()
             buyout_table = wb_analytics.buyout_percent_category(input_data)
             google_work.insert_table(worksheet, buyout_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_profit':
+            worksheet = google_work.open_sheet(info.google_key('wb_reports'), 'ОП')
+            input_data = wb_info.all_suppliers()
+            profit_table = wb_analytics.profit(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
             choice = 'wb'
         elif choice == 'ozon': ask_ozon()
         elif choice == 'ozon_positions':

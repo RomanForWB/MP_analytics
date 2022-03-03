@@ -21,14 +21,16 @@ def ask_start():
     print("========== Торговые площадки ==========")
     print("1 - Wildberries")
     print("2 - Ozon")
-    print("3 - Сгенерировать отчеты Wildberries")
-    print("4 - Сгенерировать аналитику Wildberries")
+    print("3 - Сгенерировать ежедневные отчеты Wildberries")
+    print("4 - Сгенерировать еженедельные отчеты Wildberries")
+    print("5 - Сгенерировать аналитику Wildberries")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb'
     elif choice.strip() == '2': choice = 'ozon'
-    elif choice.strip() == '3': choice = 'wb_all_reports'
-    elif choice.strip() == '4': choice = 'wb_all_analytics'
+    elif choice.strip() == '3': choice = 'wb_all_day_reports'
+    elif choice.strip() == '4': choice = 'wb_all_week_reports'
+    elif choice.strip() == '5': choice = 'wb_all_analytics'
     else:
         choice = 'start'
         print("Неправильный выбор...")
@@ -53,10 +55,15 @@ def ask_wb():
     print("13 - Заказы (все)")
     print("14 - Заказы (топ 500)")
     print("15 - Заказы (новинки)")
-    print("16 - Заказы по товарам (кол-во)")
-    print("17 - Заказы по товарам (сумма)")
-    print("18 - Рентабельность (размер)")
-    print("19 - В начало")
+    print("16 - Заказы (все категории)")
+    print("17 - Заказы по товарам (кол-во)")
+    print("18 - Заказы по товарам (сумма)")
+    print("19 - Рентабельность (расчет)")
+    print("20 - Рентабельность (размер)")
+    print("21 - Рентабельность (цвет)")
+    print("22 - Рентабельность (артикул)")
+    print("23 - Рентабельность (предмет)")
+    print("24 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -74,10 +81,15 @@ def ask_wb():
     elif choice.strip() == '13': choice = 'wb_orders_category_all'
     elif choice.strip() == '14': choice = 'wb_orders_category_500'
     elif choice.strip() == '15': choice = 'wb_orders_category_new'
-    elif choice.strip() == '16': choice = 'wb_orders_count'
-    elif choice.strip() == '17': choice = 'wb_orders_value'
-    elif choice.strip() == '18': choice = 'wb_profit'
-    elif choice.strip() == '19': choice = 'start'
+    elif choice.strip() == '16': choice = 'wb_orders_category_all_categories'
+    elif choice.strip() == '17': choice = 'wb_orders_count'
+    elif choice.strip() == '18': choice = 'wb_orders_value'
+    elif choice.strip() == '19': choice = 'wb_profit'
+    elif choice.strip() == '20': choice = 'wb_profit_size'
+    elif choice.strip() == '21': choice = 'wb_profit_color'
+    elif choice.strip() == '22': choice = 'wb_profit_article'
+    elif choice.strip() == '23': choice = 'wb_profit_category'
+    elif choice.strip() == '24': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -274,23 +286,7 @@ if __name__ == '__main__':
     while True:
         if choice == 'start': ask_start()
         elif choice == 'wb': ask_wb()
-        elif choice == 'wb_all_reports':
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт-размер')
-            input_data = wb_info.all_suppliers()
-            buyout_table = wb_analytics.buyout_percent_size(input_data)
-            google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт-цвет')
-            input_data = wb_info.all_suppliers()
-            buyout_table = wb_analytics.buyout_percent_color(input_data)
-            google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт')
-            input_data = wb_info.all_suppliers()
-            buyout_table = wb_analytics.buyout_percent_article(input_data)
-            google_work.insert_table(worksheet, buyout_table, replace=True)
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп предмет')
-            input_data = wb_info.all_suppliers()
-            buyout_table = wb_analytics.buyout_percent_category(input_data)
-            google_work.insert_table(worksheet, buyout_table, replace=True)
+        elif choice == 'wb_all_day_reports':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, шт')
             input_data = wb_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=7))
@@ -329,6 +325,36 @@ if __name__ == '__main__':
             start_date = str(info.current_month_start_date(skip_one=True))
             report_table = wb_analytics.report(input_data, start_date)
             google_special.wb_month_report(worksheet, report_table)
+            choice = 'start'
+        elif choice == 'wb_all_week_reports':
+            input_data = wb_info.all_suppliers()
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт-размер')
+            buyout_table = wb_analytics.buyout_percent_size(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт-цвет')
+            buyout_table = wb_analytics.buyout_percent_color(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп арт')
+            buyout_table = wb_analytics.buyout_percent_article(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'проц выкуп предмет')
+            buyout_table = wb_analytics.buyout_percent_category(input_data)
+            google_work.insert_table(worksheet, buyout_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент расчет')
+            profit_table = wb_analytics.profit(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент арт-размер')
+            profit_table = wb_analytics.profit_size(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент арт-цвет')
+            profit_table = wb_analytics.profit_color(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент арт')
+            profit_table = wb_analytics.profit_article(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент предмет')
+            profit_table = wb_analytics.profit_category(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
             choice = 'start'
         elif choice == 'wb_all_analytics':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
@@ -424,6 +450,14 @@ if __name__ == '__main__':
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
             choice = 'wb'
+        elif choice == 'wb_orders_category_all_categories':
+            worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'все категории')
+            input_data = wb_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=7))
+            orders_table = wb_analytics.orders_category(input_data, start_date)
+            google_work.clear(worksheet, 'A:I')
+            google_work.insert_table(worksheet, orders_table, replace=False)
+            choice = 'wb'
         elif choice == 'wb_orders_category_new':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'новинки')
             categories_list = google_work.get_columns(worksheet, 1, 10)
@@ -479,9 +513,33 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, buyout_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_profit':
-            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент арт-размер')
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент расчет')
             input_data = wb_info.all_suppliers()
             profit_table = wb_analytics.profit(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_profit_size':
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент арт-размер')
+            input_data = wb_info.all_suppliers()
+            profit_table = wb_analytics.profit_size(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_profit_color':
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент арт-цвет')
+            input_data = wb_info.all_suppliers()
+            profit_table = wb_analytics.profit_color(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_profit_article':
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент арт')
+            input_data = wb_info.all_suppliers()
+            profit_table = wb_analytics.profit_article(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_profit_category':
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент предмет')
+            input_data = wb_info.all_suppliers()
+            profit_table = wb_analytics.profit_category(input_data)
             google_work.insert_table(worksheet, profit_table, replace=True)
             choice = 'wb'
         elif choice == 'ozon': ask_ozon()

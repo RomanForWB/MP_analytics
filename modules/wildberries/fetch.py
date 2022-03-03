@@ -16,6 +16,7 @@ _report = dict()
 _detail_report = dict()
 _buyouts = None
 _cost = None
+_cookie_token = None
 
 _mpstats_info = dict()
 _mpstats_positions = dict()
@@ -198,7 +199,7 @@ def _report_by_supplier(url, supplier):
     result = _report.get(supplier)
     if result is None:
         params = {'isCommussion': 2}
-        headers = {'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
+        headers = {'Cookie': f"WBToken={cookie_token(supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
         result = single_requests.fetch('GET', content_type='json', url=url,
                                        params=params, headers=headers, timeout=20)['data']
         _report[supplier] = result
@@ -209,7 +210,7 @@ def _report_by_suppliers_list(url, suppliers_list):
     result = _report.get(tuple(suppliers_list))
     if result is None:
         params = {'isCommussion': 2}
-        headers_list = [{'Cookie': f"WBToken={wb_info.api_key('cookie_token', supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
+        headers_list = [{'Cookie': f"WBToken={cookie_token(supplier)}; x-supplier-id={wb_info.api_key('cookie_id', supplier)}"}
                         for supplier in suppliers_list]
         report_dict = async_requests.fetch('GET', suppliers_list, content_type='json',
                                            url=url, params=params, headers_list=headers_list)
@@ -262,6 +263,21 @@ def cost():
         _cost = result
     return deepcopy(result)
 
+
+def cookie_token(supplier):
+    global _cookie_token
+    result = _cookie_token
+    if result is None:
+        url = 'https://seller.wildberries.ru/passport/api/v2/auth/login'
+        body = {
+            "country": "RU",
+            "device": "test",
+            "token": wb_info.api_key('main_token', supplier)
+        }
+        single_requests.fetch('POST', content_type='json', url=url, body=body)
+        result = single_requests.session.cookies.get_dict()['WBToken']
+        _cookie_token = result
+    return deepcopy(result)
 
 # ==============================================
 

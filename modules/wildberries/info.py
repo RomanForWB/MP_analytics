@@ -1,5 +1,7 @@
 from json import load as json_load
 
+# последнее обновление 03.03.2022
+
 _wb_keys = None
 _suppliers = {"maryina":
                   {"name": "ИП Марьина А.А.",

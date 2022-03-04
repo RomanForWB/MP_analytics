@@ -1930,7 +1930,6 @@ def _profit_category_by_suppliers_list(suppliers_list, weeks):
     analytic_report_dict = fetch.report(suppliers_list=suppliers_list)
     cost_dict = fetch.cost()
     last_date = ''
-    table = list()
     items_dict = dict()
     for supplier, report_list in report_dict.items():
         for sale in report_list:
@@ -2008,4 +2007,124 @@ def profit_category(input_data, weeks=4):
     #elif type(input_data) == int: table = _profit_size_by_nm_list([input_data])
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
+    return table
+
+
+def _profit_compare_by_suppliers_list(suppliers_list, weeks):
+    report_dict = fetch.detail_report(suppliers_list=suppliers_list, weeks=weeks)
+    analytic_report_dict = fetch.report(suppliers_list=suppliers_list)
+    last_date = ''
+    for sale in report_dict[suppliers_list[0]]:
+        if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+    start_date = str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=(weeks*7-1))).date())
+    orders_dict = fetch.orders(suppliers_list=suppliers_list, start_date=start_date)
+    buyouts_dict = dict()
+    for item in fetch.buyouts():
+        buyouts_dict.setdefault(int(item[1]), {'buyouts': [], 'price': int(item[3])})
+        buyouts_dict[int(item[1])]['buyouts'].append(
+            [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
+    cost_dict = fetch.cost()
+
+    period = list()
+    result_dict = dict()
+    for i in range(weeks):
+        items_dict = dict()
+        days = info.days_list(to_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=(7*i))).date()),
+               from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=(6+7*i))).date()))
+
+        for supplier, report_list in report_dict.items():
+            for sale in report_list:
+                if datetime.strptime(sale['rr_dt'], '%Y-%m-%dT00:00:00Z').strftime('%d.%m') not in days: continue
+                dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
+                            sale['sa_name'], sale['subject_name'], sale['brand_name'], sale['ts_name'])
+                items_dict.setdefault(dict_key, {'sales_value': 0, 'sales_count': 0, 'delivery_value': 0,
+                                                 'return_value': 0, 'update': ''})
+                if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
+                    items_dict[dict_key]['sales_value'] += sale['ppvz_for_pay']
+                    items_dict[dict_key]['sales_count'] += 1
+                elif sale['doc_type_name'] == 'Возврат' and sale['quantity'] == 1:
+                    items_dict[dict_key]['sales_value'] -= sale['ppvz_for_pay']
+                    items_dict[dict_key]['sales_count'] -= 1
+                    items_dict[dict_key]['return_value'] += sale['ppvz_reward']
+                elif sale['delivery_rub'] != 0:
+                    items_dict[dict_key]['delivery_value'] += sale['delivery_rub']
+                if sale['rr_dt'] > items_dict[dict_key]['update']:
+                    items_dict[dict_key]['update'] = sale['rr_dt']
+                if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+
+            analytic_report = analytic_report_dict[supplier]
+            storage_value = 0
+            for year_values in analytic_report['consolidatedYears']:
+                for month_values in year_values['consolidatedMonths']:
+                    for day_values in month_values['consolidatedDays']:
+                        day = day_values['day'].split('.')[0]
+                        month = month_values['month']
+                        if f'{day}.{month}' in days: storage_value += day_values['storageCost']
+            sales_count = sum([value['sales_count'] for key, value in items_dict.items()])
+            if sales_count == 0: storage_value_by_item = 0
+            else: storage_value_by_item = storage_value/sales_count
+
+            for key, value in items_dict.items():
+                if cost_dict['nm'].get(key[1]) is not None:
+                    cost = cost_dict['nm'][key[1]]
+                elif cost_dict['article'].get(key[2].split('/')[0]+'/') is not None:
+                    cost = cost_dict['article'][key[2].split('/')[0]+'/']
+                else: cost = 0
+                items_dict[key]['profit_value'] = value['sales_value'] - value['delivery_value'] - \
+                              value['return_value'] - storage_value_by_item*value['sales_count'] - \
+                              cost*value['sales_count']
+
+        categories_orders_dict = dict()
+        for supplier, orders_list in orders_dict.items():
+            for order in orders_list:
+                category = order['subject']
+                if categories_orders_dict.get(category) is None: categories_orders_dict[category] = 0
+                try:
+                    day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').date().strftime('%d.%m')
+                    if day in days:
+                        final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
+                        categories_orders_dict[category] += final_price
+                    if buyouts_dict.get(order['nmId']) is not None:
+                        buyouts_dict[order['nmId']].update({'category': category})
+                except KeyError: pass
+
+        for nm, values in buyouts_dict.items():
+            if values.get('category') is not None:
+                for buyout in values['buyouts']:
+                    if buyout[0] in days: categories_orders_dict[values['category']] -= values['price'] * buyout[1]
+
+        period.append(f'{days[0]} - {days[-1]}')
+        for key, value in items_dict.items():
+            category = key[3]
+            if result_dict.get(category) is None: result_dict[category] = dict()
+            result_dict[category].setdefault(period[i], {'profit_value': 0, 'orders_value': 0})
+            result_dict[category][period[i]]['profit_value'] += value['profit_value']
+        for category, value in categories_orders_dict.items():
+            if result_dict.get(category) is None: result_dict[category] = dict()
+            result_dict[category].setdefault(period[i], {'profit_value': 0, 'orders_value': 0})
+            result_dict[category][period[i]]['orders_value'] += value
+
+    table = list()
+    for category, period_values in result_dict.items():
+        row = [category]
+        for day_period in period:
+            row += [period_values[day_period]['profit_value'], period_values[day_period]['orders_value']]
+        table.append(row)
+    table.sort(key=lambda item: sum(item[1:]), reverse=True)
+    period_with_spaces = list()
+    for item in period:
+        period_with_spaces.append(item)
+        period_with_spaces.append('')
+    table = [['Недели'] + period_with_spaces, ['Категории'] + ['Операционная прибыль, руб', 'Заказы, руб']*weeks] + table
+    return table
+
+
+def profit_compare(input_data, weeks=4):
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _profit_compare_by_suppliers_list(input_data, weeks)
+        #elif type(input_data[0]) == int: table = _profit_size_by_nm_list(input_data)
+    #elif type(input_data) == str: table = _profit_compare_by_supplier(input_data, weeks)
+    #elif type(input_data) == int: table = _profit_size_by_nm_list([input_data])
+    else: raise ValueError("Unable to recognize input data")
     return table

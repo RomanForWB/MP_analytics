@@ -63,7 +63,8 @@ def ask_wb():
     print("21 - Рентабельность (цвет)")
     print("22 - Рентабельность (артикул)")
     print("23 - Рентабельность (предмет)")
-    print("24 - В начало")
+    print("24 - Рентабельность (недели)")
+    print("25 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -89,7 +90,8 @@ def ask_wb():
     elif choice.strip() == '21': choice = 'wb_profit_color'
     elif choice.strip() == '22': choice = 'wb_profit_article'
     elif choice.strip() == '23': choice = 'wb_profit_category'
-    elif choice.strip() == '24': choice = 'start'
+    elif choice.strip() == '24': choice = 'wb_profit_compare'
+    elif choice.strip() == '25': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -281,6 +283,12 @@ def get_int_column(worksheet, header, column_number, keep_lenght=True):
     return int_values
 
 
+def ask_week_count():
+    while True:
+        try: return int(input("Введите количество недель: ").strip())
+        except: print("Неправильный выбор...")
+
+
 if __name__ == '__main__':
     # ================== начало диалога ==================
     while True:
@@ -354,6 +362,9 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, profit_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент предмет')
             profit_table = wb_analytics.profit_category(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент недели')
+            profit_table = wb_analytics.profit_compare(input_data)
             google_work.insert_table(worksheet, profit_table, replace=True)
             choice = 'start'
         elif choice == 'wb_all_analytics':
@@ -540,6 +551,13 @@ if __name__ == '__main__':
             worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент предмет')
             input_data = wb_info.all_suppliers()
             profit_table = wb_analytics.profit_category(input_data)
+            google_work.insert_table(worksheet, profit_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_profit_compare':
+            worksheet = google_work.open_sheet(info.google_key('wb_week_reports'), 'рент недели')
+            input_data = wb_info.all_suppliers()
+            weeks = ask_week_count()
+            profit_table = wb_analytics.profit_compare(input_data, weeks)
             google_work.insert_table(worksheet, profit_table, replace=True)
             choice = 'wb'
         elif choice == 'ozon': ask_ozon()

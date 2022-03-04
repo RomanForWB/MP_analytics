@@ -129,7 +129,7 @@ class Renamer(QWidget):
         cards = wb_fetch.cards(supplier=supplier)
         for i in range(len(cards)):
             self.rows.append([])
-            self.rows[i].append(QLabel(str(cards[i]['imtId'])))
+            self.rows[i].append(QLabel(str(cards[i]['nomenclatures'][0]['nmId'])))
             self.grid.addWidget(self.rows[i][0], i, 0)
 
             for type in cards[i]['addin']:

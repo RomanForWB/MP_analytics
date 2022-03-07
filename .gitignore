@@ -1,6 +1,7 @@
 
 .idea/
 keys/
+.DS_Store
 
 test.py
 test2.py

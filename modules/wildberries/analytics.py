@@ -1049,8 +1049,10 @@ def buyout_percent_category(input_data, weeks=4):
     return table
 
 
+# ================= for positions =================
 main_category_exceptions = {'Жилеты': 'Женщинам/Пиджаки, жилеты и жакеты/Жилеты'}
 main_categories = ['Женщинам/Одежда/', 'Мужчинам/Одежда/', 'Обувь/Женская/', 'Обувь/Мужская/']
+
 
 def _positions_by_supplier(supplier, start_date):
     info_dict = {item['id']: item for item in fetch.mpstats_info(supplier=supplier)}

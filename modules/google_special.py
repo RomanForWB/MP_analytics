@@ -19,7 +19,7 @@ ru_month = {1: 'января',
             12: 'декабря'}
 
 
-def wb_day_report(worksheet, report_table):
+def day_report(worksheet, report_table):
     first_column = google_work.get_columns(worksheet, 0, 1)
     for i in range(len(first_column)):
         if 'Динамика' in first_column[i]:
@@ -70,7 +70,7 @@ def wb_day_report(worksheet, report_table):
                                           "blue": 0.94921875}})
 
 
-def wb_week_report(worksheet, report_table):
+def week_report(worksheet, report_table):
     first_column = google_work.get_columns(worksheet, 0, 1)
     plan_row = list()
 
@@ -194,7 +194,7 @@ def wb_week_report(worksheet, report_table):
                                           "blue": 0.94921875}})
 
 
-def wb_month_report(worksheet, report_table):
+def month_report(worksheet, report_table):
     first_column = google_work.get_columns(worksheet, 0, 1)
     plan_row = list()
 

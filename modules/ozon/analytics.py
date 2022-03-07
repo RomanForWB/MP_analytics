@@ -47,48 +47,6 @@ def stocks(input_data):
     return table
 
 
-def _report_by_supplier(supplier, start_date):
-    analytics_dict = fetch.analytics(supplier=supplier, start_date=start_date)
-    transactions_dict = fetch.transactions(supplier=supplier, start_date=start_date)
-    return [[day.replace('-', '.'), analytics['orders_count'], analytics['orders_value'],
-             analytics['delivered_count'] - analytics['returns_count'] - analytics['cancellations_count'],
-             transactions_dict[day]['sales_value'], transactions_dict[day]['delivery_value'],
-             transactions_dict[day]['comission_value'], transactions_dict[day]['service_value'],
-             transactions_dict[day]['total_value']] for day, analytics in analytics_dict.items()]
-
-
-def _report_by_suppliers_list(suppliers_list, start_date):
-    analytics_dict = fetch.analytics(suppliers_list=suppliers_list, start_date=start_date)
-    transactions_dict = fetch.transactions(suppliers_list=suppliers_list, start_date=start_date)
-    dates = info.dates_list(from_date=start_date, to_yesterday=True)
-    table = [[day, sum([analytics_dict[supplier][day]['orders_count'] for supplier in suppliers_list]),
-                  sum([analytics_dict[supplier][day]['orders_value'] for supplier in suppliers_list]),
-                  sum([analytics_dict[supplier][day]['delivered_count'] - \
-                       analytics_dict[supplier][day]['returns_count'] - \
-                       analytics_dict[supplier][day]['cancellations_count'] for supplier in suppliers_list]),
-                  sum([transactions_dict[supplier][day]['sales_value'] for supplier in suppliers_list]),
-                  sum([transactions_dict[supplier][day]['delivery_value'] for supplier in suppliers_list]),
-                  sum([transactions_dict[supplier][day]['comission_value'] for supplier in suppliers_list]),
-                  sum([transactions_dict[supplier][day]['service_value'] for supplier in suppliers_list]),
-                  sum([transactions_dict[supplier][day]['total_value'] for supplier in suppliers_list])]
-                  for day in dates]
-    return table
-
-
-def report(input_data, start_date):
-    header = ['Дата', 'Заказы шт.', 'Заказы руб.', 'Выкуплено шт.', 'Выкуплено руб.',
-              'Доставка руб.', 'Комиссия руб.', 'Доп. услуги руб.', 'К перечислению']
-    table = list()
-    if type(input_data) == list:
-        if type(input_data[0]) == str: table = _report_by_suppliers_list(input_data, start_date)
-        elif type(input_data[0]) == int: table = _report_by_sku_list(input_data, start_date)
-    elif type(input_data) == str: table = _report_by_supplier(input_data, start_date)
-    elif type(input_data) == int: table = _report_by_sku_list([input_data], start_date)
-    else: raise ValueError("Unable to recognize input data")
-    table.insert(0, header)
-    return table
-
-
 def _positions_by_sku_list(sku_list, start_date):
     positions_dict = fetch.mpstats_positions(sku_list=sku_list, start_date=start_date)
     fetched_products_dict = fetch.products(suppliers_list=ozon_info.all_suppliers())
@@ -249,6 +207,47 @@ def categories(input_data, start_date=str(date.today()-timedelta(days=7))):
         elif type(input_data[0]) == int: table = _categories_by_sku_list(input_data, start_date)
     elif type(input_data) == str: table = _categories_by_supplier(input_data, start_date)
     elif type(input_data) == int: table = _categories_by_sku_list([input_data], start_date)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table
+
+
+def _report_by_supplier(supplier, start_date):
+    analytics_dict = fetch.analytics(supplier=supplier, start_date=start_date)
+    transactions_dict = fetch.transactions(supplier=supplier, start_date=start_date)
+    return [[day, analytics['orders_value'], analytics['orders_count'], transactions_dict[day]['sales_value'],
+             analytics['delivered_count'] - analytics['returns_count'] - analytics['cancellations_count'],
+             -transactions_dict[day]['delivery_value'],
+             # transactions_dict[day]['comission_value'], transactions_dict[day]['service_value'],
+             transactions_dict[day]['total_value']] for day, analytics in analytics_dict.items()]
+
+
+def _report_by_suppliers_list(suppliers_list, start_date):
+    analytics_dict = fetch.analytics(suppliers_list=suppliers_list, start_date=start_date)
+    transactions_dict = fetch.transactions(suppliers_list=suppliers_list, start_date=start_date)
+    dates = info.dates_list(from_date=start_date, to_yesterday=True)
+    table = [[day, sum([analytics_dict[supplier][day]['orders_value'] for supplier in suppliers_list]),
+                  sum([analytics_dict[supplier][day]['orders_count'] for supplier in suppliers_list]),
+                  sum([transactions_dict[supplier][day]['sales_value'] for supplier in suppliers_list]),
+                  sum([analytics_dict[supplier][day]['delivered_count'] - \
+                       analytics_dict[supplier][day]['returns_count'] - \
+                       analytics_dict[supplier][day]['cancellations_count'] for supplier in suppliers_list]),
+                  sum([-transactions_dict[supplier][day]['delivery_value'] for supplier in suppliers_list]),
+                  # sum([transactions_dict[supplier][day]['comission_value'] for supplier in suppliers_list]),
+                  # sum([transactions_dict[supplier][day]['service_value'] for supplier in suppliers_list]),
+                  sum([transactions_dict[supplier][day]['total_value'] for supplier in suppliers_list])]
+                  for day in dates]
+    return table
+
+
+def report(input_data, start_date):
+    header = ['Дата', 'Заказано руб.', 'Заказано шт.', 'Выкупили руб.', 'Выкупили шт.', 'Логистика руб.', 'К перечислению']
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _report_by_suppliers_list(input_data, start_date)
+        # elif type(input_data[0]) == int: table = _report_by_sku_list(input_data, start_date)
+    elif type(input_data) == str: table = _report_by_supplier(input_data, start_date)
+    # elif type(input_data) == int: table = _report_by_sku_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table

@@ -1049,6 +1049,9 @@ def buyout_percent_category(input_data, weeks=4):
     return table
 
 
+main_category_exceptions = {'Жилеты': 'Женщинам/Пиджаки, жилеты и жакеты/Жилеты'}
+main_categories = ['Женщинам/Одежда/', 'Мужчинам/Одежда/', 'Обувь/Женская/', 'Обувь/Мужская/']
+
 def _positions_by_supplier(supplier, start_date):
     info_dict = {item['id']: item for item in fetch.mpstats_info(supplier=supplier)}
     cards_list = fetch.cards(supplier=supplier)
@@ -1057,18 +1060,32 @@ def _positions_by_supplier(supplier, start_date):
     for card in cards_list:
         for nomenclature in card['nomenclatures']:
             nm = nomenclature['nmId']
+            if type(positions_dict[nm]['categories']) == list:
+                table.append([wb_info.supplier_name(supplier), nm,
+                                       card['supplierVendorCode'] + nomenclature['vendorCode'], '-', '-'])
+                continue
             try:
-                category = info_dict[nm]['category']
-                positions_list = positions_dict[nm]['categories'][category]
+                # ==================================
+                if card['object'] in main_category_exceptions.keys(): main_category = main_category_exceptions[card['object']]
+                else:
+                    main_category_lenght = 0
+                    main_category = None
+                    for category in positions_dict[nm]['categories'].keys():
+                        for start_category in main_categories:
+                            if category.startswith(start_category) and len(category) > main_category_lenght:
+                                main_category_lenght = len(category)
+                                main_category = category
+                    if main_category is None: main_category = info_dict[nm]['category']
+                # ==================================
+                positions_list = positions_dict[nm]['categories'][main_category]
                 for i in range(len(positions_list)):
                     if positions_list[i] == 'NaN': positions_list[i] = '-'
                 table.append([wb_info.supplier_name(supplier), nm,
                               card['supplierVendorCode'] + nomenclature['vendorCode'],
-                              category, info_dict[nm]['brand']] + positions_list)
+                              main_category, info_dict[nm]['brand']] + positions_list)
             except (TypeError, KeyError):
                 table.append([wb_info.supplier_name(supplier), nm,
-                              card['supplierVendorCode'] + nomenclature['vendorCode'],
-                              '', ''] + [''])
+                              card['supplierVendorCode'] + nomenclature['vendorCode'], '-', '-'])
 
     return sorted(table, key=lambda item: item[2])
 
@@ -1085,18 +1102,32 @@ def _positions_by_suppliers_list(suppliers_list, start_date):
         for card in cards_dict[supplier]:
             for nomenclature in card['nomenclatures']:
                 nm = nomenclature['nmId']
+                if type(positions_dict[nm]['categories']) == list:
+                    supplier_table.append([wb_info.supplier_name(supplier), nm,
+                                           card['supplierVendorCode'] + nomenclature['vendorCode'], '-', '-'])
+                    continue
                 try:
-                    category = info_dict[supplier][nm]['category']
-                    positions_list = positions_dict[supplier][nm]['categories'][category]
+                    # ==================================
+                    if card['object'] in main_category_exceptions.keys(): main_category = main_category_exceptions[card['object']]
+                    else:
+                        main_category_lenght = 0
+                        main_category = None
+                        for category in positions_dict[nm]['categories'].keys():
+                            for start_category in main_categories:
+                                if category.startswith(start_category) and len(category) > main_category_lenght:
+                                    main_category_lenght = len(category)
+                                    main_category = category
+                        if main_category is None: main_category = info_dict[nm]['category']
+                    # ==================================
+                    positions_list = positions_dict[supplier][nm]['categories'][main_category]
                     for i in range(len(positions_list)):
                         if positions_list[i] == 'NaN': positions_list[i] = '-'
                     supplier_table.append([wb_info.supplier_name(supplier), nm,
                                            card['supplierVendorCode'] + nomenclature['vendorCode'],
-                                           category, info_dict[supplier][nm]['brand']] + positions_list)
+                                           main_category, info_dict[supplier][nm]['brand']] + positions_list)
                 except (TypeError, KeyError):
                     supplier_table.append([wb_info.supplier_name(supplier), nm,
-                                           card['supplierVendorCode'] + nomenclature['vendorCode'],
-                                           '', ''] +[''])
+                                           card['supplierVendorCode'] + nomenclature['vendorCode'], '-', '-'])
         result_table += sorted(supplier_table, key=lambda item: item[2])
     return result_table
 
@@ -1115,18 +1146,33 @@ def _positions_by_nm_list(nm_list, start_date):
                 if nomenclature['nmId'] not in nm_list: continue
                 else:
                     nm = nomenclature['nmId']
+                    if type(positions_dict[nm]['categories']) == list:
+                        supplier_table.append([wb_info.supplier_name(supplier), nm,
+                                               card['supplierVendorCode'] + nomenclature['vendorCode'], '-', '-'])
+                        continue
                     try:
-                        category = info_dict[supplier][nm]['category']
-                        positions_list = positions_dict[nm]['categories'][category]
+                        # ==================================
+                        if card['object'] in main_category_exceptions.keys():
+                            main_category = main_category_exceptions[card['object']]
+                        else:
+                            main_category_lenght = 0
+                            main_category = None
+                            for category in positions_dict[nm]['categories'].keys():
+                                for start_category in main_categories:
+                                    if category.startswith(start_category) and len(category) > main_category_lenght:
+                                        main_category_lenght = len(category)
+                                        main_category = category
+                            if main_category is None: main_category = info_dict[nm]['category']
+                        # ==================================
+                        positions_list = positions_dict[nm]['categories'][main_category]
                         for i in range(len(positions_list)):
                             if positions_list[i] == 'NaN': positions_list[i] = '-'
                         supplier_table.append([wb_info.supplier_name(supplier), nm,
                                                card['supplierVendorCode'] + nomenclature['vendorCode'],
-                                               category, info_dict[supplier][nm]['brand']] + positions_list)
+                                               main_category, info_dict[supplier][nm]['brand']] + positions_list)
                     except (TypeError, KeyError):
                         supplier_table.append([wb_info.supplier_name(supplier), nm,
-                                               card['supplierVendorCode'] + nomenclature['vendorCode'],
-                                               '', ''] + [''])
+                                               card['supplierVendorCode'] + nomenclature['vendorCode'], '-', '-'])
         result_table += sorted(supplier_table, key=lambda item: item[2])
     return result_table
 

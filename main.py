@@ -476,21 +476,24 @@ if __name__ == '__main__':
         elif choice == 'wb_orders_count':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, шт')
             input_data = wb_info.all_suppliers()
-            start_date = str(date.today() - timedelta(days=7))
+            start_date = ask_start_date()
+            if choice == 'start': continue
             orders_table = wb_analytics.orders_count(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_value':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, руб')
             input_data = wb_info.all_suppliers()
-            start_date = str(date.today() - timedelta(days=7))
+            start_date = ask_start_date()
+            if choice == 'start': continue
             orders_table = wb_analytics.orders_value(input_data, start_date)
             google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_category_all':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'заказы общие')
             input_data = wb_info.all_suppliers()
-            start_date = str(date.today() - timedelta(days=7))
+            start_date = ask_start_date()
+            if choice == 'start': continue
             categories_list = google_work.get_columns(worksheet, 1, 10)
             orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
             google_work.clear(worksheet, 'A:I')
@@ -500,7 +503,8 @@ if __name__ == '__main__':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'заказы топ 500')
             categories_list = google_work.get_columns(worksheet, 1, 10)
             input_data = list(map(int, google_work.get_columns(worksheet, 1, 11)))
-            start_date = str(date.today() - timedelta(days=7))
+            start_date = ask_start_date()
+            if choice == 'start': continue
             orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
@@ -508,7 +512,8 @@ if __name__ == '__main__':
         elif choice == 'wb_orders_category_all_categories':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'все категории')
             input_data = wb_info.all_suppliers()
-            start_date = str(date.today() - timedelta(days=7))
+            start_date = ask_start_date()
+            if choice == 'start': continue
             orders_table = wb_analytics.orders_category(input_data, start_date)
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)
@@ -517,7 +522,8 @@ if __name__ == '__main__':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'новинки')
             categories_list = google_work.get_columns(worksheet, 1, 10)
             input_data = list(map(int, google_work.get_columns(worksheet, 1, 11)))
-            start_date = str(date.today() - timedelta(days=7))
+            start_date = ask_start_date()
+            if choice == 'start': continue
             orders_table = wb_analytics.orders_category(input_data, start_date, categories_list)
             google_work.clear(worksheet, 'A:I')
             google_work.insert_table(worksheet, orders_table, replace=False)

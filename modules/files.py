@@ -145,7 +145,8 @@ def create_folder(folder):
     :param folder: path to the folder
     :type folder: str
     """
-    mkdir(folder)
+    try: mkdir(folder)
+    except FileExistsError: pass
 
 
 def get_path(identifier):

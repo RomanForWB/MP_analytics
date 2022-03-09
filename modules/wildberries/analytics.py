@@ -356,11 +356,7 @@ def orders_value(input_data, start_date=str(date.today()-timedelta(days=6))):
 def _orders_category_by_supplier(supplier, start_date, visible_categories=None):
     orders_list = fetch.orders(supplier=supplier, start_date=start_date)
     days = info.days_list(start_date)
-    buyouts_dict = dict()
-    for item in fetch.buyouts():
-        buyouts_dict.setdefault(int(item[1]), {'buyouts': [], 'price': int(item[3])})
-        buyouts_dict[int(item[1])]['buyouts'].append(
-            [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
+    buyouts_dict = fetch.buyouts()
     categories_dict = dict()
     for order in orders_list:
         if order['category'] == 'Обувь': category = 'Обувь'
@@ -400,11 +396,7 @@ def _orders_category_by_supplier(supplier, start_date, visible_categories=None):
 def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categories=None):
     orders_dict = fetch.orders(suppliers_list=suppliers_list, start_date=start_date)
     days = info.days_list(start_date)
-    buyouts_dict = dict()
-    for item in fetch.buyouts():
-        buyouts_dict.setdefault(int(item[1]), {'buyouts': [], 'price': int(item[3])})
-        buyouts_dict[int(item[1])]['buyouts'].append(
-            [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
+    buyouts_dict = fetch.buyouts()
     categories_dict = dict()
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
@@ -445,11 +437,7 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categ
 def _orders_category_by_nm_list(nm_list, start_date, visible_categories=None):
     orders_dict = fetch.orders(suppliers_list=wb_info.all_suppliers(), start_date=start_date)
     days = info.days_list(start_date)
-    buyouts_dict = dict()
-    for item in fetch.buyouts():
-        buyouts_dict.setdefault(int(item[1]), {'buyouts': [], 'price': int(item[3])})
-        buyouts_dict[int(item[1])]['buyouts'].append(
-            [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
+    buyouts_dict = fetch.buyouts()
     categories_dict = dict()
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
@@ -2066,11 +2054,7 @@ def _profit_compare_by_suppliers_list(suppliers_list, weeks):
         if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
     start_date = str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=(weeks*7-1))).date())
     orders_dict = fetch.orders(suppliers_list=suppliers_list, start_date=start_date)
-    buyouts_dict = dict()
-    for item in fetch.buyouts():
-        buyouts_dict.setdefault(int(item[1]), {'buyouts': [], 'price': int(item[3])})
-        buyouts_dict[int(item[1])]['buyouts'].append(
-            [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
+    buyouts_dict = fetch.buyouts()
     cost_dict = fetch.cost()
 
     period = list()

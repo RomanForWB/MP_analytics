@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from copy import deepcopy
 import modules.async_requests as async_requests
 import modules.session_requests as session_requests
@@ -244,8 +244,15 @@ def buyouts():
     if result is None:
         ws = google_work.open_sheet(info.google_key('wb_day_reports'), 'выкупы')
         buyout_columns = google_work.get_columns(ws, 1, 1, 2, 3, 4)
-        result = [[buyout_columns[0][i], buyout_columns[1][i], buyout_columns[2][i], buyout_columns[3][i],]
+        buyout_rows = [[buyout_columns[0][i], buyout_columns[1][i], buyout_columns[2][i], buyout_columns[3][i],]
                         for i in range(len(buyout_columns[0]))]
+        result = dict()
+        for item in buyout_rows:
+            try:
+                result.setdefault(int(item[1]), {'buyouts': [], 'price': int(item[3])})
+                result[int(item[1])]['buyouts'].append(
+                    [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
+            except ValueError: pass
         _buyouts = result
     return deepcopy(result)
 

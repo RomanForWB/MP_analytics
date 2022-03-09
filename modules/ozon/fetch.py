@@ -9,6 +9,7 @@ _product_ids = dict()
 _products = dict()
 _categories = dict()
 _analytics = dict()
+_warehouses = dict()
 
 _mpstats_positions = dict()
 _mpstats_info = dict()
@@ -104,6 +105,40 @@ def categories(supplier=None, suppliers_list=None):
     if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch categories.")
     elif supplier is not None: return _categories_by_supplier(supplier)
     elif suppliers_list is not None: return _categories_by_suppliers_list(suppliers_list)
+
+
+def _warehouses_by_supplier(supplier):
+    result = _analytics.get(supplier)
+    if result is None:
+        url = f'https://api-seller.ozon.ru/v1/analytics/stock_on_warehouses'
+        headers = {'Client-Id': ozon_info.client_id(supplier),
+                   'Api-Key': ozon_info.api_key(supplier),
+                   'Content-Type': 'application/json'}
+        body = {'limit': 1000}
+        result = single_requests.fetch('POST', url=url, headers=headers, body=body, content_type='json')['total_items']
+        _warehouses[supplier] = result
+    return deepcopy(result)
+
+
+def _warehouses_by_suppliers_list(suppliers_list):
+    result = _analytics.get(tuple(suppliers_list))
+    if result is None:
+        url = f'https://api-seller.ozon.ru/v1/analytics/stock_on_warehouses'
+        headers_list = [{'Client-Id': ozon_info.client_id(supplier),
+                   'Api-Key': ozon_info.api_key(supplier),
+                   'Content-Type': 'application/json'} for supplier in suppliers_list]
+        body = {'limit': 1000}
+        result = async_requests.fetch('POST', suppliers_list, url=url, headers_list=headers_list,
+                                      body=body, content_type='json', lib='httpx')
+        result = {supplier: values['total_items'] for supplier, values in result.items()}
+        _warehouses[tuple(suppliers_list)] = result
+    return deepcopy(result)
+
+
+def warehouses(supplier=None, suppliers_list=None):
+    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch warehouses.")
+    elif supplier is not None: return _warehouses_by_supplier(supplier)
+    elif suppliers_list is not None: return _warehouses_by_suppliers_list(suppliers_list)
 
 
 def _analytics_by_supplier(supplier, start_date):

@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import modules.info as info
 import modules.ozon.info as ozon_info
 import modules.ozon.fetch as fetch
@@ -9,39 +9,88 @@ _categories = dict()
 _analytics = dict()
 
 
-def _stocks_by_supplier(supplier):
+def _stocks_by_supplier(supplier, old_stocks_columns):
     products_list = fetch.products(supplier=supplier)
     categories_dict = fetch.categories(supplier=supplier)
-    table = [[ozon_info.supplier_name(supplier), product['sku'],
-             product['offer_id'], categories_dict[product['category_id']],
-             product['stocks']['present'], product['stocks']['coming'],
-             product['stocks']['reserved'], product['status']['state_updated_at']]
-             for product in products_list]
+    warehouses_list = fetch.warehouses(supplier=supplier)
+    old_stocks_dict = {(old_stocks_columns[0][i], int(old_stocks_columns[1][i]),
+                        old_stocks_columns[2][i], old_stocks_columns[3][i]):
+                           {'present': int(old_stocks_columns[4][i]), 'reserved': int(old_stocks_columns[5][i]),
+                            'shipped': int(old_stocks_columns[6][i]), 'between': int(old_stocks_columns[7][i]),
+                            'loss': int(old_stocks_columns[8][i]), 'update': old_stocks_columns[9][i]}
+                       for i in range(len(old_stocks_columns[0]))}
+    stocks_dict = dict()
+    for product in products_list:
+        dict_key = (ozon_info.supplier_name(supplier), product['sku'],
+                    product['offer_id'], categories_dict[product['category_id']])
+        stocks_dict[dict_key] = {'present': product['stocks']['present'] - product['stocks']['reserved'],
+                                 'reserved': product['stocks']['reserved'],
+                                 'loss': 0, 'between': 0, 'shipped': 0}
+    for stock in warehouses_list:
+        dict_key = (ozon_info.supplier_name(supplier), stock['sku'],
+                    stock['offer_id'], stock['category'])
+        stocks_dict.setdefault(dict_key, {'present': 0, 'reserved': 0})
+        stocks_dict[dict_key].update({'loss': stock['stock']['loss'],
+                                      'between': stock['stock']['between_warehouses'],
+                                      'shipped': stock['stock']['shipped']})
+    table = list()
+    for key, values in stocks_dict.items():
+        if old_stocks_dict.get(key) is not None:
+            update = old_stocks_dict[key].pop('update')
+            if old_stocks_dict[key] == stocks_dict[key]:
+                table.append(list(key)+[values['present'], values['reserved'], values['shipped'],
+                                        values['between'], values['loss'], update])
+        else: table.append(list(key)+[values['present'], values['reserved'], values['shipped'],
+                                      values['between'], values['loss'], str(datetime.now())])
     return sorted(table, key=lambda item: item[2])
 
 
-def _stocks_by_suppliers_list(suppliers_list):
+def _stocks_by_suppliers_list(suppliers_list, old_stocks_columns):
     products_dict = fetch.products(suppliers_list=suppliers_list)
+    warehouses_dict = fetch.warehouses(suppliers_list=suppliers_list)
     categories_dict = fetch.categories(suppliers_list=suppliers_list)
+    old_stocks_dict = {(old_stocks_columns[0][i], int(old_stocks_columns[1][i]),
+                        old_stocks_columns[2][i], old_stocks_columns[3][i]):
+                           {'present': int(old_stocks_columns[4][i]), 'reserved': int(old_stocks_columns[5][i]),
+                            'shipped': int(old_stocks_columns[6][i]), 'between': int(old_stocks_columns[7][i]),
+                            'loss': int(old_stocks_columns[8][i]), 'update': old_stocks_columns[9][i]}
+                       for i in range(len(old_stocks_columns[0]))}
     table = list()
-    for supplier, products_list in products_dict.items():
-        table += sorted([[ozon_info.supplier_name(supplier), product['sku'],
-                         product['offer_id'], categories_dict[product['category_id']],
-                         product['stocks']['present'], product['stocks']['coming'],
-                         product['stocks']['reserved'], product['status']['state_updated_at']]
-                         for product in products_list])
+    for supplier in suppliers_list:
+        stocks_dict = dict()
+        for product in products_dict[supplier]:
+            dict_key = (ozon_info.supplier_name(supplier), product['sku'],
+                        product['offer_id'], categories_dict[product['category_id']])
+            stocks_dict[dict_key] = {'present': product['stocks']['present'] - product['stocks']['reserved'],
+                                     'reserved': product['stocks']['reserved'],
+                                     'loss': 0, 'between': 0, 'shipped': 0}
+        for stock in warehouses_dict[supplier]:
+            dict_key = (ozon_info.supplier_name(supplier), stock['sku'],
+                        stock['offer_id'], stock['category'])
+            stocks_dict.setdefault(dict_key, {'present': 0, 'reserved': 0})
+            stocks_dict[dict_key].update({'loss': stock['stock']['loss'],
+                                          'between': stock['stock']['between_warehouses'],
+                                          'shipped': stock['stock']['shipped']})
+        supplier_table = list()
+        for key, values in stocks_dict.items():
+            if old_stocks_dict.get(key) is not None:
+                update = old_stocks_dict[key].pop('update')
+                if old_stocks_dict[key] == stocks_dict[key]:
+                    supplier_table.append(list(key) + [values['present'], values['reserved'], values['shipped'],
+                                              values['between'], values['loss'], update])
+            else: supplier_table.append(list(key) + [values['present'], values['reserved'], values['shipped'],
+                                          values['between'], values['loss'], str(datetime.now())])
+        table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
 
-def stocks(input_data):
+def stocks(input_data, old_stocks_columns):
     header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет',
-              'На складе', 'В пути на склад', 'В пути к клиенту', 'Время обновления']
+              'Доступно', 'Зарезервировано', 'В доставке', 'Между складами', 'Потери', 'Время обновления']
     table = list()
     if type(input_data) == list:
-        if type(input_data[0]) == str: table = _stocks_by_suppliers_list(input_data)
-        elif type(input_data[0]) == int: table = _stocks_by_sku_list(input_data)
-    elif type(input_data) == str: table = _stocks_by_supplier(input_data)
-    elif type(input_data) == int: table = _stocks_by_sku_list([input_data])
+        if type(input_data[0]) == str: table = _stocks_by_suppliers_list(input_data, old_stocks_columns)
+    elif type(input_data) == str: table = _stocks_by_supplier(input_data, old_stocks_columns)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)
     return table

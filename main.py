@@ -626,7 +626,8 @@ if __name__ == '__main__':
         elif choice == 'ozon_stocks':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Остатки')
             input_data = ozon_info.all_suppliers()
-            stocks_table = ozon_analytics.stocks(input_data)
+            old_stocks_columns = google_work.get_columns(worksheet, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+            stocks_table = ozon_analytics.stocks(input_data, old_stocks_columns)
             google_work.insert_table(worksheet, stocks_table, replace=True)
             choice = 'ozon'
         elif choice == 'ozon_day_report':

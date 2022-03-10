@@ -42,7 +42,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
                 timeout = httpx.Timeout(timeout=float(individual_timer))
                 session = httpx.AsyncClient(timeout=timeout)
                 individual_session = True
-                individual_timer += 5
+                if individual_timer < 60: individual_timer += 5
     else:
         while True:
             try:
@@ -73,7 +73,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
                 timeout = aiohttp.ClientTimeout(total=individual_timer)
                 session = aiohttp.ClientSession(timeout=timeout)
                 individual_session = True
-                individual_timer += 5
+                if individual_timer < 60: individual_timer += 5
 
 
 
@@ -107,7 +107,7 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
                 timeout = httpx.Timeout(timeout=float(individual_timer))
                 session = httpx.AsyncClient(timeout=timeout)
                 individual_session = True
-                individual_timer += 5
+                if individual_timer < 60: individual_timer += 5
     else:
         while True:
             try:
@@ -138,7 +138,7 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
                 timeout = aiohttp.ClientTimeout(total=individual_timer)
                 session = aiohttp.ClientSession(timeout=timeout)
                 individual_session = True
-                individual_timer += 5
+                if individual_timer < 60: individual_timer += 5
 
 
 async def _fetch_all_tasks(http_method, session, ids,

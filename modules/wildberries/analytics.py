@@ -1065,6 +1065,11 @@ def buyout_percent_size(input_data, weeks=4):
 def _buyout_percent_color_by_supplier(supplier, weeks):
     report_list = fetch.detail_report(supplier=supplier, weeks=weeks)
     items_dict = dict()
+    last_date = ''
+    for sale in report_list:
+        if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+    days = info.days_list(to_date=last_date.split('T')[0],
+           from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
     for sale in report_list:
         dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
                     sale['sa_name'], sale['subject_name'], sale['brand_name'])
@@ -1095,7 +1100,12 @@ def _buyout_percent_color_by_supplier(supplier, weeks):
 def _buyout_percent_color_by_suppliers_list(suppliers_list, weeks):
     report_dict = fetch.detail_report(suppliers_list=suppliers_list, weeks=weeks)
     table = list()
+    last_date = ''
     for supplier, report_list in report_dict.items():
+        for sale in report_list:
+            if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+        days = info.days_list(to_date=last_date.split('T')[0],
+            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
         items_dict = dict()
         for sale in report_list:
             dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
@@ -1141,6 +1151,11 @@ def buyout_percent_color(input_data, weeks=4):
 def _buyout_percent_article_by_supplier(supplier, weeks):
     report_list = fetch.detail_report(supplier=supplier, weeks=weeks)
     items_dict = dict()
+    last_date = ''
+    for sale in report_list:
+        if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+    days = info.days_list(to_date=last_date.split('T')[0],
+                          from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
     for sale in report_list:
         dict_key = (wb_info.supplier_name(supplier),
                     sale['sa_name'].split('/')[0]+'/',
@@ -1172,7 +1187,12 @@ def _buyout_percent_article_by_supplier(supplier, weeks):
 def _buyout_percent_article_by_suppliers_list(suppliers_list, weeks):
     report_dict = fetch.detail_report(suppliers_list=suppliers_list, weeks=weeks)
     table = list()
+    last_date = ''
     for supplier, report_list in report_dict.items():
+        for sale in report_list:
+            if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+        days = info.days_list(to_date=last_date.split('T')[0],
+            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
         items_dict = dict()
         for sale in report_list:
             dict_key = (wb_info.supplier_name(supplier),
@@ -1219,6 +1239,11 @@ def buyout_percent_article(input_data, weeks=4):
 def _buyout_percent_category_by_supplier(supplier, weeks):
     report_list = fetch.detail_report(supplier=supplier, weeks=weeks)
     items_dict = dict()
+    last_date = ''
+    for sale in report_list:
+        if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+    days = info.days_list(to_date=last_date.split('T')[0],
+        from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
     for sale in report_list:
         dict_key = tuple([sale['subject_name']])
         items_dict.setdefault(dict_key, {'pure': 0, 'sales': 0, 'returns': 0, 'cancel': 0, 'update': ''})
@@ -1247,8 +1272,13 @@ def _buyout_percent_category_by_supplier(supplier, weeks):
 
 def _buyout_percent_category_by_suppliers_list(suppliers_list, weeks):
     report_dict = fetch.detail_report(suppliers_list=suppliers_list, weeks=weeks)
+    last_date = ''
     items_dict = dict()
     for supplier, report_list in report_dict.items():
+        for sale in report_list:
+            if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+        days = info.days_list(to_date=last_date.split('T')[0],
+            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
         for sale in report_list:
             dict_key = tuple([sale['subject_name']])
             items_dict.setdefault(dict_key, {'pure': 0, 'sales': 0, 'returns': 0, 'cancel': 0, 'update': ''})

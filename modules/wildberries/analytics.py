@@ -374,7 +374,7 @@ def _orders_category_by_supplier(supplier, start_date, visible_categories=None):
     for nm, values in buyouts_dict.items():
         if values.get('category') is not None:
             for buyout in values['buyouts']:
-                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= values['price']*buyout[1]
+                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= buyout[1]*buyout[2]
 
     table = list()
     total = [0] * len(days)
@@ -415,7 +415,7 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categ
     for nm, values in buyouts_dict.items():
         if values.get('category') is not None:
             for buyout in values['buyouts']:
-                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= values['price']*buyout[1]
+                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= buyout[1]*buyout[2]
 
     table = list()
     total = [0]*len(days)
@@ -457,7 +457,7 @@ def _orders_category_by_nm_list(nm_list, start_date, visible_categories=None):
     for nm, values in buyouts_dict.items():
         if values.get('category') is not None:
             for buyout in values['buyouts']:
-                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= values['price']*buyout[1]
+                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= buyout[1]*buyout[2]
 
     table = list()
     total = [0 for day in days]
@@ -2123,7 +2123,7 @@ def _profit_compare_by_suppliers_list(suppliers_list, weeks):
         for nm, values in buyouts_dict.items():
             if values.get('category') is not None:
                 for buyout in values['buyouts']:
-                    if buyout[0] in days: categories_orders_dict[values['category']] -= values['price'] * buyout[1]
+                    if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= buyout[1] * buyout[2]
 
         period.append(f'{days[0]} - {days[-1]}')
         for key, value in items_dict.items():

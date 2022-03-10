@@ -249,9 +249,9 @@ def buyouts():
         result = dict()
         for item in buyout_rows:
             try:
-                result.setdefault(int(item[1]), {'buyouts': [], 'price': int(item[3])})
+                result.setdefault(int(item[1]), {'buyouts': []})
                 result[int(item[1])]['buyouts'].append(
-                    [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2])])
+                    [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2]), int(item[3])])
             except ValueError: pass
         _buyouts = result
     return deepcopy(result)

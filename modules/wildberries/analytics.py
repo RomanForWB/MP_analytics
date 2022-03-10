@@ -401,6 +401,7 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categ
     for supplier, orders_list in orders_dict.items():
         for order in orders_list:
             if order['category'] == 'Обувь': category = 'Обувь'
+            elif 'жилет' in order['subject'].lower(): category = 'Жилеты'
             else: category = order['subject']
             if category not in categories_dict.keys():
                 categories_dict[category] = {day: 0 for day in days}

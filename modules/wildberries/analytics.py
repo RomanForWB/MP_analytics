@@ -986,6 +986,36 @@ def categories(input_data, start_date):
     return table
 
 
+def max_categories(start_date):
+    days = info.days_list(start_date, to_yesterday=True)
+    table = [['Основная категория'] + days + ['Все возможные категории']]
+    top_dict = fetch.top_nms()
+    nm_list = [nm for category, sub_categories in top_dict.items()
+                  for sub_category, nms in sub_categories.items()
+                  for nm in nms]
+    positions_dict = fetch.mpstats_positions(nm_list=nm_list, start_date=start_date)
+    for category, sub_categories in top_dict.items():
+        for sub_category, nms in sub_categories.items():
+            max_categories_by_days = {day: 0 for day in days}
+            categories_set = set()
+            for nm in nms:
+                categories_by_days = {day: 0 for day in days}
+                try:
+                    categories_set.update(positions_dict[nm]['categories'].keys())
+                    for i in range(len(days)):
+                        categories_raw = [values[i] for values in positions_dict[nm]['categories'].values()]
+                        categories_count = len(categories_raw) - categories_raw.count('NaN')
+                        categories_by_days[days[i]] = categories_count
+                except (AttributeError, KeyError): pass
+                for day in days:
+                    if max_categories_by_days[day] < categories_by_days[day]:
+                        max_categories_by_days[day] = categories_by_days[day]
+            table.append([f'{category}/{sub_category}'] +
+                         [max_categories_by_days[day] for day in days] +
+                         ['\n'.join(sorted(list(categories_set)))])
+    return table
+
+
 def _buyout_percent_size_by_supplier(supplier, weeks):
     report_list = fetch.detail_report(supplier=supplier, weeks=weeks)
     items_dict = dict()

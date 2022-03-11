@@ -14,6 +14,7 @@ _orders = dict()
 _stocks = dict()
 _report = dict()
 _detail_report = dict()
+_top_nms = None
 _buyouts = None
 _cost = None
 _cookie_token = None
@@ -236,6 +237,32 @@ def feedbacks(imt_list, count=1000):
     feedbacks_dict = {imt: feedbacks_info['feedbacks']
                       for imt, feedbacks_info in feedbacks_dict.items()}
     return feedbacks_dict
+
+
+def top_nms():
+    global _top_nms
+    result = _top_nms
+    if result is None:
+        category_ids = wb_info.wbxcatalog_ids()
+        wbx_list = list()
+        for category, sub_categories in category_ids.items():
+            for sub_category, values in sub_categories.items():
+                params = {'sort': 'popular', 'page': 1, 'locale': 'ru', 'kind': 2}
+                if values.get('kind') is not None: params['kind'] = values['kind']
+                if values.get('xsubject') is not None: params['xsubject'] = values['xsubject']
+                wbx_list.append([category, sub_category,
+                                f"https://wbxcatalog-ru.wildberries.ru/{values['id']}/catalog", params])
+        products_dict = async_requests.fetch('GET', ids=[(item[0], item[1]) for item in wbx_list],
+                                             urls_list=[item[2] for item in wbx_list],
+                                             params_list=[item[3] for item in wbx_list],
+                                             content_type='text')
+        result = dict()
+        for category, sub_categories in category_ids.items():
+            result[category] = dict()
+            for sub_category in sub_categories.keys():
+                result[category][sub_category] = [item['id'] for item in json.loads(products_dict[(category, sub_category)])['data']['products']]
+        _top_nms = result
+    return deepcopy(result)
 
 
 def buyouts():

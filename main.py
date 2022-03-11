@@ -68,7 +68,8 @@ def ask_wb():
     print("22 - Рентабельность (артикул)")
     print("23 - Рентабельность (предмет)")
     print("24 - Рентабельность (недели)")
-    print("25 - В начало")
+    print("25 - Отчет по наибольшим категориям")
+    print("26 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -95,7 +96,8 @@ def ask_wb():
     elif choice.strip() == '22': choice = 'wb_profit_article'
     elif choice.strip() == '23': choice = 'wb_profit_category'
     elif choice.strip() == '24': choice = 'wb_profit_compare'
-    elif choice.strip() == '25': choice = 'start'
+    elif choice.strip() == '25': choice = 'wb_max_categories'
+    elif choice.strip() == '26': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -452,6 +454,12 @@ if __name__ == '__main__':
             if choice == 'start': continue
             positions_table = wb_analytics.positions(input_data, start_date)
             google_work.insert_table(worksheet, positions_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_max_categories':
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории макс')
+            start_date = str(date.today() - timedelta(days=7))
+            max_categories_table = wb_analytics.max_categories(start_date)
+            google_work.insert_table(worksheet, max_categories_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_stocks':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Остатки')

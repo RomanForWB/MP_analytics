@@ -35,18 +35,20 @@ class LineWithSaveButton(QLineEdit):
                 }
         for i in range(len(body["params"]["card"]["addin"])):
             if body["params"]["card"]["addin"][i]["type"] == 'Наименование':
-                body["params"]["card"]["addin"][i]['params'][0]['value'] = self.text()
+                body["params"]["card"]["addin"][i]['params'][0]['value'] = self.text()[:99]
         response = requests.post("https://suppliers-api.wildberries.ru/card/update", json=body, headers=self.headers)
         if 200 <= response.status_code < 300:
             print(f'Успешно заменено наименование: {self.text()}')
             self.button.setStyleSheet('QPushButton {color: green;}')
             QTest.qWait(1500)
-            self.button.setStyleSheet('QPushButton {color: black;}')
+            try: self.button.setStyleSheet('QPushButton {color: black;}')
+            except RuntimeError: pass
         else:
             print(f'Ошибка при замене: {self.text()}')
             self.button.setStyleSheet('QPushButton {color: red;}')
             QTest.qWait(1500)
-            self.button.setStyleSheet('QPushButton {color: black;}')
+            try: self.button.setStyleSheet('QPushButton {color: black;}')
+            except RuntimeError: pass
 
 
 class LinkButton(QPushButton):
@@ -126,6 +128,7 @@ class Renamer(QWidget):
 
     def add_new_results(self):
         global supplier
+        wb_fetch._cards = dict()
         cards = wb_fetch.cards(supplier=supplier)
         for i in range(len(cards)):
             self.rows.append([])

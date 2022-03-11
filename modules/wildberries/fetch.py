@@ -6,7 +6,7 @@ import modules.single_requests as single_requests
 import modules.google_work as google_work
 import modules.wildberries.info as wb_info
 import modules.info as info
-import json
+import json, re
 
 _cards = dict()
 _day_orders = dict()
@@ -249,9 +249,12 @@ def buyouts():
         result = dict()
         for item in buyout_rows:
             try:
-                result.setdefault(int(item[1]), {'buyouts': []})
-                result[int(item[1])]['buyouts'].append(
-                    [datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m'), int(item[2]), int(item[3])])
+                buyout_date = datetime.strptime(item[0], '%d.%m.%Y').strftime('%d.%m')
+                nm = int(re.sub(r"[^0-9]", '', item[1]))
+                count = int(re.sub(r"[^0-9]", '', item[2]))
+                price = int(re.sub(r"[^0-9]", '', item[3]))
+                result.setdefault(nm, {'buyouts': []})
+                result[nm]['buyouts'].append([buyout_date, count, price])
             except ValueError: pass
         _buyouts = result
     return deepcopy(result)

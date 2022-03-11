@@ -1069,11 +1069,22 @@ def _buyout_percent_color_by_supplier(supplier, weeks):
     for sale in report_list:
         if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
     days = info.days_list(to_date=last_date.split('T')[0],
-           from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+           from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=27)).date()))
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
     for sale in report_list:
         dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
                     sale['sa_name'], sale['subject_name'], sale['brand_name'])
         items_dict.setdefault(dict_key, {'pure': 0, 'sales': 0, 'returns': 0, 'cancel': 0, 'update': ''})
+        if buyouts_dict.get(sale['nm_id']) is not None:
+            items_dict[dict_key]['sales'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            items_dict[dict_key]['pure'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            buyouts_dict.pop(sale['nm_id'])
         if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
             items_dict[dict_key]['sales'] += 1
             items_dict[dict_key]['pure'] += 1
@@ -1105,12 +1116,23 @@ def _buyout_percent_color_by_suppliers_list(suppliers_list, weeks):
         for sale in report_list:
             if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
         days = info.days_list(to_date=last_date.split('T')[0],
-            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=27)).date()))
+        buyouts_dict = dict()
+        for nm, values in fetch.buyouts().items():
+            buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+            for buyout in values['buyouts']:
+                if buyout[0] in days:
+                    buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                    buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
         items_dict = dict()
         for sale in report_list:
             dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
                         sale['sa_name'], sale['subject_name'], sale['brand_name'])
             items_dict.setdefault(dict_key, {'pure': 0, 'sales': 0, 'returns': 0, 'cancel': 0, 'update': ''})
+            if buyouts_dict.get(sale['nm_id']) is not None:
+                items_dict[dict_key]['sales'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                items_dict[dict_key]['pure'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                buyouts_dict.pop(sale['nm_id'])
             if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
                 items_dict[dict_key]['sales'] += 1
                 items_dict[dict_key]['pure'] += 1
@@ -1155,12 +1177,23 @@ def _buyout_percent_article_by_supplier(supplier, weeks):
     for sale in report_list:
         if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
     days = info.days_list(to_date=last_date.split('T')[0],
-                          from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+                          from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=27)).date()))
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
     for sale in report_list:
         dict_key = (wb_info.supplier_name(supplier),
                     sale['sa_name'].split('/')[0]+'/',
                     sale['subject_name'], sale['brand_name'])
         items_dict.setdefault(dict_key, {'pure': 0, 'sales': 0, 'returns': 0, 'cancel': 0, 'update': ''})
+        if buyouts_dict.get(sale['nm_id']) is not None:
+            items_dict[dict_key]['sales'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            items_dict[dict_key]['pure'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            buyouts_dict.pop(sale['nm_id'])
         if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
             items_dict[dict_key]['sales'] += 1
             items_dict[dict_key]['pure'] += 1
@@ -1192,13 +1225,24 @@ def _buyout_percent_article_by_suppliers_list(suppliers_list, weeks):
         for sale in report_list:
             if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
         days = info.days_list(to_date=last_date.split('T')[0],
-            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=27)).date()))
         items_dict = dict()
+        buyouts_dict = dict()
+        for nm, values in fetch.buyouts().items():
+            buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+            for buyout in values['buyouts']:
+                if buyout[0] in days:
+                    buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                    buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
         for sale in report_list:
             dict_key = (wb_info.supplier_name(supplier),
                         sale['sa_name'].split('/')[0]+'/',
                         sale['subject_name'], sale['brand_name'])
             items_dict.setdefault(dict_key, {'pure': 0, 'sales': 0, 'returns': 0, 'cancel': 0, 'update': ''})
+            if buyouts_dict.get(sale['nm_id']) is not None:
+                items_dict[dict_key]['sales'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                items_dict[dict_key]['pure'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                buyouts_dict.pop(sale['nm_id'])
             if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
                 items_dict[dict_key]['sales'] += 1
                 items_dict[dict_key]['pure'] += 1
@@ -1243,10 +1287,21 @@ def _buyout_percent_category_by_supplier(supplier, weeks):
     for sale in report_list:
         if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
     days = info.days_list(to_date=last_date.split('T')[0],
-        from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+        from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=27)).date()))
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
     for sale in report_list:
         dict_key = tuple([sale['subject_name']])
         items_dict.setdefault(dict_key, {'pure': 0, 'sales': 0, 'returns': 0, 'cancel': 0, 'update': ''})
+        if buyouts_dict.get(sale['nm_id']) is not None:
+            items_dict[dict_key]['sales'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            items_dict[dict_key]['pure'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            buyouts_dict.pop(sale['nm_id'])
         if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
             items_dict[dict_key]['sales'] += 1
             items_dict[dict_key]['pure'] += 1
@@ -1278,10 +1333,21 @@ def _buyout_percent_category_by_suppliers_list(suppliers_list, weeks):
         for sale in report_list:
             if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
         days = info.days_list(to_date=last_date.split('T')[0],
-            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=27)).date()))
+        buyouts_dict = dict()
+        for nm, values in fetch.buyouts().items():
+            buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+            for buyout in values['buyouts']:
+                if buyout[0] in days:
+                    buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                    buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
         for sale in report_list:
             dict_key = tuple([sale['subject_name']])
             items_dict.setdefault(dict_key, {'pure': 0, 'sales': 0, 'returns': 0, 'cancel': 0, 'update': ''})
+            if buyouts_dict.get(sale['nm_id']) is not None:
+                items_dict[dict_key]['sales'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                items_dict[dict_key]['pure'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                buyouts_dict.pop(sale['nm_id'])
             if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
                 items_dict[dict_key]['sales'] += 1
                 items_dict[dict_key]['pure'] += 1
@@ -1608,6 +1674,13 @@ def _profit_color_by_supplier(supplier, weeks):
         if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
     days = info.days_list(to_date=last_date.split('T')[0],
            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
 
     for sale in report_list:
         if datetime.strptime(sale['rr_dt'], '%Y-%m-%dT00:00:00Z').strftime('%d.%m') not in days: continue
@@ -1615,6 +1688,10 @@ def _profit_color_by_supplier(supplier, weeks):
                     sale['sa_name'], sale['subject_name'], sale['brand_name'], sale['ts_name'])
         items_dict.setdefault(dict_key, {'sales_value': 0, 'sales_count': 0, 'delivery_value': 0,
                                          'return_value': 0, 'update': ''})
+        if buyouts_dict.get(sale['nm_id']) is not None:
+            items_dict[dict_key]['sales_value'] -= buyouts_dict[sale['nm_id']]['buyouts_value']
+            items_dict[dict_key]['sales_count'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            buyouts_dict.pop(sale['nm_id'])
         if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
             items_dict[dict_key]['sales_value'] += sale['ppvz_for_pay']
             items_dict[dict_key]['sales_count'] += 1
@@ -1675,19 +1752,31 @@ def _profit_color_by_suppliers_list(suppliers_list, weeks):
     analytic_report_dict = fetch.report(suppliers_list=suppliers_list)
     cost_dict = fetch.cost()
     last_date = ''
+    for sale in report_dict['tumanyan']:
+        if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+    days = info.days_list(to_date=last_date.split('T')[0],
+                          from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
+
     table = list()
     for supplier, report_list in report_dict.items():
         items_dict = dict()
-        for sale in report_list:
-            if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
-        days = info.days_list(to_date=last_date.split('T')[0],
-            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
         for sale in report_list:
             if datetime.strptime(sale['rr_dt'], '%Y-%m-%dT00:00:00Z').strftime('%d.%m') not in days: continue
             dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
                         sale['sa_name'], sale['subject_name'], sale['brand_name'], sale['ts_name'])
             items_dict.setdefault(dict_key, {'sales_value': 0, 'sales_count': 0, 'delivery_value': 0,
                                              'return_value': 0, 'update': ''})
+            if buyouts_dict.get(sale['nm_id']) is not None:
+                items_dict[dict_key]['sales_value'] -= buyouts_dict[sale['nm_id']]['buyouts_value']
+                items_dict[dict_key]['sales_count'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                buyouts_dict.pop(sale['nm_id'])
             if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
                 items_dict[dict_key]['sales_value'] += sale['ppvz_for_pay']
                 items_dict[dict_key]['sales_count'] += 1
@@ -1769,13 +1858,23 @@ def _profit_article_by_supplier(supplier, weeks):
         if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
     days = info.days_list(to_date=last_date.split('T')[0],
            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
-
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
     for sale in report_list:
         if datetime.strptime(sale['rr_dt'], '%Y-%m-%dT00:00:00Z').strftime('%d.%m') not in days: continue
         dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
                     sale['sa_name'], sale['subject_name'], sale['brand_name'], sale['ts_name'])
         items_dict.setdefault(dict_key, {'sales_value': 0, 'sales_count': 0, 'delivery_value': 0,
                                          'return_value': 0, 'update': ''})
+        if buyouts_dict.get(sale['nm_id']) is not None:
+            items_dict[dict_key]['sales_value'] -= buyouts_dict[sale['nm_id']]['buyouts_value']
+            items_dict[dict_key]['sales_count'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            buyouts_dict.pop(sale['nm_id'])
         if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
             items_dict[dict_key]['sales_value'] += sale['ppvz_for_pay']
             items_dict[dict_key]['sales_count'] += 1
@@ -1836,19 +1935,32 @@ def _profit_article_by_suppliers_list(suppliers_list, weeks):
     analytic_report_dict = fetch.report(suppliers_list=suppliers_list)
     cost_dict = fetch.cost()
     last_date = ''
+    for sale in report_dict['tumanyan']:
+        if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+    days = info.days_list(to_date=last_date.split('T')[0],
+                          from_date=str(
+                              (datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
+
     table = list()
     for supplier, report_list in report_dict.items():
         items_dict = dict()
-        for sale in report_list:
-            if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
-        days = info.days_list(to_date=last_date.split('T')[0],
-            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
         for sale in report_list:
             if datetime.strptime(sale['rr_dt'], '%Y-%m-%dT00:00:00Z').strftime('%d.%m') not in days: continue
             dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
                         sale['sa_name'], sale['subject_name'], sale['brand_name'], sale['ts_name'])
             items_dict.setdefault(dict_key, {'sales_value': 0, 'sales_count': 0, 'delivery_value': 0,
                                              'return_value': 0, 'update': ''})
+            if buyouts_dict.get(sale['nm_id']) is not None:
+                items_dict[dict_key]['sales_value'] -= buyouts_dict[sale['nm_id']]['buyouts_value']
+                items_dict[dict_key]['sales_count'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                buyouts_dict.pop(sale['nm_id'])
             if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
                 items_dict[dict_key]['sales_value'] += sale['ppvz_for_pay']
                 items_dict[dict_key]['sales_count'] += 1
@@ -1930,13 +2042,23 @@ def _profit_category_by_supplier(supplier, weeks):
         if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
     days = info.days_list(to_date=last_date.split('T')[0],
            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
-
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
     for sale in report_list:
         if datetime.strptime(sale['rr_dt'], '%Y-%m-%dT00:00:00Z').strftime('%d.%m') not in days: continue
         dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
                     sale['sa_name'], sale['subject_name'], sale['brand_name'], sale['ts_name'])
         items_dict.setdefault(dict_key, {'sales_value': 0, 'sales_count': 0, 'delivery_value': 0,
                                          'return_value': 0, 'update': ''})
+        if buyouts_dict.get(sale['nm_id']) is not None:
+            items_dict[dict_key]['sales_value'] -= buyouts_dict[sale['nm_id']]['buyouts_value']
+            items_dict[dict_key]['sales_count'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+            buyouts_dict.pop(sale['nm_id'])
         if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
             items_dict[dict_key]['sales_value'] += sale['ppvz_for_pay']
             items_dict[dict_key]['sales_count'] += 1
@@ -1997,18 +2119,30 @@ def _profit_category_by_suppliers_list(suppliers_list, weeks):
     analytic_report_dict = fetch.report(suppliers_list=suppliers_list)
     cost_dict = fetch.cost()
     last_date = ''
+    for sale in report_dict['tumanyan']:
+        if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
+    days = info.days_list(to_date=last_date.split('T')[0],
+                          from_date=str(
+                              (datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
+    buyouts_dict = dict()
+    for nm, values in fetch.buyouts().items():
+        buyouts_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+        for buyout in values['buyouts']:
+            if buyout[0] in days:
+                buyouts_dict[nm]['buyouts_count'] += buyout[1]
+                buyouts_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
     items_dict = dict()
     for supplier, report_list in report_dict.items():
-        for sale in report_list:
-            if sale['rr_dt'] > last_date: last_date = sale['rr_dt']
-        days = info.days_list(to_date=last_date.split('T')[0],
-            from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=6)).date()))
         for sale in report_list:
             if datetime.strptime(sale['rr_dt'], '%Y-%m-%dT00:00:00Z').strftime('%d.%m') not in days: continue
             dict_key = (wb_info.supplier_name(supplier), sale['nm_id'],
                         sale['sa_name'], sale['subject_name'], sale['brand_name'], sale['ts_name'])
             items_dict.setdefault(dict_key, {'sales_value': 0, 'sales_count': 0, 'delivery_value': 0,
                                              'return_value': 0, 'update': ''})
+            if buyouts_dict.get(sale['nm_id']) is not None:
+                items_dict[dict_key]['sales_value'] -= buyouts_dict[sale['nm_id']]['buyouts_value']
+                items_dict[dict_key]['sales_count'] -= buyouts_dict[sale['nm_id']]['buyouts_count']
+                buyouts_dict.pop(sale['nm_id'])
             if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
                 items_dict[dict_key]['sales_value'] += sale['ppvz_for_pay']
                 items_dict[dict_key]['sales_count'] += 1
@@ -2094,7 +2228,13 @@ def _profit_compare_by_suppliers_list(suppliers_list, weeks):
         items_dict = dict()
         days = info.days_list(to_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=(7*i))).date()),
                from_date=str((datetime.strptime(last_date, '%Y-%m-%dT00:00:00Z') - timedelta(days=(6+7*i))).date()))
-
+        buyouts_week_dict = dict()
+        for nm, values in fetch.buyouts().items():
+            buyouts_week_dict[nm] = {'buyouts_count': 0, 'buyouts_value': 0}
+            for buyout in values['buyouts']:
+                if buyout[0] in days:
+                    buyouts_week_dict[nm]['buyouts_count'] += buyout[1]
+                    buyouts_week_dict[nm]['buyouts_value'] += buyout[1] * buyout[2]
         for supplier, report_list in report_dict.items():
             for sale in report_list:
                 if datetime.strptime(sale['rr_dt'], '%Y-%m-%dT00:00:00Z').strftime('%d.%m') not in days: continue
@@ -2102,6 +2242,10 @@ def _profit_compare_by_suppliers_list(suppliers_list, weeks):
                             sale['sa_name'], sale['subject_name'], sale['brand_name'], sale['ts_name'])
                 items_dict.setdefault(dict_key, {'sales_value': 0, 'sales_count': 0, 'delivery_value': 0,
                                                  'return_value': 0, 'update': ''})
+                if buyouts_week_dict.get(sale['nm_id']) is not None:
+                    items_dict[dict_key]['sales_value'] -= buyouts_week_dict[sale['nm_id']]['buyouts_value']
+                    items_dict[dict_key]['sales_count'] -= buyouts_week_dict[sale['nm_id']]['buyouts_count']
+                    buyouts_week_dict.pop(sale['nm_id'])
                 if sale['doc_type_name'] == 'Продажа' and sale['quantity'] == 1:
                     items_dict[dict_key]['sales_value'] += sale['ppvz_for_pay']
                     items_dict[dict_key]['sales_count'] += 1

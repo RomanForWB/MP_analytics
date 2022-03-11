@@ -1,12 +1,12 @@
 from json import load as json_load
 
 _wb_keys = None
-_suppliers = {"maryina":
-                  {"name": "ИП Марьина А.А.",
-                   "seller_identifiers": ["ИП Марьина А А", "ИП Марьина Анна Александровна"]},
-              "tumanyan":
+_suppliers = {"tumanyan":
                   {"name": "ИП Туманян А.А.",
                    "seller_identifiers": ["ИП Туманян Арен Арменович"]},
+              "maryina":
+                  {"name": "ИП Марьина А.А.",
+                   "seller_identifiers": ["ИП Марьина А А", "ИП Марьина Анна Александровна"]},
               "neweramedia":
                   {"name": "ООО НЬЮЭРАМЕДИА",
                    "seller_identifiers": ["ООО НЬЮЭРАМЕДИА"]},

@@ -20,6 +20,7 @@ _cost = None
 _cookie_token = None
 
 _mpstats_info = dict()
+_mpstats_categories_info = dict()
 _mpstats_positions = dict()
 
 
@@ -397,5 +398,23 @@ def mpstats_info(supplier=None, suppliers_list=None, nm_list=None, nm=None):
     elif suppliers_list is not None: return _mpstats_info_by_suppliers_list(headers, suppliers_list)
     elif nm is not None: return _mpstats_info_by_nm_list(headers, [nm])
     elif nm_list is not None: return _mpstats_info_by_nm_list(headers, nm_list)
+
+
+def mpstats_categories_info(categories_list, start_date=str(date.today()-timedelta(days=7)),
+                            end_date=str(date.today()-timedelta(days=1))):
+    result = _mpstats_categories_info.get(tuple([tuple(categories_list), start_date, end_date]))
+    if result is None:
+        headers = {'X-Mpstats-TOKEN': info.mpstats_token(),
+                   'Content-Type': 'application/json'}
+        url = 'https://mpstats.io/api/wb/get/category/by_date'
+        params_list = [{'path': category.strip(), 'groupBy': 'day',
+                       'd1': str(start_date), 'd2': str(end_date)}
+                       for category in categories_list]
+        result_dict = async_requests.fetch("GET", categories_list, content_type='json', url=url,
+                                           params_list=params_list, headers=headers)
+        result = {category: {item['period']: item for item in day_values}
+                  for category, day_values in result_dict.items()}
+        _mpstats_categories_info[tuple([tuple(categories_list), start_date, end_date])] = result
+    return deepcopy(result)
 
 

@@ -1016,6 +1016,26 @@ def max_categories(start_date):
     return table
 
 
+def categories_revenue(categories_list, start_date=str(date.today()-timedelta(days=6)),
+                       end_date=str(date.today())):
+    start_date = str((datetime.strptime(start_date, '%Y-%m-%d')-timedelta(days=1)).date())
+    end_date = str((datetime.strptime(end_date, '%Y-%m-%d')-timedelta(days=1)).date())
+    categories_info_dict = fetch.mpstats_categories_info(categories_list, start_date, end_date)
+    dates_list = info.dates_list(from_date=start_date, to_date=end_date)
+    dates_list.reverse()
+    table = [['Дата']]
+    for day in dates_list: table[0] += ['', datetime.strptime(day, '%Y-%m-%d').strftime('%d.%m'), '']
+    table.append(['Категории'])
+    for day in dates_list: table[1] += ['Выручка руб.', 'Продажи шт.', 'Средняя цена руб.']
+    for category, day_values in categories_info_dict.items():
+        row = [category]
+        for day in dates_list:
+            try: row += [day_values[day]['revenue'], day_values[day]['sales'], day_values[day]['avg_sale_price']]
+            except KeyError: row += ['','','']
+        table.append(row)
+    return table
+
+
 def _buyout_percent_size_by_supplier(supplier, weeks):
     report_list = fetch.detail_report(supplier=supplier, weeks=weeks)
     items_dict = dict()

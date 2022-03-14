@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from re import search, sub
 
 import modules.info as info
@@ -68,8 +68,9 @@ def ask_wb():
     print("22 - Рентабельность (артикул)")
     print("23 - Рентабельность (предмет)")
     print("24 - Рентабельность (недели)")
-    print("25 - Отчет по наибольшим категориям")
-    print("26 - В начало")
+    print("25 - Отчет по выручке")
+    print("26 - Отчет по наибольшим категориям")
+    print("27 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -96,8 +97,9 @@ def ask_wb():
     elif choice.strip() == '22': choice = 'wb_profit_article'
     elif choice.strip() == '23': choice = 'wb_profit_category'
     elif choice.strip() == '24': choice = 'wb_profit_compare'
-    elif choice.strip() == '25': choice = 'wb_max_categories'
-    elif choice.strip() == '26': choice = 'start'
+    elif choice.strip() == '25': choice = 'wb_categories_revenue'
+    elif choice.strip() == '26': choice = 'wb_max_categories'
+    elif choice.strip() == '27': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -481,6 +483,14 @@ if __name__ == '__main__':
             if choice == 'start': continue
             shipments_table = wb_analytics.shipments(input_data)
             google_work.insert_table(worksheet, shipments_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_categories_revenue':
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Выручка')
+            categories_list = google_work.get_columns(worksheet, 2, 1)
+            start_date = ask_start_date()
+            if choice == 'start': continue
+            revenue_table = wb_analytics.categories_revenue(categories_list, start_date)
+            google_work.insert_table(worksheet, revenue_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_orders_count':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, шт')

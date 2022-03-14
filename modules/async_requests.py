@@ -22,12 +22,12 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
             try:
                 response = await session.get(url, params=params, headers=headers)
                 if response.status_code < 200 or response.status_code >= 300:
-                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
+                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка:{response.status_code}', end='')
                     if failure_counter is None: return [id, None]
                     failure_counter -= 1
                     if failure_counter <= 0:
                         if ask_stop(): failure_counter = None
-                        else: failure_counter = 1000 + counter * 20
+                        else: failure_counter = 1000000000
                 else:
                     if content_type.lower() == 'json': result = response.json()
                     else: result = response.text
@@ -48,12 +48,12 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
             try:
                 async with session.get(url, params=params, headers=headers) as response:
                     if response.status < 200 or response.status >= 300:
-                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
+                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка:{response.status}', end='')
                         if failure_counter is None: return [id, None]
                         failure_counter -= 1
                         if failure_counter <= 0:
                             if ask_stop(): failure_counter = None
-                            else: failure_counter = 1000 + counter * 20
+                            else: failure_counter = 1000000000
                     else:
                         if content_type.lower() == 'json': result = await response.json()
                         else: result = await response.text()
@@ -87,12 +87,12 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
             try:
                 response = await session.post(url, params=params, json=body, headers=headers)
                 if response.status_code < 200 or response.status_code >= 300:
-                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
+                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка:{response.status_code}', end='')
                     if failure_counter is None: return [id, None]
                     failure_counter -= 1
                     if failure_counter <= 0:
                         if ask_stop(): failure_counter = None
-                        else: failure_counter = 10000 + counter * 20
+                        else: failure_counter = 1000000000
                 else:
                     if content_type.lower() == 'json': result = response.json()
                     else: result = response.text
@@ -113,12 +113,12 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
             try:
                 async with session.post(url, params=params, json=body, headers=headers) as response:
                     if response.status < 200 or response.status >= 300:
-                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}', end=' ')
+                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка:{response.status}', end='')
                         if failure_counter is None: return [id, None]
                         failure_counter -= 1
                         if failure_counter <= 0:
                             if ask_stop(): failure_counter = None
-                            else: failure_counter = 10000 + counter * 20
+                            else: failure_counter = 1000000000
                     else:
                         if content_type.lower() == 'json': result = await response.json()
                         else: result = await response.text()

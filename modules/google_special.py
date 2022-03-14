@@ -40,22 +40,26 @@ def day_report(worksheet, report_table):
                         sum([row[5] for row in report_table[2:]]),
                         sum([row[6] for row in report_table[2:]]),
                         mean([row[7] for row in report_table[2:]])])
+    try: dynamic_1 = report_table[-2][1] / report_table[-3][1] - 1
+    except ZeroDivisionError: dynamic_1 = ''
+    try: dynamic_1 = report_table[-2][1] / report_table[-3][1] - 1
+    except ZeroDivisionError: dynamic_1 = ''
     dynamics_1_row = ['Динамика 1 день',
-                      report_table[-2][1] / report_table[-3][1] - 1,
-                      report_table[-2][2] / report_table[-3][2] - 1,
-                      report_table[-2][3] / report_table[-3][3] - 1,
-                      report_table[-2][4] / report_table[-3][4] - 1,
-                      report_table[-2][5] / report_table[-3][5] - 1,
-                      report_table[-2][6] / report_table[-3][6] - 1,
-                      report_table[-2][7] / report_table[-3][7] - 1]
+                      report_table[-2][1] / report_table[-3][1] - 1 if (report_table[-3][1] != 0) else '',
+                      report_table[-2][2] / report_table[-3][2] - 1 if (report_table[-3][2] != 0) else '',
+                      report_table[-2][3] / report_table[-3][3] - 1 if (report_table[-3][3] != 0) else '',
+                      report_table[-2][4] / report_table[-3][4] - 1 if (report_table[-3][4] != 0) else '',
+                      report_table[-2][5] / report_table[-3][5] - 1 if (report_table[-3][5] != 0) else '',
+                      report_table[-2][6] / report_table[-3][6] - 1 if (report_table[-3][6] != 0) else '',
+                      report_table[-2][7] / report_table[-3][7] - 1 if (report_table[-3][7] != 0) else '']
     dynamics_7_row = ['Динамика 7 дней',
-                      report_table[-2][1] / report_table[-9][1] - 1,
-                      report_table[-2][2] / report_table[-9][2] - 1,
-                      report_table[-2][3] / report_table[-9][3] - 1,
-                      report_table[-2][4] / report_table[-9][4] - 1,
-                      report_table[-2][5] / report_table[-9][5] - 1,
-                      report_table[-2][6] / report_table[-9][6] - 1,
-                      report_table[-2][7] / report_table[-9][7] - 1]
+                      report_table[-2][1] / report_table[-9][1] - 1 if (report_table[-9][1] != 0) else '',
+                      report_table[-2][2] / report_table[-9][2] - 1 if (report_table[-9][1] != 0) else '',
+                      report_table[-2][3] / report_table[-9][3] - 1 if (report_table[-9][1] != 0) else '',
+                      report_table[-2][4] / report_table[-9][4] - 1 if (report_table[-9][1] != 0) else '',
+                      report_table[-2][5] / report_table[-9][5] - 1 if (report_table[-9][1] != 0) else '',
+                      report_table[-2][6] / report_table[-9][6] - 1 if (report_table[-9][1] != 0) else '',
+                      report_table[-2][7] / report_table[-9][7] - 1 if (report_table[-9][1] != 0) else '']
 
     google_work.insert_table(worksheet, [dynamics_1_row, dynamics_7_row], start_cell='A2')
     worksheet.insert_rows(report_table)
@@ -110,13 +114,13 @@ def week_report(worksheet, report_table):
 
     if len(report_table) < 4: dynamics_1_row = ['Динамика 1 день']
     else: dynamics_1_row = ['Динамика 1 день',
-                            report_table[-2][1] / report_table[-3][1] - 1,
-                            report_table[-2][2] / report_table[-3][2] - 1,
-                            report_table[-2][3] / report_table[-3][3] - 1,
-                            report_table[-2][4] / report_table[-3][4] - 1,
-                            report_table[-2][5] / report_table[-3][5] - 1,
-                            report_table[-2][6] / report_table[-3][6] - 1,
-                            report_table[-2][7] / report_table[-3][7] - 1,
+                            report_table[-2][1] / report_table[-3][1] - 1 if (report_table[-3][1] != 0) else '',
+                            report_table[-2][2] / report_table[-3][2] - 1 if (report_table[-3][2] != 0) else '',
+                            report_table[-2][3] / report_table[-3][3] - 1 if (report_table[-3][3] != 0) else '',
+                            report_table[-2][4] / report_table[-3][4] - 1 if (report_table[-3][4] != 0) else '',
+                            report_table[-2][5] / report_table[-3][5] - 1 if (report_table[-3][5] != 0) else '',
+                            report_table[-2][6] / report_table[-3][6] - 1 if (report_table[-3][6] != 0) else '',
+                            report_table[-2][7] / report_table[-3][7] - 1 if (report_table[-3][7] != 0) else '',
                             ""]
 
     fact_row = copy(report_table[-1])
@@ -234,24 +238,24 @@ def month_report(worksheet, report_table):
 
     if len(report_table) < 4: dynamics_1_row = ['Динамика 1 день']
     else: dynamics_1_row = ['Динамика 1 день',
-                            report_table[-2][1] / report_table[-3][1] - 1,
-                            report_table[-2][2] / report_table[-3][2] - 1,
-                            report_table[-2][3] / report_table[-3][3] - 1,
-                            report_table[-2][4] / report_table[-3][4] - 1,
-                            report_table[-2][5] / report_table[-3][5] - 1,
-                            report_table[-2][6] / report_table[-3][6] - 1,
-                            report_table[-2][7] / report_table[-3][7] - 1,
+                            report_table[-2][1] / report_table[-3][1] - 1 if (report_table[-3][1] != 0) else '',
+                            report_table[-2][2] / report_table[-3][2] - 1 if (report_table[-3][2] != 0) else '',
+                            report_table[-2][3] / report_table[-3][3] - 1 if (report_table[-3][3] != 0) else '',
+                            report_table[-2][4] / report_table[-3][4] - 1 if (report_table[-3][4] != 0) else '',
+                            report_table[-2][5] / report_table[-3][5] - 1 if (report_table[-3][5] != 0) else '',
+                            report_table[-2][6] / report_table[-3][6] - 1 if (report_table[-3][6] != 0) else '',
+                            report_table[-2][7] / report_table[-3][7] - 1 if (report_table[-3][7] != 0) else '',
                             '']
 
     if len(report_table) < 10: dynamics_7_row = ['Динамика 7 дней']
     else: dynamics_7_row = ['Динамика 7 дней',
-                            report_table[-2][1] / report_table[-9][1] - 1,
-                            report_table[-2][2] / report_table[-9][2] - 1,
-                            report_table[-2][3] / report_table[-9][3] - 1,
-                            report_table[-2][4] / report_table[-9][4] - 1,
-                            report_table[-2][5] / report_table[-9][5] - 1,
-                            report_table[-2][6] / report_table[-9][6] - 1,
-                            report_table[-2][7] / report_table[-9][7] - 1,
+                            report_table[-2][1] / report_table[-9][1] - 1 if (report_table[-9][1] != 0) else '',
+                            report_table[-2][2] / report_table[-9][2] - 1 if (report_table[-9][2] != 0) else '',
+                            report_table[-2][3] / report_table[-9][3] - 1 if (report_table[-9][3] != 0) else '',
+                            report_table[-2][4] / report_table[-9][4] - 1 if (report_table[-9][4] != 0) else '',
+                            report_table[-2][5] / report_table[-9][5] - 1 if (report_table[-9][5] != 0) else '',
+                            report_table[-2][6] / report_table[-9][6] - 1 if (report_table[-9][6] != 0) else '',
+                            report_table[-2][7] / report_table[-9][7] - 1 if (report_table[-9][7] != 0) else '',
                             ""]
     fact_row = copy(report_table[-1])
     fact_row[0] = 'Факт'

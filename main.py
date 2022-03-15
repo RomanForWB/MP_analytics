@@ -389,7 +389,7 @@ if __name__ == '__main__':
         elif choice == 'wb_all_analytics':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
             input_data = get_int_column(worksheet, 1, 2)
-            start_date = str(date.today() - timedelta(days=7))
+            start_date = str(date.today() - timedelta(days=6))
             categories_table = wb_analytics.categories(input_data, start_date)
             google_work.insert_table(worksheet, categories_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Позиции')

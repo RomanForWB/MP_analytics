@@ -1036,6 +1036,94 @@ def categories_revenue(categories_list, start_date=str(date.today()-timedelta(da
     return table
 
 
+def trends(start_date=str(date.today()-timedelta(days=6)), end_date=str(date.today())):
+    start_date = str((datetime.strptime(start_date, '%Y-%m-%d') - timedelta(days=1)).date())
+    end_date = str((datetime.strptime(end_date, '%Y-%m-%d') - timedelta(days=1)).date())
+    orders_dict = fetch.orders(suppliers_list=wb_info.all_suppliers(), start_date=start_date)
+    days = info.days_list(from_date=start_date, to_date=end_date)
+    dates_list = info.dates_list(from_date=start_date, to_date=end_date)
+    buyouts_dict = fetch.buyouts()
+    categories_dict = dict()
+    for supplier, orders_list in orders_dict.items():
+        for order in orders_list:
+            category = order['subject']
+            categories_dict.setdefault(category, {day: 0 for day in days})
+            try:
+                day = datetime.strptime(order['date'], '%Y-%m-%dT%H:%M:%S').strftime('%d.%m')
+                final_price = order['totalPrice'] * (100 - order['discountPercent']) / 100
+                categories_dict[category][day] += final_price
+                if buyouts_dict.get(order['nmId']) is not None:
+                    buyouts_dict[order['nmId']].update({'category': category})
+            except KeyError: pass
+
+    for nm, values in buyouts_dict.items():
+        if values.get('category') is not None:
+            for buyout in values['buyouts']:
+                if buyout[0] in days: categories_dict[values['category']][buyout[0]] -= buyout[1] * buyout[2]
+
+    category_convert_dict = {'Женщинам/Одежда/Верхняя одежда/Куртка': 'Куртки',
+                             'Женщинам/Одежда/Блузки и рубашки/Блузка': 'Блузки',
+                             'Женщинам/Джемперы, водолазки и кардиганы/Водолазка': 'Водолазки',
+                             'Обувь/Женская/Кеды и кроссовки/Кроссовки': 'Кроссовки',
+                             'Спорт/Туризм/Походы/Одежда/Жилет спортивный': 'Жилеты спортивные',
+                             'Женщинам/Пиджаки, жилеты и жакеты/Жилет': 'Жилеты',
+                             'Женщинам/Одежда/Верхняя одежда/Плащ': 'Плащи',
+                             'Женщинам/Одежда/Юбки': 'Юбки',
+                             'Женщинам/Одежда/Костюмы/Костюм спортивный': 'Костюмы спортивные',
+                             'Женщинам/Одежда/Блузки и рубашки/Рубашка': 'Рубашки',
+                             'Женщинам/Джемперы, водолазки и кардиганы/Свитер': 'Свитеры',
+                             'Женщинам/Верхняя одежда/Тренчкот': 'Тренчкоты',
+                             'Женщинам/Брюки/Брюки': 'Брюки',
+                             'Женщинам/Верхняя одежда/Пуховик': 'Пуховики',
+                             'Женщинам/Верхняя одежда/Косуха': 'Косухи',
+                             'Женщинам/Одежда/Платья и сарафаны/Платье': 'Платья',
+                             'Женщинам/Верхняя одежда/Дубленка': 'Дубленки',
+                             'Женщинам/Одежда/Пиджаки и жакеты/Пиджак': 'Пиджаки',
+                             'Женщинам/Джинсы/Джинсы': 'Джинсы',
+                             'Женщинам/Верхняя одежда/Пальто': 'Пальто',
+                             'Аксессуары/Сумки и рюкзаки/Сумки': 'Сумки',
+                             'Женщинам/Одежда/Лонгсливы': 'Лонгсливы',
+                             'Женщинам/Одежда/Шорты/Шорты': 'Шорты',
+                             'Женщинам/Толстовки, свитшоты и худи/Худи': 'Худи',
+                             'Женщинам/Верхняя одежда/Полупальто': 'Полупальто',
+                             'Женщинам/Одежда/Костюмы/Костюм': 'Костюмы',
+                             'Женщинам/Брюки/Велосипедки': 'Велосипедки',
+                             'Женщинам/Верхняя одежда/Ветровка': 'Ветровки',
+                             'Женщинам/Одежда/Футболки и топы/Топ': 'Топы'}
+    categories_info_dict = fetch.mpstats_categories_info(list(category_convert_dict.keys()), start_date, end_date)
+    category_rows = list()
+    for mp_category, wb_category in category_convert_dict.items():
+        category_row = [wb_category]
+        trand_row = ['Тренд']
+        our_dynamic_row = ['Динамика наша']
+        market_dynamic_row = ['Динамика рынка']
+        for i in range(len(days)):
+            category_row.append(categories_dict[wb_category][days[i]])
+            trand_row.append(categories_info_dict[mp_category][dates_list[i]]['revenue'])
+            if i == 0:
+                our_dynamic_row.append('')
+                market_dynamic_row.append('')
+            else:
+                try: our_dynamic_row.append(categories_dict[wb_category][days[i]] /
+                                           categories_dict[wb_category][days[i - 1]] - 1)
+                except (ZeroDivisionError): our_dynamic_row.append(0)
+                try: market_dynamic_row.append(categories_info_dict[mp_category][dates_list[i]]['revenue'] /
+                                              categories_info_dict[mp_category][dates_list[i - 1]]['revenue'] - 1)
+                except (ZeroDivisionError): market_dynamic_row.append(0)
+        category_row.append(sum(category_row[1:]))
+        trand_row.append(sum(trand_row[1:]))
+        try: our_dynamic_row.append(category_row[-2]/category_row[1] - 1)
+        except ZeroDivisionError: our_dynamic_row.append(0)
+        try: market_dynamic_row.append(trand_row[-2]/trand_row[1] - 1)
+        except ZeroDivisionError: market_dynamic_row.append(0)
+        category_rows.append([category_row, trand_row, our_dynamic_row, market_dynamic_row])
+    table = [['Категории'] + days + ['Итог 7 дней']]
+    category_rows.sort(key=lambda item: sum(item[0][1:-1]), reverse=True)
+    for rows in category_rows:
+        for row in rows: table.append(row)
+    return table
+
+
 def _buyout_percent_size_by_supplier(supplier, weeks):
     report_list = fetch.detail_report(supplier=supplier, weeks=weeks)
     items_dict = dict()

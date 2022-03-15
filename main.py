@@ -70,7 +70,8 @@ def ask_wb():
     print("24 - Рентабельность (недели)")
     print("25 - Отчет по выручке")
     print("26 - Отчет по наибольшим категориям")
-    print("27 - В начало")
+    print("27 - Отчет по трендам")
+    print("28 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -99,7 +100,8 @@ def ask_wb():
     elif choice.strip() == '24': choice = 'wb_profit_compare'
     elif choice.strip() == '25': choice = 'wb_categories_revenue'
     elif choice.strip() == '26': choice = 'wb_max_categories'
-    elif choice.strip() == '27': choice = 'start'
+    elif choice.strip() == '27': choice = 'wb_trends'
+    elif choice.strip() == '28': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -406,7 +408,15 @@ if __name__ == '__main__':
             input_data = wb_info.all_suppliers()
             shipments_table = wb_analytics.shipments(input_data)
             google_work.insert_table(worksheet, shipments_table, replace=True)
-            choice = 'start'
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Выручка')
+            categories_list = google_work.get_columns(worksheet, 2, 1)
+            start_date = str(date.today() - timedelta(days=6))
+            revenue_table = wb_analytics.categories_revenue(categories_list, start_date)
+            google_work.insert_table(worksheet, revenue_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Тренды')
+            trends_table = wb_analytics.trends(start_date)
+            google_work.insert_table(worksheet, trends_table, replace=True)
+            choice = 'wb'
         elif choice == 'ozon_all_day_reports':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'День')
             input_data = ozon_info.all_suppliers()
@@ -462,6 +472,13 @@ if __name__ == '__main__':
             start_date = str(date.today() - timedelta(days=7))
             max_categories_table = wb_analytics.max_categories(start_date)
             google_work.insert_table(worksheet, max_categories_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_trends':
+            worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Тренды')
+            start_date = ask_start_date()
+            if choice == 'start': continue
+            trends_table = wb_analytics.trends(start_date)
+            google_work.insert_table(worksheet, trends_table, replace=True)
             choice = 'wb'
         elif choice == 'wb_stocks':
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Остатки')

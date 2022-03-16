@@ -21,7 +21,7 @@ def _product_ids_by_supplier(supplier):
         url = 'https://api-seller.ozon.ru/v1/product/list'
         headers = {'Client-Id': ozon_info.client_id(supplier),
                    'Api-Key': ozon_info.api_key(supplier)}
-        body = {"filter": {"visibility": "VISIBLE"}, "page": 1, "page_size": 5000}
+        body = {"filter": {"visibility": "ALL"}, "page": 1, "page_size": 5000}
         result = [item['product_id'] for item in
                   single_requests.fetch('POST', content_type='json', url=url, body=body, headers=headers)['result']['items']]
         _product_ids[supplier] = result
@@ -34,7 +34,7 @@ def _product_ids_by_suppliers_list(suppliers_list):
         url = 'https://api-seller.ozon.ru/v1/product/list'
         headers_list = [{'Client-Id': ozon_info.client_id(supplier),
                          'Api-Key': ozon_info.api_key(supplier)} for supplier in suppliers_list]
-        body = {"filter": {"visibility": "VISIBLE"}, "page": 1, "page_size": 5000}
+        body = {"filter": {"visibility": "ALL"}, "page": 1, "page_size": 5000}
         results_dict = async_requests.fetch('POST', suppliers_list, url=url, headers_list=headers_list,
                                             body=body, content_type='json', lib='httpx')
         result = {supplier: [item['product_id'] for item in result['result']['items']]
@@ -51,13 +51,16 @@ def _products_by_supplier(supplier):
         headers = {'Client-Id': ozon_info.client_id(supplier),
                    'Api-Key': ozon_info.api_key(supplier)}
         body = {'product_id': product_ids}
-        result = single_requests.fetch('POST', content_type='json', url=url,
+        product_list = single_requests.fetch('POST', content_type='json', url=url,
                                        body=body, headers=headers)['result']['items']
-        for i in range(len(result)):
-            for source in result[i]['sources']:
-                if source['source'] == 'fbo':
-                    result[i]['sku'] = source['sku']
-                    break
+        result = list()
+        for i in range(len(product_list)):
+            for source in product_list[i]['sources']:
+                product = deepcopy(product_list[i])
+                product.pop('sources')
+                product['source'] = source['source']
+                product['sku'] = source['sku']
+                result.append(product)
         _products[supplier] = result
     return deepcopy(result)
 
@@ -141,7 +144,7 @@ def warehouses(supplier=None, suppliers_list=None):
     elif suppliers_list is not None: return _warehouses_by_suppliers_list(suppliers_list)
 
 
-def _analytics_by_supplier(supplier, start_date):
+def _report_by_supplier(supplier, start_date):
     result = _analytics.get((supplier, start_date))
     if result is None:
         url = 'https://api-seller.ozon.ru/v1/analytics/data'
@@ -169,7 +172,7 @@ def _analytics_by_supplier(supplier, start_date):
     return deepcopy(result)
 
 
-def _analytics_by_suppliers_list(suppliers_list, start_date):
+def _report_by_suppliers_list(suppliers_list, start_date):
     result = _analytics.get((tuple(suppliers_list), start_date))
     if result is None:
         url = 'https://api-seller.ozon.ru/v1/analytics/data'
@@ -198,10 +201,54 @@ def _analytics_by_suppliers_list(suppliers_list, start_date):
     return deepcopy(result)
 
 
-def analytics(supplier=None, suppliers_list=None, start_date=str(date.today()-timedelta(days=6))):
+def report(supplier=None, suppliers_list=None, start_date=str(date.today() - timedelta(days=6))):
     if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch analytics.")
-    elif supplier is not None: return _analytics_by_supplier(supplier, start_date)
-    elif suppliers_list is not None: return _analytics_by_suppliers_list(suppliers_list, start_date)
+    elif supplier is not None: return _report_by_supplier(supplier, start_date)
+    elif suppliers_list is not None: return _report_by_suppliers_list(suppliers_list, start_date)
+
+
+def _orders_by_supplier(supplier, start_date):
+    result = _analytics.get((supplier, start_date))
+    if result is None:
+        result_list = list()
+        offset = 0
+        while True:
+            url = 'https://api-seller.ozon.ru/v1/analytics/data'
+            headers = {'Client-Id': ozon_info.client_id(supplier),
+                       'Api-Key': ozon_info.api_key(supplier)}
+            body = {"date_from": str(start_date),
+                    "date_to": str(date.today()),
+                    "metrics": ["revenue",
+                                "ordered_units"],
+                    "dimension": ["day", 'sku'],
+                    "limit": 1000,
+                    "offset": offset}
+            analytic_list = single_requests.fetch('POST', content_type='json', url=url, body=body,
+                                                           headers=headers)['result']['data']
+            if len(analytic_list) < 1: break
+            else:
+                result_list += analytic_list
+                offset += 1000
+        result = dict()
+        for item in result_list:
+            day = item['dimensions'][0]['id']
+            sku = int(item['dimensions'][1]['id'])
+            result.setdefault(sku, {day: {'orders_value': 0, 'orders_count': 0} for day in info.dates_list(start_date)})
+            result[sku][day] = {'orders_value': item['metrics'][0],
+                                'orders_count': item['metrics'][1]}
+        _analytics[(supplier, start_date)] = result
+    return deepcopy(result)
+
+
+def _orders_by_suppliers_list(suppliers_list, start_date):
+    return {supplier: _orders_by_supplier(supplier, start_date)
+            for supplier in suppliers_list}
+
+
+def orders(supplier=None, suppliers_list=None, start_date=str(date.today() - timedelta(days=7))):
+    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch analytics.")
+    elif supplier is not None: return _orders_by_supplier(supplier, start_date)
+    elif suppliers_list is not None: return _orders_by_suppliers_list(suppliers_list, start_date)
 
 
 def _transactions_by_supplier(supplier, start_date):

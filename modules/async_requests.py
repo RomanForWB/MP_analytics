@@ -22,7 +22,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
             try:
                 response = await session.get(url, params=params, headers=headers)
                 if response.status_code < 200 or response.status_code >= 300:
-                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка:{response.status_code}', end='')
+                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка: {response.status_code}', end='')
                     if failure_counter is None: return [id, None]
                     failure_counter -= 1
                     if failure_counter <= 0:
@@ -48,7 +48,7 @@ async def _get_fetch(session, id, content_type, lib, url, params, headers):
             try:
                 async with session.get(url, params=params, headers=headers) as response:
                     if response.status < 200 or response.status >= 300:
-                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка:{response.status}', end='')
+                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка: {response.status}', end='')
                         if failure_counter is None: return [id, None]
                         failure_counter -= 1
                         if failure_counter <= 0:
@@ -87,7 +87,7 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
             try:
                 response = await session.post(url, params=params, json=body, headers=headers)
                 if response.status_code < 200 or response.status_code >= 300:
-                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка:{response.status_code}', end='')
+                    print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка: {response.status_code}', end='')
                     if failure_counter is None: return [id, None]
                     failure_counter -= 1
                     if failure_counter <= 0:
@@ -113,7 +113,7 @@ async def _post_fetch(session, id, body, content_type, lib, url, params, headers
             try:
                 async with session.post(url, params=params, json=body, headers=headers) as response:
                     if response.status < 200 or response.status >= 300:
-                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка:{response.status}', end='')
+                        print(f'\rОбработано: {counter}\tСейчас в обработке: {id}\tОшибка: {response.status}', end='')
                         if failure_counter is None: return [id, None]
                         failure_counter -= 1
                         if failure_counter <= 0:

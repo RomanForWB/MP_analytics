@@ -1,3 +1,4 @@
+import re
 from datetime import date, timedelta, datetime
 import modules.info as info
 import modules.ozon.info as ozon_info
@@ -262,7 +263,7 @@ def categories(input_data, start_date=str(date.today()-timedelta(days=7))):
 
 
 def _report_by_supplier(supplier, start_date):
-    analytics_dict = fetch.analytics(supplier=supplier, start_date=start_date)
+    analytics_dict = fetch.report(supplier=supplier, start_date=start_date)
     transactions_dict = fetch.transactions(supplier=supplier, start_date=start_date)
     return [[day, analytics['orders_value'], analytics['orders_count'], transactions_dict[day]['sales_value'],
              analytics['delivered_count'] - analytics['returns_count'] - analytics['cancellations_count'],
@@ -272,7 +273,7 @@ def _report_by_supplier(supplier, start_date):
 
 
 def _report_by_suppliers_list(suppliers_list, start_date):
-    analytics_dict = fetch.analytics(suppliers_list=suppliers_list, start_date=start_date)
+    analytics_dict = fetch.report(suppliers_list=suppliers_list, start_date=start_date)
     transactions_dict = fetch.transactions(suppliers_list=suppliers_list, start_date=start_date)
     dates = info.dates_list(from_date=start_date, to_yesterday=True)
     table = [[day, sum([analytics_dict[supplier][day]['orders_value'] for supplier in suppliers_list]),
@@ -296,6 +297,179 @@ def report(input_data, start_date):
         if type(input_data[0]) == str: table = _report_by_suppliers_list(input_data, start_date)
         # elif type(input_data[0]) == int: table = _report_by_sku_list(input_data, start_date)
     elif type(input_data) == str: table = _report_by_supplier(input_data, start_date)
+    # elif type(input_data) == int: table = _report_by_sku_list([input_data], start_date)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table
+
+
+def _orders_count_by_supplier(supplier, start_date):
+    products_list = fetch.products(supplier=supplier)
+    products_dict = {item['sku']: item for item in products_list}
+    categories_dict = fetch.categories(supplier=supplier)
+    orders_dict = fetch.orders(supplier=supplier, start_date=start_date)
+    days = info.days_list(from_date=start_date)
+    table = list()
+    for sku, days_values in orders_dict.items():
+        days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
+                       for key, values in days_values.items()}
+        row = [ozon_info.supplier_name(supplier), sku,
+                   products_dict[sku]['offer_id'],
+                   categories_dict[products_dict[sku]['category_id']]]
+        for day in days: row.append(days_values[day]['orders_count'])
+        row.append(sum([day_value['orders_count'] for day_value in days_values.values()]))
+        try: row.append(sum([day_value['orders_value'] for day_value in days_values.values()]) /
+                       sum([day_value['orders_count'] for day_value in days_values.values()]))
+        except ZeroDivisionError: row.append('')
+        row.append(sum([day_value['orders_value'] for day_value in days_values.values()]))
+        table.append(row)
+    return sorted(table, key=lambda item: item[2])
+
+
+def _orders_count_by_suppliers_list(suppliers_list, start_date):
+    products_dict = fetch.products(suppliers_list=suppliers_list)
+    categories_dict = fetch.categories(suppliers_list=suppliers_list)
+    orders_dict = fetch.orders(suppliers_list=suppliers_list, start_date=start_date)
+    days = info.days_list(from_date=start_date)
+    table = list()
+    for supplier in suppliers_list:
+        supplier_table = list()
+        supplier_products_dict = {item['sku']: item for item in products_dict[supplier]}
+        for sku, days_values in orders_dict[supplier].items():
+            days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
+                           for key, values in days_values.items()}
+            row = [ozon_info.supplier_name(supplier), sku,
+                   supplier_products_dict[sku]['offer_id'],
+                   categories_dict[supplier_products_dict[sku]['category_id']]]
+            for day in days: row.append(days_values[day]['orders_count'])
+            row.append(sum([day_value['orders_count'] for day_value in days_values.values()]))
+            try: row.append(sum([day_value['orders_value'] for day_value in days_values.values()]) /
+                       sum([day_value['orders_count'] for day_value in days_values.values()]))
+            except ZeroDivisionError: row.append('')
+            row.append(sum([day_value['orders_value'] for day_value in days_values.values()]))
+            supplier_table.append(row)
+        table += sorted(supplier_table, key=lambda item: item[2])
+    return table
+
+
+def orders_count(input_data, start_date):
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет'] + \
+             info.days_list(from_date=start_date) + ['Итого', 'Средняя цена', 'Сумма заказов']
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _orders_count_by_suppliers_list(input_data, start_date)
+        # elif type(input_data[0]) == int: table = _report_by_sku_list(input_data, start_date)
+    elif type(input_data) == str: table = _orders_count_by_supplier(input_data, start_date)
+    # elif type(input_data) == int: table = _report_by_sku_list([input_data], start_date)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table
+
+
+def _orders_value_by_supplier(supplier, start_date):
+    products_list = fetch.products(supplier=supplier)
+    products_dict = {item['sku']: item for item in products_list}
+    categories_dict = fetch.categories(supplier=supplier)
+    orders_dict = fetch.orders(supplier=supplier, start_date=start_date)
+    days = info.days_list(from_date=start_date)
+    table = list()
+    for sku, days_values in orders_dict.items():
+        days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
+                       for key, values in days_values.items()}
+        row = [ozon_info.supplier_name(supplier), sku,
+                   products_dict[sku]['offer_id'],
+                   categories_dict[products_dict[sku]['category_id']]]
+        for day in days: row.append(days_values[day]['orders_value'])
+        row.append(sum([day_value['orders_count'] for day_value in days_values.values()]))
+        try: row.append(sum([day_value['orders_value'] for day_value in days_values.values()]) /
+                       sum([day_value['orders_count'] for day_value in days_values.values()]))
+        except ZeroDivisionError: row.append('')
+        row.append(sum([day_value['orders_value'] for day_value in days_values.values()]))
+        table.append(row)
+    return sorted(table, key=lambda item: item[2])
+
+
+def _orders_value_by_suppliers_list(suppliers_list, start_date):
+    products_dict = fetch.products(suppliers_list=suppliers_list)
+    categories_dict = fetch.categories(suppliers_list=suppliers_list)
+    orders_dict = fetch.orders(suppliers_list=suppliers_list, start_date=start_date)
+    days = info.days_list(from_date=start_date)
+    table = list()
+    for supplier in suppliers_list:
+        supplier_table = list()
+        supplier_products_dict = {item['sku']: item for item in products_dict[supplier]}
+        for sku, days_values in orders_dict[supplier].items():
+            days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
+                           for key, values in days_values.items()}
+            row = [ozon_info.supplier_name(supplier), sku,
+                   supplier_products_dict[sku]['offer_id'],
+                   categories_dict[supplier_products_dict[sku]['category_id']]]
+            for day in days: row.append(days_values[day]['orders_value'])
+            row.append(sum([day_value['orders_count'] for day_value in days_values.values()]))
+            try: row.append(sum([day_value['orders_value'] for day_value in days_values.values()]) /
+                       sum([day_value['orders_count'] for day_value in days_values.values()]))
+            except ZeroDivisionError: row.append('')
+            row.append(sum([day_value['orders_value'] for day_value in days_values.values()]))
+            supplier_table.append(row)
+        table += sorted(supplier_table, key=lambda item: item[2])
+    return table
+
+
+def orders_value(input_data, start_date):
+    header = ['Организация', 'Номенклатура', 'Артикул поставщика', 'Предмет'] + \
+             info.days_list(from_date=start_date) + ['Итого', 'Средняя цена', 'Сумма заказов']
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _orders_value_by_suppliers_list(input_data, start_date)
+        # elif type(input_data[0]) == int: table = _report_by_sku_list(input_data, start_date)
+    elif type(input_data) == str: table = _orders_value_by_supplier(input_data, start_date)
+    # elif type(input_data) == int: table = _report_by_sku_list([input_data], start_date)
+    else: raise ValueError("Unable to recognize input data")
+    table.insert(0, header)
+    return table
+
+
+def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categories):
+    products_dict = fetch.products(suppliers_list=suppliers_list)
+    categories_dict = fetch.categories(suppliers_list=suppliers_list)
+    orders_dict = fetch.orders(suppliers_list=suppliers_list, start_date=start_date)
+    days = info.days_list(from_date=start_date)
+    orders_by_category_dict = dict()
+    other_days_values = {day: 0 for day in days}
+    for supplier in suppliers_list:
+        supplier_products_dict = {item['sku']: item for item in products_dict[supplier]}
+        for sku, days_values in orders_dict[supplier].items():
+            category_words = re.split(r'\s+', categories_dict[supplier_products_dict[sku]['category_id']])
+            category = ' '.join(list(filter(lambda item: 'женск' not in item.lower(), category_words)))
+            days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
+                           for key, values in days_values.items()}
+            for day in days:
+                if visible_categories is not None:
+                    if category in visible_categories:
+                        orders_by_category_dict.setdefault(category, {day: 0 for day in days})
+                        orders_by_category_dict[category][day] += days_values[day]['orders_value']
+                    else: other_days_values[day] += days_values[day]['orders_value']
+                else:
+                    orders_by_category_dict.setdefault(category, {day: 0 for day in days})
+                    orders_by_category_dict[category][day] += days_values[day]['orders_value']
+    table = [[category] + [value for day, value in days_values.items()]
+             for category, days_values in orders_by_category_dict.items()]
+    table.sort(key=lambda item: sum(item[1:]), reverse=True)
+    if sum(other_days_values.values()) > 0:
+        table.append(['Остальное'] + [other_days_values[day] for day in days])
+    table.append(['Итого'] + [sum([values[day] for values in orders_by_category_dict.values()])
+                              for day in days])
+    return table
+
+
+def orders_category(input_data, start_date, categories_list=None):
+    header = ['Заказано руб.'] + \
+             info.days_list(from_date=start_date)
+    table = list()
+    if type(input_data) == list:
+        if type(input_data[0]) == str: table = _orders_category_by_suppliers_list(input_data, start_date, categories_list)
+        # elif type(input_data[0]) == int: table = _report_by_sku_list(input_data, start_date)
+    elif type(input_data) == str: table = _orders_category_by_supplier(input_data, start_date, categories_list)
     # elif type(input_data) == int: table = _report_by_sku_list([input_data], start_date)
     else: raise ValueError("Unable to recognize input data")
     table.insert(0, header)

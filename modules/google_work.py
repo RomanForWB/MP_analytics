@@ -4,7 +4,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 # EMAIL: roman-wb@roman-wb.iam.gserviceaccount.com
 
 _connection = None
-
+_last_google_sheet = None
+_last_google_sheet_key = None
 
 def initialize_connection(new=False):
     global _connection
@@ -17,14 +18,24 @@ def initialize_connection(new=False):
 
 
 def open_sheet(google_sheet_key, sheet_name=1):
-    print(f'Подключение к https://docs.google.com/spreadsheets/d/{google_sheet_key}...')
+    global _last_google_sheet
+    global _last_google_sheet_key
     while True:
         try:
-            connection = initialize_connection()
-            google_sheet = connection.open_by_key(google_sheet_key)
-            if sheet_name == 1: return google_sheet.get_worksheet(0)
+            if _last_google_sheet_key is not None and _last_google_sheet_key == google_sheet_key:
+                google_sheet = _last_google_sheet
+            else:
+                print(f'Подключение к https://docs.google.com/spreadsheets/d/{google_sheet_key}...')
+                connection = initialize_connection()
+                google_sheet = connection.open_by_key(google_sheet_key)
+                _last_google_sheet_key = google_sheet_key
+                _last_google_sheet = google_sheet
+            if type(sheet_name) == int: return google_sheet.get_worksheet(sheet_name - 1)
             else: return google_sheet.worksheet(sheet_name)
-        except GoogleAuthError: initialize_connection(new=True)
+        except GoogleAuthError:
+            _last_google_sheet = None
+            _last_google_sheet_key = None
+            initialize_connection(new=True)
 
 
 def get_columns(worksheet, header_count, *column_numbers):

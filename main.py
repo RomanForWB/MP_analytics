@@ -117,7 +117,11 @@ def ask_ozon():
     print("4 - Отчет (день)")
     print("5 - Отчет (неделя)")
     print("6 - Отчет (месяц)")
-    print("7 - В начало")
+    print("7 - Заказы по товарам (кол-во)")
+    print("8 - Заказы по товарам (сумма)")
+    print("9 - Заказы (все)")
+    print("10 - Заказы (все категории)")
+    print("11 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'ozon_categories'
@@ -126,7 +130,11 @@ def ask_ozon():
     elif choice.strip() == '4': choice = 'ozon_day_report'
     elif choice.strip() == '5': choice = 'ozon_week_report'
     elif choice.strip() == '6': choice = 'ozon_month_report'
-    elif choice.strip() == '7': choice = 'start'
+    elif choice.strip() == '7': choice = 'ozon_orders_count'
+    elif choice.strip() == '8': choice = 'ozon_orders_value'
+    elif choice.strip() == '9': choice = 'ozon_orders_category_all'
+    elif choice.strip() == '10': choice = 'ozon_orders_category_all_categories'
+    elif choice.strip() == '11': choice = 'start'
     else:
         choice = 'ozon'
         print("Неправильный выбор...")
@@ -308,6 +316,7 @@ if __name__ == '__main__':
     while True:
         if choice == 'start': ask_start()
         elif choice == 'wb': ask_wb()
+        elif choice == 'ozon': ask_ozon()
         elif choice == 'wb_all_day_reports':
             worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, шт')
             input_data = wb_info.all_suppliers()
@@ -387,9 +396,9 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, profit_table, replace=True)
             choice = 'start'
         elif choice == 'wb_all_analytics':
+            start_date = str(date.today() - timedelta(days=6))
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
             input_data = get_int_column(worksheet, 1, 2)
-            start_date = str(date.today() - timedelta(days=6))
             categories_table = wb_analytics.categories(input_data, start_date)
             google_work.insert_table(worksheet, categories_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Позиции')
@@ -410,7 +419,6 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, shipments_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Выручка')
             categories_list = google_work.get_columns(worksheet, 2, 1)
-            start_date = str(date.today() - timedelta(days=6))
             revenue_table = wb_analytics.categories_revenue(categories_list, start_date)
             google_work.insert_table(worksheet, revenue_table, replace=True)
             worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Тренды')
@@ -418,21 +426,37 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, trends_table, replace=True)
             choice = 'wb'
         elif choice == 'ozon_all_day_reports':
-            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'День')
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'День')
             input_data = ozon_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=8))
             report_table = ozon_analytics.report(input_data, start_date)
             google_special.day_report(worksheet, report_table)
-            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Неделя')
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'Неделя')
             input_data = ozon_info.all_suppliers()
             start_date = str(info.current_monday(skip_one=True))
             report_table = ozon_analytics.report(input_data, start_date)
             google_special.week_report(worksheet, report_table)
-            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Месяц')
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'Месяц')
             input_data = ozon_info.all_suppliers()
             start_date = str(info.current_month_start_date(skip_one=True))
             report_table = ozon_analytics.report(input_data, start_date)
             google_special.month_report(worksheet, report_table)
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'динамика шт.')
+            input_data = ozon_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=7))
+            orders_table = ozon_analytics.orders_count(input_data, start_date)
+            google_work.insert_table(worksheet, orders_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'динамика руб.')
+            orders_table = ozon_analytics.orders_value(input_data, start_date)
+            google_work.insert_table(worksheet, orders_table, replace=True)
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'заказы общие')
+            categories_list = google_work.get_columns(worksheet, 1, 10)
+            orders_table = ozon_analytics.orders_category(input_data, start_date, categories_list)
+            google_work.clear(worksheet, 'A:I')
+            google_work.insert_table(worksheet, orders_table, replace=False)
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'все категории')
+            orders_table = ozon_analytics.orders_category(input_data, start_date)
+            google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'start'
         elif choice == 'ozon_all_analytics':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Позиции')
@@ -646,7 +670,7 @@ if __name__ == '__main__':
             profit_table = wb_analytics.profit_compare(input_data, weeks)
             google_work.insert_table(worksheet, profit_table, replace=True)
             choice = 'wb'
-        elif choice == 'ozon': ask_ozon()
+# ==============================================================================================================
         elif choice == 'ozon_positions':
             worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Позиции')
             input_data = get_int_column(worksheet, 1, 2)
@@ -667,24 +691,54 @@ if __name__ == '__main__':
             google_work.insert_table(worksheet, stocks_table, replace=True)
             choice = 'ozon'
         elif choice == 'ozon_day_report':
-            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'День (тест)')
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'День')
             input_data = ozon_info.all_suppliers()
             start_date = str(date.today() - timedelta(days=8))
             report_table = ozon_analytics.report(input_data, start_date)
             google_special.day_report(worksheet, report_table)
             choice = 'ozon'
         elif choice == 'ozon_week_report':
-            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Неделя (тест)')
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'Неделя')
             input_data = ozon_info.all_suppliers()
             start_date = str(info.current_monday(skip_one=True))
             report_table = ozon_analytics.report(input_data, start_date)
             google_special.week_report(worksheet, report_table)
             choice = 'ozon'
         elif choice == 'ozon_month_report':
-            worksheet = google_work.open_sheet(info.google_key('ozon_analytics'), 'Месяц (тест)')
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'Месяц')
             input_data = ozon_info.all_suppliers()
             start_date = str(info.current_month_start_date(skip_one=True))
             report_table = ozon_analytics.report(input_data, start_date)
             google_special.month_report(worksheet, report_table)
+            choice = 'ozon'
+        elif choice == 'ozon_orders_count':
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'динамика шт.')
+            input_data = ozon_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=7))
+            orders_table = ozon_analytics.orders_count(input_data, start_date)
+            google_work.insert_table(worksheet, orders_table, replace=True)
+            choice = 'ozon'
+        elif choice == 'ozon_orders_value':
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'динамика руб.')
+            input_data = ozon_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=7))
+            orders_table = ozon_analytics.orders_value(input_data, start_date)
+            google_work.insert_table(worksheet, orders_table, replace=True)
+            choice = 'ozon'
+        elif choice == 'ozon_orders_category_all':
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'заказы общие')
+            input_data = ozon_info.all_suppliers()
+            categories_list = google_work.get_columns(worksheet, 1, 10)
+            start_date = str(date.today() - timedelta(days=7))
+            orders_table = ozon_analytics.orders_category(input_data, start_date, categories_list)
+            google_work.clear(worksheet, 'A:I')
+            google_work.insert_table(worksheet, orders_table, replace=False)
+            choice = 'ozon'
+        elif choice == 'ozon_orders_category_all_categories':
+            worksheet = google_work.open_sheet(info.google_key('ozon_day_reports'), 'все категории')
+            input_data = ozon_info.all_suppliers()
+            start_date = str(date.today() - timedelta(days=7))
+            orders_table = ozon_analytics.orders_category(input_data, start_date)
+            google_work.insert_table(worksheet, orders_table, replace=True)
             choice = 'ozon'
         else: raise KeyError(f"Check menu choices - {choice} have not found")

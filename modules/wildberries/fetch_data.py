@@ -22,36 +22,6 @@ _mpstats_info = dict()
 _mpstats_categories_info = dict()
 _mpstats_positions = dict()
 
-
-def _detail_report_by_suppliers_list(suppliers_list, weeks=4):
-    url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/reportDetailByPeriod'
-    headers = {'Content-Type': 'application/json'}
-    # finding date of last detail report
-    last_date = date.today()
-    while True:
-        last_date -= timedelta(days=1)
-        params = {'key': wb_info.api_key('x64', suppliers_list[0]),
-                  'dateFrom': str(last_date),
-                  'dateTo': str(last_date)}
-        first_result = single_requests.fetch('GET', content_type='json', url=url,
-                                             params=params, headers=headers)
-        if first_result is not None: break
-    # fetching
-    for supplier in suppliers_list:
-        if _detail_reports.get(supplier) is None:
-            params_list = [{'key': wb_info.api_key('x64', supplier),
-                            'dateFrom': str(last_date - timedelta(days=(7 * i) + 6)),
-                            'dateTo': str(last_date - timedelta(days=7 * i))} for i in range(weeks)]
-            result_dict = session_requests.fetch('GET', [i for i in range(weeks)], params_list=params_list,
-                                                 url=url, headers=headers, content_type='text', timeout=10)
-            result = list()
-            for key, value in result_dict.items():
-                if value == 'null': pass
-                else: result += json.loads(value)
-            _detail_reports[supplier] = result
-
-    return {supplier: deepcopy(_detail_reports[supplier]) for supplier in suppliers_list}
-
 '''{supplier: 
     [{
     realizationreport_id, Номер отчета
@@ -98,13 +68,52 @@ def _detail_report_by_suppliers_list(suppliers_list, weeks=4):
     ppvz_supplier_name, Партнер
     ppvz_inn ИНН партнера
     }, {...}, ...], supplier : [...], ...}'''
-def detail_report(supplier=None, suppliers_list=None, weeks=4):
-    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch detail_report.")
-    elif supplier is not None: return _detail_report_by_suppliers_list([supplier], weeks)
-    elif suppliers_list is not None: return _detail_report_by_suppliers_list(suppliers_list, weeks)
+def detail_report_by_suppliers_list(suppliers_list, weeks=4):
+    url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/reportDetailByPeriod'
+    headers = {'Content-Type': 'application/json'}
+    # finding date of last detail report
+    last_date = date.today()
+    while True:
+        last_date -= timedelta(days=1)
+        params = {'key': wb_info.api_key('x64', suppliers_list[0]),
+                  'dateFrom': str(last_date),
+                  'dateTo': str(last_date)}
+        first_result = single_requests.fetch('GET', content_type='json', url=url,
+                                             params=params, headers=headers)
+        if first_result is not None: break
+    # fetching
+    for supplier in suppliers_list:
+        if _detail_reports.get(supplier) is None:
+            params_list = [{'key': wb_info.api_key('x64', supplier),
+                            'dateFrom': str(last_date - timedelta(days=(7 * i) + 6)),
+                            'dateTo': str(last_date - timedelta(days=7 * i))} for i in range(weeks)]
+            result_dict = session_requests.fetch('GET', [i for i in range(weeks)], params_list=params_list,
+                                                 url=url, headers=headers, content_type='text', timeout=10)
+            result = list()
+            for key, value in result_dict.items():
+                if value == 'null': pass
+                else: result += json.loads(value)
+            _detail_reports[supplier] = result
 
+    return {supplier: deepcopy(_detail_reports[supplier]) for supplier in suppliers_list}
 
-def _cards_by_suppliers_list(suppliers_list):
+'''{supplier: [[
+    addin, Параметры
+    countryProduction, Страна-изготовитель товара
+    createdAt, Дата создания
+    id, Идентификатор карточки
+    imtId, Идентификатор карточки
+    imtSupplierId, Не используется поставщиком
+    nomenclatures, Номенклатуры в карточке
+    parent, Родительская категория
+    object, Категория товара
+    supplierId, Идентификатор поставщика
+    supplierVendorCode, Артикул поставщика
+    updatedAt, Дата последнего обновления карточки
+    uploadID, ID массовой загрузки
+    userId, Идентификатор пользователя
+], [...] ...], supplier: [...] ...}'''
+def cards_by_suppliers_list(suppliers_list):
     new_suppliers_list = list()
     for supplier in suppliers_list:
         if _cards.get(supplier) is None: new_suppliers_list.append(supplier)
@@ -127,42 +136,6 @@ def _cards_by_suppliers_list(suppliers_list):
         _cards.update(result)
     return {supplier: deepcopy(_cards[supplier]) for supplier in suppliers_list}
 
-'''{supplier: [[
-    addin, Параметры
-    countryProduction, Страна-изготовитель товара
-    createdAt, Дата создания
-    id, Идентификатор карточки
-    imtId, Идентификатор карточки
-    imtSupplierId, Не используется поставщиком
-    nomenclatures, Номенклатуры в карточке
-    parent, Родительская категория
-    object, Категория товара
-    supplierId, Идентификатор поставщика
-    supplierVendorCode, Артикул поставщика
-    updatedAt, Дата последнего обновления карточки
-    uploadID, ID массовой загрузки
-    userId, Идентификатор пользователя
-], [...] ...], supplier: [...] ...}'''
-def cards(supplier=None, suppliers_list=None):
-    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch cards.")
-    elif supplier is not None: return _cards_by_suppliers_list([supplier])
-    elif suppliers_list is not None: return _cards_by_suppliers_list(suppliers_list)
-
-
-def _orders_by_suppliers_list(suppliers_list, start_date):
-    new_suppliers_list = list()
-    for supplier in suppliers_list:
-        if _orders.get((supplier, start_date)) is None: new_suppliers_list.append(supplier)
-    if len(new_suppliers_list) > 0:
-        url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/orders'
-        headers = {'Content-Type': 'application/json'}
-        params_list = [{'key': wb_info.api_key('x64', supplier),
-                        'dateFrom': str(start_date)} for supplier in new_suppliers_list]
-        result_dict = session_requests.fetch('GET', new_suppliers_list, content_type='json',
-                                      url=url, headers=headers, params_list=params_list, timeout=20)
-        _orders.update({supplier: cards_list for supplier, cards_list in result_dict})
-    return {supplier: deepcopy(_orders[(supplier, start_date)]) for supplier in suppliers_list}
-
 '''{supplier: [
 [   gNumber, номер заказа
     date, дата заказа
@@ -183,25 +156,19 @@ def _orders_by_suppliers_list(suppliers_list, start_date):
     brand, бренд
     is_cancel, Отмена заказа. 1 – заказ отменен до оплаты
 ], [...] ...], supplier :[...] ...}'''
-def orders(supplier=None, suppliers_list=None, start_date=str(date.today()-timedelta(days=6))):
-    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch orders.")
-    elif supplier is not None: return _orders_by_suppliers_list([supplier], start_date)
-    elif suppliers_list is not None: return _orders_by_suppliers_list(suppliers_list, start_date)
-
-
-def _stocks_by_suppliers_list(suppliers_list):
+def orders_by_suppliers_list(suppliers_list, start_date):
     new_suppliers_list = list()
     for supplier in suppliers_list:
-        if _stocks.get(supplier) is None: new_suppliers_list.append(supplier)
+        if _orders.get((supplier, start_date)) is None: new_suppliers_list.append(supplier)
     if len(new_suppliers_list) > 0:
-        url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/stocks'
+        url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/orders'
+        headers = {'Content-Type': 'application/json'}
         params_list = [{'key': wb_info.api_key('x64', supplier),
-                        'dateFrom': str(date.today()-timedelta(days=1))}
-                       for supplier in new_suppliers_list]
-        result_dict = async_requests.fetch('GET', new_suppliers_list, url=url,
-                                      params_list=params_list, content_type='json')
-        _stocks.update(result_dict)
-    return {supplier: deepcopy(_stocks[supplier]) for supplier in suppliers_list}
+                        'dateFrom': str(start_date)} for supplier in new_suppliers_list]
+        result_dict = session_requests.fetch('GET', new_suppliers_list, content_type='json',
+                                      url=url, headers=headers, params_list=params_list, timeout=20)
+        _orders.update({supplier: cards_list for supplier, cards_list in result_dict})
+    return {supplier: deepcopy(_orders[(supplier, start_date)]) for supplier in suppliers_list}
 
 '''{supplier: [[
     lastChangeDate, дата и время обновления информации в сервисе
@@ -223,13 +190,22 @@ def _stocks_by_suppliers_list(suppliers_list):
     brand, бренд
     SCCode, код контракта
 ], [...] ...], supplier: [...] ...}'''
-def stocks(supplier=None, suppliers_list=None):
-    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch stocks.")
-    elif supplier is not None: return _stocks_by_suppliers_list([supplier])
-    elif suppliers_list is not None: return _stocks_by_suppliers_list(suppliers_list)
+def stocks_by_suppliers_list(suppliers_list):
+    new_suppliers_list = list()
+    for supplier in suppliers_list:
+        if _stocks.get(supplier) is None: new_suppliers_list.append(supplier)
+    if len(new_suppliers_list) > 0:
+        url = 'https://suppliers-stats.wildberries.ru/api/v1/supplier/stocks'
+        params_list = [{'key': wb_info.api_key('x64', supplier),
+                        'dateFrom': str(date.today()-timedelta(days=1))}
+                       for supplier in new_suppliers_list]
+        result_dict = async_requests.fetch('GET', new_suppliers_list, url=url,
+                                      params_list=params_list, content_type='json')
+        _stocks.update(result_dict)
+    return {supplier: deepcopy(_stocks[supplier]) for supplier in suppliers_list}
 
 
-def _report_by_suppliers_list(suppliers_list):
+def report_by_suppliers_list(suppliers_list):
     new_suppliers_list = list()
     for supplier in suppliers_list:
         if _report.get(supplier) is None: new_suppliers_list.append(supplier)
@@ -242,12 +218,6 @@ def _report_by_suppliers_list(suppliers_list):
                                            url=url, params=params, headers_list=headers_list)
         _report.update({supplier: report_list['data'] for supplier, report_list in report_dict.items()})
     return {supplier: deepcopy(_report[supplier]) for supplier in suppliers_list}
-
-
-def report(supplier=None, suppliers_list=None):
-    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch report.")
-    elif supplier is not None: return _report_by_suppliers_list([supplier])
-    elif suppliers_list is not None: return _report_by_suppliers_list(suppliers_list)
 
 
 def feedbacks(imt_list, count=200):
@@ -360,21 +330,6 @@ def cookie_token(supplier) -> str:
 
 # ==============================================
 
-
-def _mpstats_positions_by_nm_list(nm_list, start_date):
-    new_nm_list = list()
-    for nm in nm_list:
-        if _mpstats_positions.get((nm, start_date)) is None: new_nm_list.append(nm)
-    if len(new_nm_list) > 0:
-        headers = {'X-Mpstats-TOKEN': info.mpstats_token(),
-                   'Content-Type': 'application/json'}
-        urls_list = [f'https://mpstats.io/api/wb/get/item/{nm}/by_category' for nm in new_nm_list]
-        params = {'d1': str(start_date), 'd2': str(date.today())}
-        result_dict = async_requests.fetch('GET', new_nm_list, urls_list=urls_list, params=params,
-                                           headers=headers, content_type='json')
-        _mpstats_positions.update({(nm, start_date): values for nm, values in result_dict})
-    return {nm: deepcopy(_mpstats_positions[(nm, start_date)]) for nm in nm_list}
-
 '''
 {
     'balance': [count, count, ...] Остатки по дням
@@ -388,35 +343,19 @@ def _mpstats_positions_by_nm_list(nm_list, start_date):
     'sales': [144, 160, ...] Продажи по дням
 }
 '''
-def mpstats_positions(nm=None, nm_list=None, start_date=str(date.today()-timedelta(days=7))):
-    if nm_list is None and nm is None: raise AttributeError("No input data to fetch positions.")
-    elif nm is not None: return _mpstats_positions_by_nm_list([nm], start_date)
-    elif nm_list is not None: return _mpstats_positions_by_nm_list(nm_list, start_date)
-
-
-def _mpstats_info_by_suppliers_list(suppliers_list):
-    new_suppliers_list = list()
-    for supplier in new_suppliers_list:
-        if _mpstats_info.get(supplier) is None: new_suppliers_list.append(supplier)
-    if len(new_suppliers_list) > 0:
+def _mpstats_positions_by_nm_list(nm_list, start_date):
+    new_nm_list = list()
+    for nm in nm_list:
+        if _mpstats_positions.get((nm, start_date)) is None: new_nm_list.append(nm)
+    if len(new_nm_list) > 0:
         headers = {'X-Mpstats-TOKEN': info.mpstats_token(),
                    'Content-Type': 'application/json'}
-        url = 'https://mpstats.io/api/wb/get/seller'
-        body = {"startRow": 0, "endRow": 5000}
-        for supplier in new_suppliers_list:
-            result = list()
-            for identifier in wb_info.seller_identifiers(supplier):
-                params = {'path': identifier}
-                result += single_requests.fetch('POST', content_type='json', url=url,
-                                                body=body, params=params, headers=headers)['data']
-            _mpstats_info[supplier] = result
-    return {supplier: deepcopy(_mpstats_info[supplier]) for supplier in suppliers_list}
-
-
-def mpstats_info(supplier=None, suppliers_list=None):
-    if supplier is None and suppliers_list is None: raise AttributeError("No input data to fetch info.")
-    elif supplier is not None: return _mpstats_info_by_suppliers_list([supplier])
-    elif suppliers_list is not None: return _mpstats_info_by_suppliers_list(suppliers_list)
+        urls_list = [f'https://mpstats.io/api/wb/get/item/{nm}/by_category' for nm in new_nm_list]
+        params = {'d1': str(start_date), 'd2': str(date.today())}
+        result_dict = async_requests.fetch('GET', new_nm_list, urls_list=urls_list, params=params,
+                                           headers=headers, content_type='json')
+        _mpstats_positions.update({(nm, start_date): values for nm, values in result_dict})
+    return {nm: deepcopy(_mpstats_positions[(nm, start_date)]) for nm in nm_list}
 
 '''
 [
@@ -435,19 +374,20 @@ def mpstats_info(supplier=None, suppliers_list=None):
     {...}, ... ]'''
 def mpstats_categories_info(categories_list, start_date=str(date.today()-timedelta(days=7)),
                             end_date=str(date.today()-timedelta(days=1))):
-    result = _mpstats_categories_info.get(tuple([tuple(categories_list), start_date, end_date]))
-    if result is None:
+    new_category_list = list()
+    for category in categories_list:
+        if _mpstats_categories_info.get((category, start_date, end_date)) is None: new_category_list.append(category)
+    if len(new_category_list) > 0:
         headers = {'X-Mpstats-TOKEN': info.mpstats_token(),
                    'Content-Type': 'application/json'}
         url = 'https://mpstats.io/api/wb/get/category/by_date'
         params_list = [{'path': category.strip(), 'groupBy': 'day',
                        'd1': str(start_date), 'd2': str(end_date)}
-                       for category in categories_list]
-        result_dict = async_requests.fetch("GET", categories_list, content_type='json', url=url,
+                       for category in new_category_list]
+        result_dict = async_requests.fetch("GET", new_category_list, content_type='json', url=url,
                                            params_list=params_list, headers=headers)
-        result = {category: {item['period']: item for item in day_values}
-                  for category, day_values in result_dict.items()}
-        _mpstats_categories_info[tuple([tuple(categories_list), start_date, end_date])] = result
-    return deepcopy(result)
+        _mpstats_categories_info.update({(category, start_date, end_date): values for category, values in result_dict})
+    return {category: deepcopy(_mpstats_categories_info[(category, start_date, end_date)])
+            for category in categories_list}
 
 

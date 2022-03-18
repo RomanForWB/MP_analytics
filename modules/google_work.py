@@ -68,3 +68,16 @@ def insert_table(worksheet, table_rows, replace=False,
     elif start_cell is not None: worksheet.update(start_cell, table_rows)
     else: worksheet.update(table_rows)
     print(f"Таблица \"{worksheet.title}\" успешно обновлена.")
+
+
+def update_notes(worksheet, start_row, start_column, note_rows):
+    note_content_list = [{'values': [{'note': note} for note in row]} for row in note_rows]
+    body = {"requests": [{"updateCells": {
+                          "range": {
+                              "sheetId": worksheet.id,
+                              "startRowIndex": start_row - 1,
+                              "startColumnIndex": start_column - 1,
+                              },
+                          "rows": note_content_list,
+                          "fields": "note"}}]}
+    worksheet.spreadsheet.batch_update(body)

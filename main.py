@@ -26,6 +26,7 @@ def ask_start():
     print("5 - Сгенерировать аналитику Wildberries")
     print("6 - Сгенерировать ежедневные отчеты Ozon")
     print("7 - Сгенерировать аналитику Ozon")
+    print("8 - Супертаблица Wildberries")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb'
@@ -35,6 +36,7 @@ def ask_start():
     elif choice.strip() == '5': choice = 'wb_all_analytics'
     elif choice.strip() == '6': choice = 'ozon_all_day_reports'
     elif choice.strip() == '7': choice = 'ozon_all_analytics'
+    elif choice.strip() == '8': choice = 'wb_consolidated'
     else:
         choice = 'start'
         print("Неправильный выбор...")
@@ -71,7 +73,8 @@ def ask_wb():
     print("25 - Отчет по выручке")
     print("26 - Отчет по наибольшим категориям")
     print("27 - Отчет по трендам")
-    print("28 - В начало")
+    print("28 - Супертаблица")
+    print("29 - В начало")
     global choice
     choice = input("Выбор: ")
     if choice.strip() == '1': choice = 'wb_categories'
@@ -101,7 +104,8 @@ def ask_wb():
     elif choice.strip() == '25': choice = 'wb_categories_revenue'
     elif choice.strip() == '26': choice = 'wb_max_categories'
     elif choice.strip() == '27': choice = 'wb_trends'
-    elif choice.strip() == '28': choice = 'start'
+    elif choice.strip() == '28': choice = 'wb_consolidated'
+    elif choice.strip() == '29': choice = 'start'
     else:
         choice = 'wb'
         print("Неправильный выбор...")
@@ -669,6 +673,13 @@ if __name__ == '__main__':
             weeks = ask_week_count()
             profit_table = wb_analytics.profit_compare(input_data, weeks)
             google_work.insert_table(worksheet, profit_table, replace=True)
+            choice = 'wb'
+        elif choice == 'wb_consolidated':
+            worksheet = google_work.open_sheet(info.google_key('wb_consolidated'), 'Главная')
+            consolidated_table, notes = wb_analytics.consolidated()
+            google_work.clear(worksheet, ['B:T', 'V:V', 'X:X'])
+            worksheet.update(consolidated_table, value_input_option='USER_ENTERED')
+            google_work.update_notes(worksheet, start_row=2, start_column=14, note_rows=notes)
             choice = 'wb'
 # ==============================================================================================================
         elif choice == 'ozon_positions':

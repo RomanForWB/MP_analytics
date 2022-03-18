@@ -1,7 +1,9 @@
 from datetime import date, timedelta, datetime
 
+import modules.google_work as google_work
 import modules.wildberries.info as wb_info
 import modules.wildberries.fetch as fetch
+import modules.single_requests as single_requests
 import modules.info as info
 
 
@@ -2473,3 +2475,184 @@ def profit_compare(input_data, weeks=4):
     #elif type(input_data) == int: table = _profit_size_by_nm_list([input_data])
     else: raise ValueError("Unable to recognize input data")
     return table
+
+max_categories_convert_dict = { 'Одежда/Туники': 'Женщинам/Блузки и рубашки',
+                        'Одежда/Куртки': 'Женщинам/Верхняя одежда',
+                        'Обувь/Ботинки': 'Обувь/Женская',
+                        'Одежда/Платья': 'Женщинам/Платья и сарафаны',
+                        'Одежда/Костюмы': 'Женщинам/Костюмы',
+                        'Одежда/Футболки': 'Женщинам/Футболки и топы',
+                        'Одежда/Брюки': 'Женщинам/Брюки',
+                        'Одежда/Блузки': 'Женщинам/Блузки и рубашки',
+                        'Одежда/Леггинсы': 'Женщинам/Брюки',
+                        'Одежда/Топы': 'Женщинам/Футболки и топы',
+                        'Одежда/Юбки': 'Женщинам/Юбки',
+                        'Одежда/Водолазки': 'Женщинам/Джемперы, водолазки и кардиганы',
+                        'Одежда/Тренчкоты': 'Женщинам/Верхняя одежда',
+                        'Одежда/Лонгсливы': 'Женщинам/Лонгсливы',
+                        'Одежда/Пальто': 'Женщинам/Верхняя одежда',
+                        'Одежда/Свитеры': 'Женщинам/Джемперы, водолазки и кардиганы',
+                        'Одежда/Кардиганы': 'Женщинам/Джемперы, водолазки и кардиганы',
+                        'Одежда/Жакеты': 'Женщинам/Пиджаки, жилеты и жакеты',
+                        'Одежда/Шорты': 'Женщинам/Шорты',
+                        'Одежда/Велосипедки': 'Женщинам/Шорты',
+                        'Одежда/Рубашки': 'Женщинам/Блузки и рубашки',
+                        'Одежда/Пиджаки': 'Женщинам/Пиджаки, жилеты и жакеты',
+                        'Одежда/Джинсы': 'Женщинам/Джинсы',
+                        'Обувь/Сабо': 'Обувь/Женская',
+                        'Аксессуары/Сумки': 'Обувь/Женская',
+                        'Обувь/Кроссовки': 'Обувь/Женская',
+                        'Обувь/Угги': 'Обувь/Женская',
+                        'Обувь/Лоферы': 'Обувь/Женская',
+                        'Обувь/Мюли': 'Обувь/Женская',
+                        'Обувь/Эспадрильи': 'Обувь/Женская',
+                        'Обувь/Сандалии': 'Обувь/Женская',
+                        'Обувь/Полуботинки': 'Обувь/Женская',
+                        'Одежда/Блузки-боди': 'Женщинам/Блузки и рубашки',
+                        'Спортивная одежда/Костюмы спортивные': 'Женщинам/Костюмы',
+                        'Одежда/Косухи': 'Женщинам/Верхняя одежда',
+                        'Спортивная одежда/Жилеты спортивные': 'Женщинам/Пиджаки, жилеты и жакеты',
+                        'Одежда/Дубленки': 'Женщинам/Верхняя одежда',
+                        'Одежда/Толстовки': 'Женщинам/Джемперы, водолазки и кардиганы',
+                        'Одежда/Плащи': 'Женщинам/Верхняя одежда',
+                        'Одежда/Жилеты': 'Женщинам/Пиджаки, жилеты и жакеты',
+                        'Одежда/Свитшоты': 'Женщинам/Лонгсливы',
+                        'Одежда/Ветровки': 'Женщинам/Верхняя одежда',
+                        'Одежда/Худи': 'Женщинам/Лонгсливы',
+                        'Одежда/Полупальто': 'Женщинам/Верхняя одежда',
+                        'Обувь/Ботфорты': 'Обувь/Женская',
+                        'Обувь/Кеды': 'Обувь/Женская',
+                        'Обувь/Тапочки': 'Обувь/Женская',
+                        'Одежда/Пуховики': 'Женщинам/Верхняя одежда',
+                        'Обувь/Дутики': 'Обувь/Женская'}
+def consolidated():
+    worksheet = google_work.open_sheet(info.google_key('wb_consolidated'), 'Главная')
+    input_columns = google_work.get_columns(worksheet, 1, 1, 3, 21, 22, 23, 24, 25, 26)
+    items_dict = dict()
+    for i in range(len(input_columns[0])):
+        try:
+            nm = int(input_columns[1][i])
+            items_dict[nm] = {'is_new': True if input_columns[0][i] == 'TRUE' else False,
+                              'is_card_actions': True if input_columns[2][i] == 'TRUE' else False,
+                              'card_actions': input_columns[3][i],
+                              'is_price_actions': True if input_columns[4][i] == 'TRUE' else False,
+                              'price_actions': input_columns[5][i],
+                              'is_shipment': True if input_columns[6][i] == 'TRUE' else False,
+                              'is_order': True if input_columns[7][i] == 'TRUE' else False,
+                              'rating': '',
+                              'orders': [0,0,0,0,0,0,0],
+                              'stocks': 0,
+                              'all_stocks': 'Да',
+                              'article': '',
+                              'price': 0,
+                              'category': '',
+                              'max_category': 'Нет',
+                              'our_stocks': 0,
+                              'our_in_way': 0}
+        except ValueError: pass
+
+    cards_dict = fetch.cards(suppliers_list=wb_info.all_suppliers())
+    for supplier, cards in cards_dict.items():
+        for card in cards:
+            category = f"{card['parent']}/{card['object']}"
+            for nomenclature in card['nomenclatures']:
+                article = f"{card['supplierVendorCode']}{nomenclature['vendorCode']}"
+                if items_dict.get(nomenclature['nmId']) is not None:
+                    items_dict[nomenclature['nmId']]['article'] = article
+                    items_dict[nomenclature['nmId']]['category'] = category
+
+    price_dict = {supplier: single_requests.fetch('GET', content_type='json',
+                                                  url='https://suppliers-api.wildberries.ru/public/api/v1/info?quantity=0',
+                                                  headers={'Authorization': wb_info.api_key('token', supplier)})
+                  for supplier in wb_info.all_suppliers()}
+    for items in price_dict.values():
+        for item in items:
+            nm = item['nmId']
+            if items_dict.get(nm) is not None: items_dict[nm]['price'] = item['price']*(100-item['discount'])
+
+    worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории')
+    items_categories_columns = google_work.get_columns(worksheet, 1, 2, 12)
+    items_categories_dict = {items_categories_columns[0][i]: items_categories_columns[1][i]
+                           for i in range(len(items_categories_columns[0]))}
+    worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Категории макс')
+    max_categories_columns = google_work.get_columns(worksheet, 1, 2, 8)
+    max_categories_dict = {max_categories_columns[0][i]: max_categories_columns[1][i]
+                           for i in range(len(max_categories_columns[0]))}
+    for nm, values in items_dict.items():
+        if max_categories_convert_dict.get(items_dict[nm]['category']) is None: continue
+        elif max_categories_convert_dict.get(items_categories_dict[nm]) is None: continue
+        else:
+            if max_categories_dict[max_categories_convert_dict[items_dict[nm]['category']]] == items_categories_dict[nm]:
+                items_dict[nm]['max_category'] = 'Да'
+
+    worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Отзывы')
+    feedbacks_columns = google_work.get_columns(worksheet, 1, 2, 6)
+    for i in range(len(feedbacks_columns[0])):
+        try: items_dict[int(feedbacks_columns[0][i])]['rating'] = feedbacks_columns[1][i]
+        except KeyError: pass
+
+    worksheet = google_work.open_sheet(info.google_key('wb_consolidated'), 'Остатки наш склад')
+    our_stocks_columns = google_work.get_columns(worksheet, 1, 2, 6)
+    for i in range(len(our_stocks_columns[0])):
+        article = our_stocks_columns[0][i]
+        for nm, values in items_dict.items():
+            if values['article'] == article: items_dict[nm]['our_stocks'] += our_stocks_columns[1][i]
+
+    worksheet = google_work.open_sheet(info.google_key('wb_consolidated'), 'Заказы у поставщиков')
+    our_orders_columns = google_work.get_columns(worksheet, 1, 5, 9)
+    for i in range(len(our_orders_columns[0])):
+        try: items_dict[int(our_orders_columns[0][i])]['our_in_way'] += our_orders_columns[1][i]
+        except KeyError: pass
+
+    worksheet = google_work.open_sheet(info.google_key('wb_day_reports'), 'динамика, шт')
+    orders_columns = google_work.get_columns(worksheet, 1, 2, 6, 7, 8, 9, 10, 11, 12)
+    for i in range(len(orders_columns[0])):
+        try: items_dict[int(orders_columns[0][i])]['orders'] = [int(orders_columns[j][i]) for j in range(1, len(orders_columns))]
+        except KeyError: pass
+
+    worksheet = google_work.open_sheet(info.google_key('wb_analytics'), 'Остатки')
+    stocks_columns = google_work.get_columns(worksheet, 1, 2, 9)
+    for i in range(len(stocks_columns[0])):
+        try:
+            if int(stocks_columns[1][i]) == 0: items_dict[int(stocks_columns[0][i])]['all_stocks'] = 'Нет'
+            else: items_dict[int(stocks_columns[0][i])]['stocks'] += int(stocks_columns[1][i])
+        except KeyError: pass
+
+    table = [['Новинка', 'Артикул', 'Номенклатура', 'Предмет', 'Макс категорий',
+              'Высокий рейтинг'] + info.days_list(from_date=str(date.today()-timedelta(days=7)), to_yesterday=True) +
+             ['График заказов',	'Все размеры', 'Остатки WB',
+              'Оборот', 'Цена без СПП', 'Наши остатки', 'В пути к нам', 'Действия по карточке',
+              'Действия по карточке', 'Действия по цене', 'Новая цена без СПП',
+              'Нужно ли отгрузить?', 'Нужно ли заказать?']]
+    notes = list()
+    i = 1
+    for nm, value in items_dict.items():
+        i += 1
+        row = list()
+        row.append(value['is_new'])
+        row.append(value['article'])
+        row.append(nm)
+        row.append(value['category'])
+        row.append(value['max_category'])
+        row.append(value['rating'])
+        row += value['orders']
+        row.append(f"""=SPARKLINE(G{i}:M{i};"""+"{\"charttype\"\\\"column\";\"color\"\\\"green\";\"ymin\"\\0})")
+        row.append(value['all_stocks'])
+        row.append(value['stocks'])
+        row.append(value['stocks']/(sum(value['orders'])/7) if sum(value['orders']) > 0 else '')
+        row.append(value['price'])
+        row.append(value['our_stocks'])
+        row.append(value['our_in_way'])
+        row.append(value['is_card_actions'])
+        row.append(value['card_actions'])
+        row.append(value['is_price_actions'])
+        row.append(value['price_actions'])
+        row.append(value['is_shipment'])
+        row.append(value['is_order'])
+        table.append(row)
+        notes.append([', '.join(list(map(str, value['orders'])))])
+    return table, notes
+
+
+
+

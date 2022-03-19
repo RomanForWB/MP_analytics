@@ -336,18 +336,20 @@ def _orders_count_by_suppliers_list(suppliers_list, start_date):
         supplier_table = list()
         supplier_products_dict = {item['sku']: item for item in products_dict[supplier]}
         for sku, days_values in orders_dict[supplier].items():
-            days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
-                           for key, values in days_values.items()}
-            row = [ozon_info.supplier_name(supplier), sku,
-                   supplier_products_dict[sku]['offer_id'],
-                   categories_dict[supplier_products_dict[sku]['category_id']]]
-            for day in days: row.append(days_values[day]['orders_count'])
-            row.append(sum([day_value['orders_count'] for day_value in days_values.values()]))
-            try: row.append(sum([day_value['orders_value'] for day_value in days_values.values()]) /
-                       sum([day_value['orders_count'] for day_value in days_values.values()]))
-            except ZeroDivisionError: row.append('')
-            row.append(sum([day_value['orders_value'] for day_value in days_values.values()]))
-            supplier_table.append(row)
+            try:
+                days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
+                               for key, values in days_values.items()}
+                row = [ozon_info.supplier_name(supplier), sku,
+                       supplier_products_dict[sku]['offer_id'],
+                       categories_dict[supplier_products_dict[sku]['category_id']]]
+                for day in days: row.append(days_values[day]['orders_count'])
+                row.append(sum([day_value['orders_count'] for day_value in days_values.values()]))
+                try: row.append(sum([day_value['orders_value'] for day_value in days_values.values()]) /
+                           sum([day_value['orders_count'] for day_value in days_values.values()]))
+                except ZeroDivisionError: row.append('')
+                row.append(sum([day_value['orders_value'] for day_value in days_values.values()]))
+                supplier_table.append(row)
+            except KeyError: pass
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
@@ -399,18 +401,20 @@ def _orders_value_by_suppliers_list(suppliers_list, start_date):
         supplier_table = list()
         supplier_products_dict = {item['sku']: item for item in products_dict[supplier]}
         for sku, days_values in orders_dict[supplier].items():
-            days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
-                           for key, values in days_values.items()}
-            row = [ozon_info.supplier_name(supplier), sku,
-                   supplier_products_dict[sku]['offer_id'],
-                   categories_dict[supplier_products_dict[sku]['category_id']]]
-            for day in days: row.append(days_values[day]['orders_value'])
-            row.append(sum([day_value['orders_count'] for day_value in days_values.values()]))
-            try: row.append(sum([day_value['orders_value'] for day_value in days_values.values()]) /
-                       sum([day_value['orders_count'] for day_value in days_values.values()]))
-            except ZeroDivisionError: row.append('')
-            row.append(sum([day_value['orders_value'] for day_value in days_values.values()]))
-            supplier_table.append(row)
+            try:
+                days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
+                               for key, values in days_values.items()}
+                row = [ozon_info.supplier_name(supplier), sku,
+                       supplier_products_dict[sku]['offer_id'],
+                       categories_dict[supplier_products_dict[sku]['category_id']]]
+                for day in days: row.append(days_values[day]['orders_value'])
+                row.append(sum([day_value['orders_count'] for day_value in days_values.values()]))
+                try: row.append(sum([day_value['orders_value'] for day_value in days_values.values()]) /
+                           sum([day_value['orders_count'] for day_value in days_values.values()]))
+                except ZeroDivisionError: row.append('')
+                row.append(sum([day_value['orders_value'] for day_value in days_values.values()]))
+                supplier_table.append(row)
+            except KeyError: pass
         table += sorted(supplier_table, key=lambda item: item[2])
     return table
 
@@ -439,19 +443,21 @@ def _orders_category_by_suppliers_list(suppliers_list, start_date, visible_categ
     for supplier in suppliers_list:
         supplier_products_dict = {item['sku']: item for item in products_dict[supplier]}
         for sku, days_values in orders_dict[supplier].items():
-            category_words = re.split(r'\s+', categories_dict[supplier_products_dict[sku]['category_id']])
-            category = ' '.join(list(filter(lambda item: 'женск' not in item.lower(), category_words)))
-            days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
-                           for key, values in days_values.items()}
-            for day in days:
-                if visible_categories is not None:
-                    if category in visible_categories:
+            try:
+                category_words = re.split(r'\s+', categories_dict[supplier_products_dict[sku]['category_id']])
+                category = ' '.join(list(filter(lambda item: 'женск' not in item.lower(), category_words)))
+                days_values = {datetime.strptime(key, '%Y-%m-%d').strftime('%d.%m'): values
+                               for key, values in days_values.items()}
+                for day in days:
+                    if visible_categories is not None:
+                        if category in visible_categories:
+                            orders_by_category_dict.setdefault(category, {day: 0 for day in days})
+                            orders_by_category_dict[category][day] += days_values[day]['orders_value']
+                        else: other_days_values[day] += days_values[day]['orders_value']
+                    else:
                         orders_by_category_dict.setdefault(category, {day: 0 for day in days})
                         orders_by_category_dict[category][day] += days_values[day]['orders_value']
-                    else: other_days_values[day] += days_values[day]['orders_value']
-                else:
-                    orders_by_category_dict.setdefault(category, {day: 0 for day in days})
-                    orders_by_category_dict[category][day] += days_values[day]['orders_value']
+            except KeyError: pass
     table = [[category] + [value for day, value in days_values.items()]
              for category, days_values in orders_by_category_dict.items()]
     table.sort(key=lambda item: sum(item[1:]), reverse=True)

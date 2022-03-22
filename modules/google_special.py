@@ -30,7 +30,8 @@ def day_report(worksheet, report_table):
     for i in range(1, len(report_table)):
         day = datetime.strptime(report_table[i][0], '%Y-%m-%d')
         report_table[i][0] = f'{day.day} {ru_month[int(day.month)]}'
-        report_table[i].append(report_table[i][3]/report_table[i][1])
+        try: report_table[i].append(report_table[i][3]/report_table[i][1])
+        except ZeroDivisionError: report_table[i].append(0)
 
     report_table.append(['Общий итог 7 дней',
                         sum([row[1] for row in report_table[2:]]),
@@ -98,7 +99,8 @@ def week_report(worksheet, report_table):
     for i in range(1, len(report_table)):
         day = datetime.strptime(report_table[i][0], '%Y-%m-%d')
         report_table[i][0] = f'{day.day} {ru_month[int(day.month)]}'
-        report_table[i].append(report_table[i][3] / report_table[i][1])
+        try: report_table[i].append(report_table[i][3] / report_table[i][1])
+        except ZeroDivisionError: report_table[i].append(0)
         try: report_table[i].append(outcomes_column[i])
         except IndexError: report_table[i].append(0)
 
@@ -222,7 +224,8 @@ def month_report(worksheet, report_table):
     for i in range(1, len(report_table)):
         day = datetime.strptime(report_table[i][0], '%Y-%m-%d')
         report_table[i][0] = f'{day.day} {ru_month[int(day.month)]}'
-        report_table[i].append(report_table[i][3]/report_table[i][1])
+        try: report_table[i].append(report_table[i][3]/report_table[i][1])
+        except ZeroDivisionError: report_table[i].append(0)
         try: report_table[i].append(outcomes_column[i])
         except IndexError: report_table[i].append(0)
 

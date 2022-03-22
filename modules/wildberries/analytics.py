@@ -616,11 +616,19 @@ def _report_by_suppliers_list(suppliers_list, start_date):
                     else:
                         for key, value in day_values.items():
                             days_dict[f"{year}-{month}-{day}"][key] += value
-    table = [[day,
+    table = list()
+    for day in info.dates_list(from_date=start_date, to_yesterday=True):
+        try: row = [day,
               days_dict[day]['ordered'], days_dict[day]['goodsOrdered'],
               days_dict[day]['paymentSalesRub'], days_dict[day]['paymentSalesPiece'],
               days_dict[day]['logisticsCost'], days_dict[day]['totalToTransfer']]
-             for day in info.dates_list(from_date=start_date, to_yesterday=True)]
+        except KeyError: row = [day,0,0,0,0,0,0]
+        table.append(row)
+    # table = [[day,
+    #           days_dict[day]['ordered'], days_dict[day]['goodsOrdered'],
+    #           days_dict[day]['paymentSalesRub'], days_dict[day]['paymentSalesPiece'],
+    #           days_dict[day]['logisticsCost'], days_dict[day]['totalToTransfer']]
+    #          for day in info.dates_list(from_date=start_date, to_yesterday=True)]
     return table
 
 

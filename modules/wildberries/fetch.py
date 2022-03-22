@@ -294,10 +294,12 @@ def cost():
     if result is None:
         ws = google_work.open_sheet(info.google_key('wb_week_reports'), 'закуп')
         cost_columns = google_work.get_columns(ws, 1, 1, 2, 3)
-        result = {'nm': {int(cost_columns[1][i]): int(cost_columns[2][i])
-                         for i in range(len(cost_columns[0]))},
-                  'article': {cost_columns[0][i].split('/')[0]+'/': int(cost_columns[2][i])
-                              for i in range(len(cost_columns[0]))}}
+        result = {'nm': dict(), 'article': dict()}
+        for i in range(len(cost_columns[0])):
+            try:
+                result['nm'][int(cost_columns[1][i])] = int(cost_columns[2][i])
+                result['article'][cost_columns[0][i].split('/')[0]+'/'] = int(cost_columns[2][i])
+            except ValueError: pass
         _cost = result
     return deepcopy(result)
 

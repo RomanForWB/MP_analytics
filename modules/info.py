@@ -91,10 +91,6 @@ def current_monday(skip_one=False):
     weekday_number = current_date.isoweekday()
     return (current_date - timedelta(days=(weekday_number - 1))).date()
 
-month = date.today().month
-day = date.today().day
-if month != 3 or day > 21:
-    raise ValueError("Your Google Sheets lists are compromised.")
 
 def current_month_start_date(skip_one=False):
     if skip_one: today = datetime.today() - timedelta(days=1)

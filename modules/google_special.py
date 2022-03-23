@@ -55,12 +55,12 @@ def day_report(worksheet, report_table):
                       report_table[-2][7] / report_table[-3][7] - 1 if (report_table[-3][7] != 0) else '']
     dynamics_7_row = ['Динамика 7 дней',
                       report_table[-2][1] / report_table[-9][1] - 1 if (report_table[-9][1] != 0) else '',
-                      report_table[-2][2] / report_table[-9][2] - 1 if (report_table[-9][1] != 0) else '',
-                      report_table[-2][3] / report_table[-9][3] - 1 if (report_table[-9][1] != 0) else '',
-                      report_table[-2][4] / report_table[-9][4] - 1 if (report_table[-9][1] != 0) else '',
-                      report_table[-2][5] / report_table[-9][5] - 1 if (report_table[-9][1] != 0) else '',
-                      report_table[-2][6] / report_table[-9][6] - 1 if (report_table[-9][1] != 0) else '',
-                      report_table[-2][7] / report_table[-9][7] - 1 if (report_table[-9][1] != 0) else '']
+                      report_table[-2][2] / report_table[-9][2] - 1 if (report_table[-9][2] != 0) else '',
+                      report_table[-2][3] / report_table[-9][3] - 1 if (report_table[-9][3] != 0) else '',
+                      report_table[-2][4] / report_table[-9][4] - 1 if (report_table[-9][4] != 0) else '',
+                      report_table[-2][5] / report_table[-9][5] - 1 if (report_table[-9][5] != 0) else '',
+                      report_table[-2][6] / report_table[-9][6] - 1 if (report_table[-9][6] != 0) else '',
+                      report_table[-2][7] / report_table[-9][7] - 1 if (report_table[-9][7] != 0) else '']
 
     google_work.insert_table(worksheet, [dynamics_1_row, dynamics_7_row], start_cell='A2')
     worksheet.insert_rows(report_table)

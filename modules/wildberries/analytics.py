@@ -25,7 +25,8 @@ def _feedbacks_by_data(supplier, card, feedbacks_list):
             if bad_mark == 'Нет' and feedback['productValuation'] < 4:
                 bad_mark = 'Да'
                 bad_feedback = feedback['text']
-        avg_rating = round(rating_score / len(feedbacks_list), 1)  # средний рейтинг последних отзывов
+        try: avg_rating = round(rating_score / len(feedbacks_list), 1)  # средний рейтинг последних отзывов
+        except ZeroDivisionError: avg_rating = 0
     return [[wb_info.supplier_name(supplier), nomenclature['nmId'],
              f"{card['supplierVendorCode']}{nomenclature['vendorCode']}",
              f"{card['parent']}/{card['object']}", brand,
@@ -2463,7 +2464,8 @@ def _profit_compare_by_suppliers_list(suppliers_list, weeks):
     for category, period_values in result_dict.items():
         row = [category]
         for day_period in period:
-            row += [period_values[day_period]['profit_value'], period_values[day_period]['orders_value']]
+            try: row += [period_values[day_period]['profit_value'], period_values[day_period]['orders_value']]
+            except KeyError: row+= ['-', '-']
         table.append(row)
     table.sort(key=lambda item: sum(item[1:]), reverse=True)
     period_with_spaces = list()
